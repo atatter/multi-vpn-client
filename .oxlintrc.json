@@ -1,0 +1,824 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "oxc",
+    "import",
+    "react",
+    "vitest"
+  ],
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/out/**",
+    "**/node_modules/**"
+  ],
+  "rules": {
+    "eslint/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
+    ],
+    "typescript/no-explicit-any": "error",
+    "import/no-cycle": "error",
+    "eslint/max-lines": [
+      "warn",
+      {
+        "max": 250,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
+    ],
+    "eslint/max-lines-per-function": [
+      "warn",
+      {
+        "max": 80,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
+    ],
+    "vitest/no-focused-tests": "error",
+    "vitest/no-disabled-tests": "error",
+    "react/rules-of-hooks": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        "apps/desktop/src/renderer/src/**",
+        "apps/desktop/harness/main.tsx"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "electron",
+                "message": "The renderer reaches main only through the bridge (app.api)."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "@repo/engine",
+                  "@repo/engine/*",
+                  "@repo/core/store",
+                  "@repo/core/host",
+                  "@repo/core/secret-store",
+                  "@repo/core/fs",
+                  "@repo/core/helper-crypto",
+                  "@repo/vpns/engine",
+                  "@repo/vpn-sdk/engine",
+                  "@repo/vpn-sdk/container"
+                ],
+                "message": "Node-only packages stay in main."
+              }
+            ]
+          }
+        ],
+        "import/no-nodejs-modules": "error"
+      }
+    },
+    {
+      "files": [
+        "packages/ui/src/**"
+      ],
+      "rules": {
+        "import/no-nodejs-modules": "error",
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "node:*",
+                  "fs",
+                  "fs/*",
+                  "path",
+                  "os",
+                  "child_process",
+                  "net",
+                  "crypto",
+                  "stream",
+                  "http",
+                  "https",
+                  "url",
+                  "util",
+                  "events",
+                  "buffer",
+                  "worker_threads"
+                ],
+                "message": "The design kit runs in the sandboxed window: no Node."
+              },
+              {
+                "group": [
+                  "@repo/*"
+                ],
+                "message": "@repo/ui is the design kit: it knows nothing about the app or VPNs (see docs/code-structure.md)."
+              }
+            ],
+            "paths": [
+              {
+                "name": "electron",
+                "message": "The renderer reaches main only through the bridge (app.api)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/desktop/src/renderer/src/domain/**"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "electron",
+                "message": "The renderer reaches main only through the bridge (app.api)."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "@repo/engine",
+                  "@repo/engine/*",
+                  "@repo/core/store",
+                  "@repo/core/host",
+                  "@repo/core/secret-store",
+                  "@repo/core/fs",
+                  "@repo/core/helper-crypto",
+                  "@repo/vpns/engine",
+                  "@repo/vpn-sdk/engine",
+                  "@repo/vpn-sdk/container"
+                ],
+                "message": "Node-only packages stay in main."
+              },
+              {
+                "group": [
+                  "**/store/**"
+                ],
+                "message": "domain/ holds pure helpers: it may use @repo/ui only."
+              },
+              {
+                "group": [
+                  "**/app/**"
+                ],
+                "message": "domain/ holds pure helpers: it may use @repo/ui only."
+              },
+              {
+                "group": [
+                  "**/vpn-list/**"
+                ],
+                "message": "domain/ holds pure helpers: it may use @repo/ui only."
+              },
+              {
+                "group": [
+                  "**/setup/**"
+                ],
+                "message": "domain/ holds pure helpers: it may use @repo/ui only."
+              },
+              {
+                "group": [
+                  "**/prompts/**"
+                ],
+                "message": "domain/ holds pure helpers: it may use @repo/ui only."
+              },
+              {
+                "group": [
+                  "**/vpn-page/**"
+                ],
+                "message": "domain/ holds pure helpers: it may use @repo/ui only."
+              },
+              {
+                "group": [
+                  "**/vpn-form/**"
+                ],
+                "message": "domain/ holds pure helpers: it may use @repo/ui only."
+              },
+              {
+                "group": [
+                  "**/traffic/**"
+                ],
+                "message": "domain/ holds pure helpers: it may use @repo/ui only."
+              },
+              {
+                "group": [
+                  "**/add-vpn/**"
+                ],
+                "message": "domain/ holds pure helpers: it may use @repo/ui only."
+              },
+              {
+                "group": [
+                  "**/check/**"
+                ],
+                "message": "domain/ holds pure helpers: it may use @repo/ui only."
+              },
+              {
+                "group": [
+                  "**/settings/**"
+                ],
+                "message": "domain/ holds pure helpers: it may use @repo/ui only."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/desktop/src/renderer/src/store/**"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "electron",
+                "message": "The renderer reaches main only through the bridge (app.api)."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "@repo/engine",
+                  "@repo/engine/*",
+                  "@repo/core/store",
+                  "@repo/core/host",
+                  "@repo/core/secret-store",
+                  "@repo/core/fs",
+                  "@repo/core/helper-crypto",
+                  "@repo/vpns/engine",
+                  "@repo/vpn-sdk/engine",
+                  "@repo/vpn-sdk/container"
+                ],
+                "message": "Node-only packages stay in main."
+              },
+              {
+                "group": [
+                  "**/app/**"
+                ],
+                "message": "store/ never imports a feature or the app shell."
+              },
+              {
+                "group": [
+                  "**/vpn-list/**"
+                ],
+                "message": "store/ never imports a feature or the app shell."
+              },
+              {
+                "group": [
+                  "**/setup/**"
+                ],
+                "message": "store/ never imports a feature or the app shell."
+              },
+              {
+                "group": [
+                  "**/prompts/**"
+                ],
+                "message": "store/ never imports a feature or the app shell."
+              },
+              {
+                "group": [
+                  "**/vpn-page/**"
+                ],
+                "message": "store/ never imports a feature or the app shell."
+              },
+              {
+                "group": [
+                  "**/vpn-form/**"
+                ],
+                "message": "store/ never imports a feature or the app shell."
+              },
+              {
+                "group": [
+                  "**/traffic/**"
+                ],
+                "message": "store/ never imports a feature or the app shell."
+              },
+              {
+                "group": [
+                  "**/add-vpn/**"
+                ],
+                "message": "store/ never imports a feature or the app shell."
+              },
+              {
+                "group": [
+                  "**/check/**"
+                ],
+                "message": "store/ never imports a feature or the app shell."
+              },
+              {
+                "group": [
+                  "**/settings/**"
+                ],
+                "message": "store/ never imports a feature or the app shell."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/desktop/src/renderer/src/vpn-list/**",
+        "apps/desktop/src/renderer/src/setup/**",
+        "apps/desktop/src/renderer/src/prompts/**",
+        "apps/desktop/src/renderer/src/vpn-page/**",
+        "apps/desktop/src/renderer/src/vpn-form/**",
+        "apps/desktop/src/renderer/src/traffic/**",
+        "apps/desktop/src/renderer/src/add-vpn/**",
+        "apps/desktop/src/renderer/src/check/**",
+        "apps/desktop/src/renderer/src/settings/**"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "electron",
+                "message": "The renderer reaches main only through the bridge (app.api)."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "@repo/engine",
+                  "@repo/engine/*",
+                  "@repo/core/store",
+                  "@repo/core/host",
+                  "@repo/core/secret-store",
+                  "@repo/core/fs",
+                  "@repo/core/helper-crypto",
+                  "@repo/vpns/engine",
+                  "@repo/vpn-sdk/engine",
+                  "@repo/vpn-sdk/container"
+                ],
+                "message": "Node-only packages stay in main."
+              },
+              {
+                "group": [
+                  "**/app/**"
+                ],
+                "message": "Features never import the app shell."
+              },
+              {
+                "group": [
+                  "../vpn-list/**/*.ts",
+                  "../../vpn-list/**/*.ts"
+                ],
+                "message": "A feature may render another feature's components, but never import its .ts logic; move shared logic into domain/ or store/."
+              },
+              {
+                "group": [
+                  "../setup/**/*.ts",
+                  "../../setup/**/*.ts"
+                ],
+                "message": "A feature may render another feature's components, but never import its .ts logic; move shared logic into domain/ or store/."
+              },
+              {
+                "group": [
+                  "../prompts/**/*.ts",
+                  "../../prompts/**/*.ts"
+                ],
+                "message": "A feature may render another feature's components, but never import its .ts logic; move shared logic into domain/ or store/."
+              },
+              {
+                "group": [
+                  "../vpn-page/**/*.ts",
+                  "../../vpn-page/**/*.ts"
+                ],
+                "message": "A feature may render another feature's components, but never import its .ts logic; move shared logic into domain/ or store/."
+              },
+              {
+                "group": [
+                  "../vpn-form/**/*.ts",
+                  "../../vpn-form/**/*.ts"
+                ],
+                "message": "A feature may render another feature's components, but never import its .ts logic; move shared logic into domain/ or store/."
+              },
+              {
+                "group": [
+                  "../traffic/**/*.ts",
+                  "../../traffic/**/*.ts"
+                ],
+                "message": "A feature may render another feature's components, but never import its .ts logic; move shared logic into domain/ or store/."
+              },
+              {
+                "group": [
+                  "../add-vpn/**/*.ts",
+                  "../../add-vpn/**/*.ts"
+                ],
+                "message": "A feature may render another feature's components, but never import its .ts logic; move shared logic into domain/ or store/."
+              },
+              {
+                "group": [
+                  "../check/**/*.ts",
+                  "../../check/**/*.ts"
+                ],
+                "message": "A feature may render another feature's components, but never import its .ts logic; move shared logic into domain/ or store/."
+              },
+              {
+                "group": [
+                  "../settings/**/*.ts",
+                  "../../settings/**/*.ts"
+                ],
+                "message": "A feature may render another feature's components, but never import its .ts logic; move shared logic into domain/ or store/."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/desktop/src/main/**",
+        "apps/desktop/src/preload/**",
+        "packages/engine/**",
+        "packages/helper/**",
+        "packages/card-bridge/**",
+        "apps/launcher/**"
+      ],
+      "rules": {
+        "eslint/no-restricted-globals": [
+          "error",
+          {
+            "name": "window",
+            "message": "No DOM outside the renderer."
+          },
+          {
+            "name": "document",
+            "message": "No DOM outside the renderer."
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/core/src/**"
+      ],
+      "rules": {
+        "eslint/no-restricted-globals": [
+          "error",
+          {
+            "name": "window",
+            "message": "core runs everywhere: no DOM."
+          },
+          {
+            "name": "document",
+            "message": "core runs everywhere: no DOM."
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/core/src/**"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "node:*",
+                  "fs",
+                  "fs/*",
+                  "path",
+                  "os",
+                  "child_process",
+                  "net",
+                  "crypto",
+                  "stream",
+                  "http",
+                  "https",
+                  "url",
+                  "util",
+                  "events",
+                  "buffer",
+                  "worker_threads"
+                ],
+                "message": "core's main entry runs in the renderer too: Node-only code goes in store.ts, host.ts, secret-store.ts, fs.ts or helper-crypto.ts."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/core/src/store.ts",
+        "packages/core/src/host.ts",
+        "packages/core/src/secret-store.ts",
+        "packages/core/src/fs.ts",
+        "packages/core/src/helper-crypto.ts",
+        "packages/core/src/**/*.test.ts"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": [
+        "apps/desktop/src/main/**"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "electron",
+                "importNames": [
+                  "ipcMain"
+                ],
+                "message": "Register IPC through main/ipc/handle.ts, so every handler gets the same checks."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/desktop/src/main/ipc/handle.ts"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": [
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "rules": {
+        "eslint/max-lines-per-function": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/vpn-sdk/src/**"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@repo/*"
+                ],
+                "message": "@repo/vpn-sdk is what VPN kinds are written against: it imports no other package and names no kind."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/vpn-sdk/src/index.ts",
+        "packages/vpn-sdk/src/kind.ts",
+        "packages/vpn-sdk/src/fields.ts",
+        "packages/vpn-sdk/src/cidr.ts",
+        "packages/vpn-sdk/src/ui.ts"
+      ],
+      "rules": {
+        "import/no-nodejs-modules": "error",
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "node:*",
+                  "fs",
+                  "fs/*",
+                  "path",
+                  "os",
+                  "child_process",
+                  "net",
+                  "crypto",
+                  "stream",
+                  "http",
+                  "https",
+                  "url",
+                  "util",
+                  "events",
+                  "buffer",
+                  "worker_threads"
+                ],
+                "message": "This entry runs in the window too: Node-only code goes in engine.ts or container.ts."
+              },
+              {
+                "group": [
+                  "@repo/*"
+                ],
+                "message": "@repo/vpn-sdk is what VPN kinds are written against: it imports no other package and names no kind."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/vpns/src/engine.ts",
+        "packages/vpns/src/integrations/**/*.ts",
+        "packages/vpns/src/shared/**/*.ts"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "react",
+                  "react/*",
+                  "@repo/ui",
+                  "@repo/ui/*",
+                  "@repo/vpn-sdk/ui",
+                  "*.tsx"
+                ],
+                "message": "This is engine-side code (Node): no React and no forms. See docs/adding-a-vpn-kind.md."
+              },
+              {
+                "group": [
+                  "../*/**",
+                  "!../../**",
+                  "../../integrations/**",
+                  "../../index.ts",
+                  "../../engine.ts",
+                  "../../ui.ts",
+                  "@repo/vpns",
+                  "@repo/vpns/*",
+                  "../../**/*.tsx"
+                ],
+                "message": "An integration never imports another integration or the lists of them; code two integrations share goes in shared/. See docs/adding-a-vpn-kind.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/vpns/src/index.ts",
+        "packages/vpns/src/integrations/*/kind.ts"
+      ],
+      "rules": {
+        "import/no-nodejs-modules": "error",
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "node:*",
+                  "fs",
+                  "fs/*",
+                  "path",
+                  "os",
+                  "child_process",
+                  "net",
+                  "crypto",
+                  "stream",
+                  "http",
+                  "https",
+                  "url",
+                  "util",
+                  "events",
+                  "buffer",
+                  "worker_threads"
+                ],
+                "message": "kind.ts runs everywhere, the window too: no Node. See docs/adding-a-vpn-kind.md."
+              },
+              {
+                "group": [
+                  "react",
+                  "react/*",
+                  "@repo/ui",
+                  "@repo/ui/*",
+                  "@repo/vpn-sdk/engine",
+                  "@repo/vpn-sdk/container",
+                  "@repo/vpn-sdk/ui",
+                  "@repo/vpns",
+                  "@repo/vpns/*",
+                  "@repo/engine",
+                  "@repo/engine/*",
+                  "@repo/core/store",
+                  "@repo/core/host",
+                  "@repo/core/secret-store",
+                  "@repo/core/fs",
+                  "@repo/core/helper-crypto"
+                ],
+                "message": "kind.ts is what every process shares: no engine or window code. See docs/adding-a-vpn-kind.md."
+              },
+              {
+                "group": [
+                  "./*",
+                  "!./integrations",
+                  "./integrations/*/*",
+                  "!./integrations/*/kind.ts",
+                  "../**"
+                ],
+                "message": "kind.ts imports no other file of its integration and no other integration. See docs/adding-a-vpn-kind.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/vpns/src/ui.ts",
+        "packages/vpns/src/integrations/**/*.tsx"
+      ],
+      "rules": {
+        "import/no-nodejs-modules": "error",
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "node:*",
+                  "fs",
+                  "fs/*",
+                  "path",
+                  "os",
+                  "child_process",
+                  "net",
+                  "crypto",
+                  "stream",
+                  "http",
+                  "https",
+                  "url",
+                  "util",
+                  "events",
+                  "buffer",
+                  "worker_threads"
+                ],
+                "message": "Forms run in the sandboxed window: no Node. See docs/adding-a-vpn-kind.md."
+              },
+              {
+                "group": [
+                  "@repo/vpn-sdk/engine",
+                  "@repo/vpn-sdk/container",
+                  "@repo/vpns",
+                  "@repo/vpns/*",
+                  "@repo/engine",
+                  "@repo/engine/*",
+                  "@repo/core/store",
+                  "@repo/core/host",
+                  "@repo/core/secret-store",
+                  "@repo/core/fs",
+                  "@repo/core/helper-crypto"
+                ],
+                "message": "Forms run in the window: no engine code, and the lists of integrations only through the app. See docs/adding-a-vpn-kind.md."
+              },
+              {
+                "group": [
+                  "./*.ts",
+                  "!./kind.ts",
+                  "!./index.ts",
+                  "../**/*.ts",
+                  "../*/**",
+                  "!../../**",
+                  "../../integrations/**",
+                  "../../index.ts",
+                  "../../engine.ts",
+                  "../../ui.ts",
+                  "../../shared/**/*.ts"
+                ],
+                "message": "A form imports only its own kind.ts and .tsx files: other .ts files are engine side, and other integrations are off limits. See docs/adding-a-vpn-kind.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/vpns/src/**/*.test.ts"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": "off"
+      }
+    }
+  ]
+}

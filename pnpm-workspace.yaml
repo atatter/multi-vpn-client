@@ -1,0 +1,8 @@
+packages:
+  - apps/*
+  - packages/*
+allowBuilds:
+  bun: true
+  esbuild: true
+  # electron-builder's Squirrel.Windows installer, which isn't used: archives are zip/tar.gz.
+  electron-winstaller: false

@@ -1,0 +1,2 @@
+# Windows checkouts would otherwise turn LF into CRLF, which breaks tests that compare text.
+* text=auto eol=lf

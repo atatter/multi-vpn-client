@@ -1,0 +1,21 @@
+{
+  "name": "@repo/vpn-sdk",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cidr": "./src/cidr.ts",
+    "./engine": "./src/engine.ts",
+    "./container": "./src/container.ts",
+    "./ui": "./src/ui.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0"
+  }
+}

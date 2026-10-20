@@ -1,0 +1,37 @@
+{
+  "name": "@repo/desktop",
+  "productName": "Multi VPN Client",
+  "description": "Stay connected to several corporate VPNs at once, each carrying the sites you choose.",
+  "private": true,
+  "version": "0.1.0",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "postinstall": "install-electron",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "package": "electron-vite build && node scripts/notices.mts && electron-builder --publish never",
+    "harness": "vite --config harness/vite.config.ts",
+    "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json"
+  },
+  "devDependencies": {
+    "@fontsource/barlow-semi-condensed": "5.3.0",
+    "@repo/core": "workspace:*",
+    "@repo/engine": "workspace:*",
+    "@repo/ui": "workspace:*",
+    "@repo/vpn-sdk": "workspace:*",
+    "@repo/vpns": "workspace:*",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "5.2.0",
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3",
+    "electron-vite": "5.0.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwindcss": "4.3.3",
+    "vite": "7.3.7",
+    "zod": "4.6.7"
+  }
+}

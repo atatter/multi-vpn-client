@@ -1,0 +1,10 @@
+name: Idea or question
+description: Something the app should do, or something you'd like to ask.
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like?
+      description: The problem you're trying to solve helps more than a finished design.
+    validations:
+      required: true

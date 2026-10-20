@@ -1,0 +1,82 @@
+name: Bug
+description: Something doesn't work, or the app says something that isn't true.
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issues are public. Replace real gateway addresses, usernames and internal names with placeholders like `vpn.example.com` before you post, including in logs and screenshots. Keep the report to one problem.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and didn't find this one.
+          required: true
+        - label: I replaced real gateway addresses, usernames and passwords with placeholders.
+          required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Add a GlobalProtect VPN for vpn.example.com
+        2. Connect it
+        3. Open a site it should carry
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Windows
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: VPN type
+      options:
+        - OpenVPN
+        - Fortinet SSL VPN
+        - GlobalProtect
+        - Check Point
+        - Not about one VPN
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Shown in Settings.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Connection log
+      description: From the VPN's page, under "Connection log". Remove real addresses and usernames first.
+      render: text
+  - type: upload
+    id: attachments
+    attributes:
+      label: Screenshots or recordings
+      description: Hide real addresses and usernames before uploading.
+    validations:
+      required: false
+      accept: ".png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.webm,.log,.txt"

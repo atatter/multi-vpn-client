@@ -1,0 +1,26 @@
+{
+  "name": "multi-vpn-client",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@12.11.2",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm build:helper && pnpm build:card-bridge && pnpm --filter @repo/desktop dev",
+    "build": "pnpm -r build",
+    "test": "vitest run",
+    "typecheck": "pnpm -r typecheck",
+    "build:helper": "pnpm --filter @repo/helper build",
+    "build:card-bridge": "pnpm --filter @repo/card-bridge build",
+    "package": "pnpm --filter @repo/helper exec bun scripts/build.ts --os && pnpm --filter @repo/card-bridge exec bun scripts/build.ts --os && pnpm --filter @repo/desktop package",
+    "lint": "oxlint"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "oxlint": "1.88.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.4"
+  }
+}

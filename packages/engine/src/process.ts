@@ -1,0 +1,33 @@
+import { spawn } from "node:child_process";
+
+export interface RunResult {
+  code: number;
+  stdout: string;
+  stderr: string;
+}
+
+/** Runs a command to completion (no shell), optionally feeding stdin. Never throws on a non-zero exit. */
+export function run(command: string, args: readonly string[], input?: string | Buffer): Promise<RunResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: ["pipe", "pipe", "pipe"] });
+    const stdout: Buffer[] = [];
+    const stderr: Buffer[] = [];
+    child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
+    child.stderr.on("data", (chunk: Buffer) => stderr.push(chunk));
+    child.on("error", reject);
+    child.on("close", (code) =>
+      resolve({ code: code ?? 1, stdout: Buffer.concat(stdout).toString("utf8"), stderr: Buffer.concat(stderr).toString("utf8") }),
+    );
+    child.stdin.end(input);
+  });
+}
+
+/** Like `run`, but throws with stderr when the command fails. Returns stdout. */
+export async function runChecked(command: string, args: readonly string[], input?: string | Buffer): Promise<string> {
+  const result = await run(command, args, input);
+  if (result.code !== 0) throw new Error((result.stderr || result.stdout).trim() || `${command} exited with ${result.code}`);
+  return result.stdout;
+}
+
+/** Single-quotes a value for POSIX sh. */
+export const shQuote = (value: string) => `'${value.replaceAll("'", `'\\''`)}'`;

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Multi VPN Client harness</title>
+    <style>
+      body { margin: 0; padding: 20px; background: #c9cfcd; font: 13px sans-serif; }
+      iframe { display: block; width: 360px; height: 420px; border: 0; border-radius: 11px; background: #f6f7f6; box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(0 0 0 / 0.15); }
+    </style>
+  </head>
+  <body>
+    <!-- The app window, 360px wide like the real one; it reports its height the way it asks main to size the window. -->
+    <iframe id="window" title="Multi VPN Client"></iframe>
+    <script type="module">
+      const frame = document.getElementById("window");
+      frame.src = `app.html${location.hash}`;
+      addEventListener("message", (event) => {
+        if (typeof event.data?.fit === "number") frame.style.height = `${Math.min(event.data.fit, 760)}px`;
+      });
+    </script>
+  </body>
+</html>

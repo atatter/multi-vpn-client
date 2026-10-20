@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "module": "preserve", "moduleResolution": "bundler", "types": ["node"] },
+  "include": ["electron.vite.config.ts", "harness/vite.config.ts", "src/main", "src/preload", "src/shared", "src/renderer-layers.test.ts", "scripts"]
+}

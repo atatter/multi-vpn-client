@@ -1,0 +1,17 @@
+{
+  "name": "@repo/engine",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@repo/core": "workspace:*",
+    "@repo/vpn-sdk": "workspace:*",
+    "@repo/vpns": "workspace:*",
+    "zod": "4.6.7"
+  }
+}

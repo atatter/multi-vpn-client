@@ -1,0 +1,78 @@
+name: Triage report
+description: Filed from `npx multi-vpn-client triage`, where a coding agent investigated the machine. For hand-written reports, use the Bug form.
+labels: ["via-triage", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the structure `multi-vpn-client triage` follows. One problem per issue. Issues are public: gateway addresses, internal names, IP addresses, usernames and home folder paths must be replaced with placeholders.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The problem in the user's own words.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnosis
+    attributes:
+      label: Diagnosis
+      description: What the investigation found, grounded in logs and source.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The app version the problem happened on (not the launcher that ran triage), or unknown.
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: VPN type
+      options:
+        - OpenVPN
+        - Fortinet SSL VPN
+        - GlobalProtect
+        - Check Point
+        - Not about one VPN
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS and version, how the app runs (npx, downloaded archive, source), Docker version, helper state.
+      placeholder: macOS 15.6 (arm64), npx, Docker Desktop 4.48, helper installed and current
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: The most relevant log lines only, redacted.
+      render: text
+  - type: input
+    id: related
+    attributes:
+      label: Related issues
+      description: Existing issues that look similar, and why this isn't one of them.
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Fix applied or workaround
+      description: Anything run on the machine to unblock the user.
+  - type: input
+    id: agent
+    attributes:
+      label: Filed by
+      description: The agent and model that produced this report.
+      placeholder: Claude Code (Opus 5.5) via multi-vpn-client triage

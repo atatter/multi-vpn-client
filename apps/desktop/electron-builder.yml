@@ -1,0 +1,61 @@
+# Packages the built window (out/) with this OS's helper and card bridge into one archive per architecture. The
+# release workflow runs it on each OS; `pnpm package` in the repo root does the same for this machine. The npm
+# launcher downloads these archives by name, so artifactName and the per-OS targets are part of its contract.
+appId: dev.multi-vpn-client
+artifactName: multi-vpn-client-${version}-${platform}-${arch}.${ext}
+directories:
+  output: dist
+# Main, preload and renderer bundle every dependency (electron.vite.config.ts), so nothing from node_modules ships.
+# The icon goes in too: main sets it on the window (APP_ICON in src/main/window.ts).
+files:
+  - out/**
+  - resources/icon.png
+# The app's own icon for the macOS bundle, the Windows .exe and the Linux desktop entry.
+icon: resources/icon.png
+npmRebuild: false
+# Written by scripts/notices.mts: the licenses of everything in the archive besides Electron's own. It goes in
+# resources/, because a signed macOS bundle can't hold loose files in Contents/.
+extraResources:
+  - from: build/THIRD_PARTY_NOTICES.txt
+    to: THIRD_PARTY_NOTICES.txt
+# Turn off the ways to run this Electron as a plain Node or attach a debugger to it.
+electronFuses:
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  onlyLoadAppFromAsar: true
+
+# binaries.ts looks for each executable in resources/<name>/, under the name the bun build gives it.
+mac:
+  target:
+    - target: tar.gz
+      arch: [arm64, x64]
+  # Ad-hoc: Apple Silicon only runs signed code. Without a Developer ID, a browser download is quarantined and
+  # blocked by Gatekeeper; the npm launcher's download isn't.
+  identity: "-"
+  hardenedRuntime: false
+  extraResources:
+    - from: ../../packages/helper/dist/mvpn-helper-${platform}-${arch}
+      to: helper/mvpn-helper-${platform}-${arch}
+    - from: ../../packages/card-bridge/dist/mvpn-card-bridge-${platform}-${arch}
+      to: card-bridge/mvpn-card-bridge-${platform}-${arch}
+linux:
+  target:
+    - target: tar.gz
+      arch: [x64, arm64]
+  executableName: multi-vpn-client
+  category: Network
+  extraResources:
+    - from: ../../packages/helper/dist/mvpn-helper-${platform}-${arch}
+      to: helper/mvpn-helper-${platform}-${arch}
+    - from: ../../packages/card-bridge/dist/mvpn-card-bridge-${platform}-${arch}
+      to: card-bridge/mvpn-card-bridge-${platform}-${arch}
+win:
+  target:
+    - target: zip
+      arch: [x64]
+  extraResources:
+    - from: ../../packages/helper/dist/mvpn-helper-${platform}-${arch}.exe
+      to: helper/mvpn-helper-${platform}-${arch}.exe
+    - from: ../../packages/card-bridge/dist/mvpn-card-bridge-${platform}-${arch}.exe
+      to: card-bridge/mvpn-card-bridge-${platform}-${arch}.exe

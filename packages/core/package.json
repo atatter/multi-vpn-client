@@ -1,0 +1,21 @@
+{
+  "name": "@repo/core",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./store": "./src/store.ts",
+    "./host": "./src/host.ts",
+    "./secret-store": "./src/secret-store.ts",
+    "./helper-crypto": "./src/helper-crypto.ts",
+    "./fs": "./src/fs.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@repo/vpn-sdk": "workspace:*",
+    "@repo/vpns": "workspace:*",
+    "zod": "4.6.7"
+  }
+}

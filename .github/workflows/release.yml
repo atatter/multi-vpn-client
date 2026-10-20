@@ -1,0 +1,206 @@
+# Builds and smoke-tests the release archives on each OS. On a v* tag it also publishes them: the GitHub Release first
+# (the npm launcher downloads from it), then the npm package, after a maintainer approves the `npm` environment.
+# How to cut a release: docs/releasing.md. Actions are pinned to commit SHAs, and release builds use no caches, so
+# nothing a pull request wrote can end up in a release.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - apps/desktop/electron-builder.yml
+      - apps/desktop/electron.vite.config.ts
+      - apps/desktop/package.json
+      - apps/desktop/scripts/**
+      - apps/desktop/licenses/**
+      - apps/launcher/**
+      - packages/helper/scripts/**
+      - packages/card-bridge/scripts/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # One version for everything: the app, every archive, the GitHub Release and the npm package.
+      - id: version
+        run: |
+          version=$(node -p 'require("./apps/desktop/package.json").version')
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match the version in apps/desktop/package.json ($version)."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build (${{ matrix.os }})
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            smoke: ""
+          - os: ubuntu-latest
+            smoke: xvfb-run --auto-servernum
+          - os: windows-latest
+            smoke: ""
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      # The helper and card bridge for every architecture of this OS, then the archives with notices.
+      - run: pnpm package
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          # electron-builder skips signing on pull requests, which leaves Electron's own signature broken by the fuses.
+          # The signature is ad-hoc and this job holds no secrets, so PR builds sign exactly like tag builds.
+          CSC_FOR_PULL_REQUEST: "true"
+      - name: Verify the macOS signatures, including the bundled helper and card bridge
+        if: runner.os == 'macOS'
+        run: for app in apps/desktop/dist/mac*/*.app; do codesign --verify --deep --strict --verbose=2 "$app"; done
+      - run: pnpm --filter @repo/launcher build
+      - name: Smoke-test this machine's archive the way the launcher installs it
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          node apps/launcher/scripts/pack.ts --version "$VERSION" --archives apps/desktop/dist --out npm-package --partial
+          ${{ matrix.smoke }} node apps/launcher/scripts/smoke.ts --package npm-package --archives apps/desktop/dist
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: archives-${{ runner.os }}
+          path: |
+            apps/desktop/dist/multi-vpn-client-*.tar.gz
+            apps/desktop/dist/multi-vpn-client-*.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - if: runner.os == 'Linux'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: notices
+          path: apps/desktop/build/THIRD_PARTY_NOTICES.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  pack:
+    name: Pack the npm package
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @repo/launcher build
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: archives-*
+          merge-multiple: true
+          path: archives
+      # Without --partial: every machine's archive must be there, or nothing is packed.
+      - run: node apps/launcher/scripts/pack.ts --version "$VERSION" --archives archives --out npm-package
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: npm-package
+          path: npm-package
+          if-no-files-found: error
+          retention-days: 7
+
+  github-release:
+    name: GitHub Release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [version, pack]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: archives-*
+          merge-multiple: true
+          path: release
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: notices
+          path: release
+      - name: Create the release with the archives, their checksums and the notices
+        working-directory: release
+        run: |
+          sha256sum multi-vpn-client-* > SHA256SUMS
+          cat > ../notes.md <<EOF
+          Run it with \`npx multi-vpn-client@$VERSION\` (Node 22 or newer, and Docker). The launcher downloads the archive for your machine from this release and checks it against the checksum published with the npm package.
+
+          The archives below are the same app for downloading by hand. They aren't signed with a developer certificate yet: macOS blocks the app until you allow it in System Settings → Privacy & Security, and Windows SmartScreen asks before running it. SHA256SUMS lists their checksums. THIRD_PARTY_NOTICES.txt lists the licenses of what's inside.
+          EOF
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --title "Multi VPN Client $VERSION" --notes-file ../notes.md ./*
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+
+  npm:
+    name: Publish to npm
+    needs: [github-release, pack]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Waits for a maintainer's approval. npm's trusted publisher accepts this workflow file in this environment only.
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: npm-package
+          path: npm-package
+      # Trusted publishing (OIDC): no npm token exists. Nothing is checked out or installed in this job.
+      - run: npm publish --access public --provenance
+        working-directory: npm-package

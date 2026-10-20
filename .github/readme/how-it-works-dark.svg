@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="300" viewBox="0 0 820 300" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif">
+  <rect width="820" height="300" rx="12" fill="#0D1117"/>
+  <rect x="20" y="115" width="180" height="66" rx="10" fill="#161B22" stroke="#30363D" stroke-width="1"/>
+  <text x="36" y="142" font-size="15" font-weight="600" fill="#E6EDF3">Your apps</text>
+  <text x="36" y="163" font-size="12.5" fill="#9198A1">Browser, terminal, chat…</text>
+  <rect x="250" y="105" width="200" height="86" rx="10" fill="#161B22" stroke="#7EA6FF" stroke-width="2"/>
+  <text x="266" y="132" font-size="15" font-weight="600" fill="#E6EDF3">Routes and DNS</text>
+  <text x="266" y="153" font-size="12.5" fill="#9198A1">on this machine, set by</text>
+  <text x="266" y="172" font-size="12.5" fill="#9198A1">the network helper</text>
+  <rect x="600" y="30" width="200" height="66" rx="10" fill="#161B22" stroke="#46C48B" stroke-width="2"/>
+  <text x="616" y="57" font-size="15" font-weight="600" fill="#E6EDF3">Client A</text>
+  <text x="616" y="78" font-size="12.5" fill="#9198A1">OpenVPN, in Docker</text>
+  <rect x="600" y="117" width="200" height="66" rx="10" fill="#161B22" stroke="#E9A23B" stroke-width="2"/>
+  <text x="616" y="144" font-size="15" font-weight="600" fill="#E6EDF3">Client B</text>
+  <text x="616" y="165" font-size="12.5" fill="#9198A1">GlobalProtect, in Docker</text>
+  <rect x="600" y="204" width="200" height="66" rx="10" fill="#161B22" stroke="#30363D" stroke-width="1"/>
+  <text x="616" y="231" font-size="15" font-weight="600" fill="#E6EDF3">Your own connection</text>
+  <text x="616" y="252" font-size="12.5" fill="#9198A1">Everything else</text>
+  <path d="M200 148 C225 148 225 148 242 148" fill="none" stroke="#6E7681" stroke-width="2"/>
+  <path d="M241 143 L250 148 L241 153" fill="none" stroke="#6E7681" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M450 136 C525 136 525 63 592 63" fill="none" stroke="#46C48B" stroke-width="2"/>
+  <path d="M591 58 L600 63 L591 68" fill="none" stroke="#46C48B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="586" y="54" text-anchor="end" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#46C48B">*.client-a.example</text>
+  <path d="M450 148 C525 148 525 150 592 150" fill="none" stroke="#E9A23B" stroke-width="2"/>
+  <path d="M591 145 L600 150 L591 155" fill="none" stroke="#E9A23B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="586" y="141" text-anchor="end" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#E9A23B">10.20.0.0/16</text>
+  <path d="M450 160 C525 160 525 237 592 237" fill="none" stroke="#6E7681" stroke-width="2"/>
+  <path d="M591 232 L600 237 L591 242" fill="none" stroke="#6E7681" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

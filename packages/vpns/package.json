@@ -1,0 +1,22 @@
+{
+  "name": "@repo/vpns",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./engine": "./src/engine.ts",
+    "./ui": "./src/ui.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@repo/ui": "workspace:*",
+    "@repo/vpn-sdk": "workspace:*",
+    "react": "19.3.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0"
+  }
+}

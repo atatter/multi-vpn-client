@@ -1,0 +1,167 @@
+@import "@fontsource/barlow-semi-condensed/400.css";
+@import "@fontsource/barlow-semi-condensed/500.css";
+@import "@fontsource/barlow-semi-condensed/600.css";
+@import "tailwindcss";
+/* Classes outside the renderer: the design kit and the VPN kinds' forms. */
+@source "../../../../../packages/ui/src";
+@source "../../../../../packages/vpns/src";
+
+/*
+ * Direction: road-tunnel signage. Concrete greys, exit-sign green for "on", sodium-lamp amber for
+ * "in progress / overridden", Barlow (DIN-style) for type. Tokens are CSS variables so dark mode
+ * only swaps values; Tailwind exposes them as bg-surface, text-muted, border-rule, and so on.
+ */
+@theme inline {
+  --font-sans: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-field: var(--field);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-off: var(--off);
+  --color-track: var(--track);
+  --color-chip: var(--chip);
+  --color-raised: var(--raised);
+  --color-go: var(--go);
+  --color-go-track: var(--go-track);
+  --color-sodium: var(--sodium);
+  --color-danger: var(--danger);
+  --color-signal: var(--signal);
+  --color-on-signal: var(--on-signal);
+  --color-standby: var(--standby);
+  --shadow-lifted: var(--lifted);
+}
+
+:root {
+  color-scheme: light dark;
+  /*
+   * Every screen's content sits --edge from the window's side, like the action bar. Inside the scrolling
+   * body, --gutter of that is kept for the scrollbar (on both sides, so it stays symmetric), leaving --in.
+   */
+  --edge: 14px;
+  --gutter: 6px;
+  --in: calc(var(--edge) - var(--gutter));
+  --bg: #e4e7e6;
+  --surface: #f6f7f6;
+  --field: #ffffff;
+  --ink: #262b2f;
+  --muted: #626a6f;
+  --rule: #d5dad9;
+  --rule-strong: #c2c8c9;
+  --off: #b4bbbd;
+  --track: #c3c9cb;
+  --chip: #e4e7e6;
+  --raised: #ffffff;
+  --go: #0e7a51;
+  --go-track: #16935f;
+  --sodium: #9a5c04;
+  --danger: #b42318;
+  --signal: #2357c6;
+  --on-signal: #ffffff;
+  /* On and connected, but a higher VPN takes all its traffic. */
+  --standby: #56688a;
+  --lifted: 0 12px 28px -10px rgb(38 43 47 / 0.35), 0 0 0 1px rgb(38 43 47 / 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171b1e;
+    --surface: #1e2327;
+    --field: #171b1e;
+    --ink: #e6eaeb;
+    --muted: #939ca1;
+    --rule: #2e353a;
+    --rule-strong: #3a4247;
+    --off: #4a5358;
+    --track: #3a4247;
+    --chip: #2a3035;
+    --raised: #3d464c;
+    --go: #46c48b;
+    --go-track: #2fa672;
+    --sodium: #e9a23b;
+    --danger: #f97066;
+    --signal: #7ea6ff;
+    --on-signal: #10161c;
+    --standby: #9aabc9;
+    --lifted: 0 12px 28px -10px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.06);
+  }
+}
+
+@layer base {
+  /* A desktop app, not a page: no stray text selection or I-beams on chrome. Errors and logs opt back in. */
+  body {
+    @apply bg-surface font-sans text-[15px] leading-[1.3] text-ink select-none cursor-default;
+  }
+  /*
+   * The window itself never scrolls; each screen scrolls its own body. Otherwise a screen sliding in
+   * overflows for a moment, a page scrollbar takes width, and text re-wraps until the slide ends.
+   */
+  html,
+  body {
+    overflow: hidden;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-signal;
+  }
+}
+
+/*
+ * Keeps title bar content clear of the OS window buttons, wherever and however big they are
+ * (Window Controls Overlay): macOS's traffic lights on the left, Windows' and Linux's buttons on the right.
+ * Without buttons on a side, the env() fallbacks reduce to the plain margin.
+ */
+@utility titlebar-insets {
+  /* The reported area already ends a few pixels past the last traffic light; 6px more makes about 14px of air. */
+  padding-left: max(14px, calc(env(titlebar-area-x, 0px) + 6px));
+  padding-right: max(8px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw)));
+}
+
+/*
+ * The scrolling body keeps room for its scrollbar whether or not it shows, so nothing reflows (and no
+ * text re-wraps) when content grows past the window. The bar is thin and takes the palette's colours.
+ */
+@utility scroll-body {
+  scrollbar-gutter: stable both-edges;
+  &::-webkit-scrollbar {
+    width: var(--gutter);
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--rule-strong);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* Screens slide in from the side they come from. */
+@keyframes push {
+  from {
+    transform: translateX(18px);
+    opacity: 0;
+  }
+}
+@keyframes pop {
+  from {
+    transform: translateX(-18px);
+    opacity: 0;
+  }
+}
+@keyframes rise {
+  from {
+    transform: translateY(-4px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
