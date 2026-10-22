@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { contextText, findOnPath, pickAgent, SEED_PROMPT } from "./triage.ts";
+import { contextText, findAgents, findOnPath, pickAgent, SEED_PROMPT } from "./triage.ts";
 
 describe("finding an agent", () => {
   const bin = mkdtempSync(join(tmpdir(), "mvpn-path-"));
@@ -20,18 +20,30 @@ describe("finding an agent", () => {
   it("finds Windows' .cmd shims through PATHEXT", () => {
     expect(findOnPath("codex", { PATH: `${other};${bin}`, PATHEXT: ".EXE;.CMD" }, "win32")).toBe(join(bin, "codex.cmd"));
   });
+
+  it("finds Cursor by cursor-agent, not by the generic agent", () => {
+    const cursor = mkdtempSync(join(tmpdir(), "mvpn-path-"));
+    const env = { PATH: cursor, PATHEXT: ".EXE;.CMD" };
+    writeFileSync(join(cursor, "agent.cmd"), "");
+    expect(findAgents(env, "win32")).toEqual(new Map());
+    writeFileSync(join(cursor, "cursor-agent.cmd"), "");
+    expect(findAgents(env, "win32")).toEqual(new Map([["cursor", join(cursor, "cursor-agent.cmd")]]));
+  });
 });
 
 describe("picking an agent", () => {
   it("starts the one asked for, if it's installed", () => {
     expect(pickAgent(["claude", "codex"], "codex")).toEqual({ agent: "codex" });
+    expect(pickAgent(["claude", "cursor"], "cursor")).toEqual({ agent: "cursor" });
     expect(pickAgent(["claude"], "codex")).toEqual({ error: "Codex (codex) isn't installed or isn't on PATH." });
-    expect(pickAgent(["claude"], "gemini")).toEqual({ error: "--agent must be claude or codex." });
+    expect(pickAgent(["claude"], "cursor")).toEqual({ error: "Cursor Agent (cursor-agent) isn't installed or isn't on PATH." });
+    expect(pickAgent(["claude"], "gemini")).toEqual({ error: "--agent must be claude, codex, or cursor." });
+    expect(pickAgent(["claude"], "toString")).toEqual({ error: "--agent must be claude, codex, or cursor." });
   });
 
-  it("starts the only one installed, asks when there are two, and has none otherwise", () => {
-    expect(pickAgent(["codex"], undefined)).toEqual({ agent: "codex" });
-    expect(pickAgent(["claude", "codex"], undefined)).toEqual({ ask: ["claude", "codex"] });
+  it("starts the only one installed, asks when there are more, and has none otherwise", () => {
+    expect(pickAgent(["cursor"], undefined)).toEqual({ agent: "cursor" });
+    expect(pickAgent(["claude", "codex", "cursor"], undefined)).toEqual({ ask: ["claude", "codex", "cursor"] });
     expect(pickAgent([], undefined)).toEqual({ none: true });
   });
 });
