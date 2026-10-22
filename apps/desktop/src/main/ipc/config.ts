@@ -17,10 +17,13 @@ export function registerConfigHandlers({
   configPath,
   secrets,
   connections,
+  onSaved,
 }: {
   configPath: string;
   secrets: ReturnType<typeof createSecretStore>;
   connections: ConnectionManager;
+  /** Gets the config each time the user saves settings, the only write that changes names or priority (for the tray's menu). */
+  onSaved: (config: Config) => void;
 }) {
   handle("config:load", async () => {
     const [config, secretStatus, problem] = await Promise.all([loadConfig(configPath), secrets.status(), keychainProblem()]);
@@ -49,6 +52,7 @@ export function registerConfigHandlers({
       const saved = await saveConfig(config.data, configPath);
       const secretStatus = await pending.commit();
       void connections.refresh(); // connected VPNs pick up changed routes
+      onSaved(saved);
       return { ok: true, config: saved, secretStatus };
     }),
   );
