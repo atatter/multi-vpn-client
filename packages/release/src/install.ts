@@ -1,12 +1,12 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { createWriteStream, existsSync, readFileSync } from "node:fs";
+import { createWriteStream, existsSync } from "node:fs";
 import { mkdir, mkdtemp, readdir, rename, rm, stat } from "node:fs/promises";
 import { get as httpGet, type IncomingMessage } from "node:http";
 import { get as httpsGet } from "node:https";
 import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
-import { archiveUrl, executableIn, type Manifest } from "./release.ts";
+import { archiveUrl, compareVersions, executableIn, isVersion, type Manifest } from "./release.ts";
 
 interface InstallOptions {
   manifest: Manifest;
@@ -16,24 +16,16 @@ interface InstallOptions {
   dir: string;
   platform: NodeJS.Platform;
   env: NodeJS.ProcessEnv;
-  log: (line: string) => void;
-}
-
-/** Reads a small system file, or undefined where it doesn't exist. */
-export function readOptional(path: string): string | undefined {
-  try {
-    return readFileSync(path, "utf8");
-  } catch {
-    return undefined;
-  }
+  /** The share of the archive downloaded so far, from 0 to 1. */
+  onProgress?: (share: number) => void;
 }
 
 /**
- * Makes sure this launcher's version is unpacked and returns its executable. The archive is downloaded, checked
+ * Makes sure the manifest's version is unpacked and returns its executable. The archive is downloaded, checked
  * against the manifest's checksum, unpacked into a temporary folder and only then renamed into place, so a version
- * folder that exists is always complete.
+ * folder that exists is always complete. Other versions are left alone: one of them may be running.
  */
-export async function ensureInstalled({ manifest, target, dir, platform, env, log }: InstallOptions): Promise<string> {
+export async function ensureInstalled({ manifest, target, dir, platform, env, onProgress }: InstallOptions): Promise<string> {
   const archive = manifest.archives[target];
   if (!archive) throw new Error(`Multi VPN Client ${manifest.version} isn't available for ${target}. It's built for ${Object.keys(manifest.archives).join(", ")}.`);
   const versionDir = join(dir, manifest.version);
@@ -43,8 +35,7 @@ export async function ensureInstalled({ manifest, target, dir, platform, env, lo
   const work = await mkdtemp(join(dir, ".download-"));
   try {
     const file = join(work, archive.file);
-    log(`Downloading Multi VPN Client ${manifest.version}…`);
-    const sha256 = await download(archiveUrl(manifest, archive, env), file);
+    const sha256 = await download(archiveUrl(manifest, archive, env), file, (received, length) => onProgress?.(received / (length ?? archive.size)));
     if (sha256 !== archive.sha256) throw new Error(`The download of ${archive.file} doesn't match its checksum, so it wasn't opened. Try again; if it keeps happening, report it.`);
 
     const unpacked = join(work, "unpacked");
@@ -59,8 +50,23 @@ export async function ensureInstalled({ manifest, target, dir, platform, env, lo
   } finally {
     await rm(work, { recursive: true, force: true });
   }
-  await removeOtherVersions(dir, manifest.version);
   return executableIn(versionDir, platform);
+}
+
+/** The versions in `dir` that are completely unpacked, in no particular order. */
+export async function installedVersions(dir: string, platform: NodeJS.Platform): Promise<string[]> {
+  const entries = await readdir(dir).catch(() => []);
+  return entries.filter((entry) => isVersion(entry) && existsSync(executableIn(join(dir, entry), platform)));
+}
+
+/**
+ * Removes the versions older than `version`. Only the app calls it, for its own version, once it holds the
+ * single-instance lock: then no older version can be running. Best effort, as a Windows file may still be in use.
+ */
+export async function removeOlderVersions(dir: string, version: string): Promise<void> {
+  for (const entry of await readdir(dir).catch(() => [])) {
+    if (isVersion(entry) && compareVersions(entry, version) < 0) await rm(join(dir, entry), { recursive: true, force: true }).catch(() => undefined);
+  }
 }
 
 /**
@@ -84,14 +90,19 @@ function request(url: string, redirects = 5): Promise<IncomingMessage> {
   });
 }
 
-/** Streams `url` into `file` and returns its SHA-256. */
-async function download(url: string, file: string): Promise<string> {
+/** Streams `url` into `file`, reporting the bytes received and the response's length, and returns its SHA-256. */
+async function download(url: string, file: string, onProgress: (received: number, length: number | undefined) => void): Promise<string> {
   const hash = createHash("sha256");
+  const response = await request(url);
+  const length = Number(response.headers["content-length"]) || undefined;
+  let received = 0;
   await pipeline(
-    await request(url),
+    response,
     async function* (chunks: AsyncIterable<Buffer>) {
       for await (const chunk of chunks) {
         hash.update(chunk);
+        received += chunk.length;
+        onProgress(received, length);
         yield chunk;
       }
     },
@@ -119,11 +130,4 @@ async function singleFolder(dir: string): Promise<string> {
   const [only] = entries;
   if (entries.length === 1 && only && !only.endsWith(".app") && (await stat(join(dir, only))).isDirectory()) return join(dir, only);
   return dir;
-}
-
-/** Best effort: a version that's still running may not be removable (Windows), and that's fine. */
-async function removeOtherVersions(dir: string, keep: string): Promise<void> {
-  for (const entry of await readdir(dir)) {
-    if (entry !== keep && !entry.startsWith(".")) await rm(join(dir, entry), { recursive: true, force: true }).catch(() => undefined);
-  }
 }

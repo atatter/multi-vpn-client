@@ -1,6 +1,7 @@
 import { applySecretChanges, changesForSave, compileRoutes, Config, type ConnectionState, type ConnectResult, type DockerState, effectiveRules, type HelperState, keepServerRoutes, newVpn, parseSite, isIpv4, rankVpns, ROUTING_RESERVED_RANGE, type RouteRule, routeFor, type SecretChanges, type SecretMap, secretStatusOf, type TrafficSnapshot, validateSecretChanges, vpnHosts } from "@repo/core";
 import type { MainApi } from "../../../preload/index.ts";
-import type { ConnectionStatuses } from "../../../shared/ipc-contract.ts";
+import type { ConnectionStatuses, UpdateState } from "../../../shared/ipc-contract.ts";
+import { createFakeUpdater, UPDATES } from "./fake-update.ts";
 
 /**
  * A main process in memory, for the store's tests and the browser harness: the same MainApi the preload
@@ -74,7 +75,11 @@ const PUBLIC_ADDRESS = "203.0.113.10";
 
 export type FakeApi = ReturnType<typeof createFakeApi>;
 
-export function createFakeApi({ scenario = "daily", pause = async () => {} }: { scenario?: Scenario; pause?: (ms: number) => Promise<void> } = {}) {
+export function createFakeApi({
+  scenario = "daily",
+  update = UPDATES.idle,
+  pause = async () => {},
+}: { scenario?: Scenario; update?: UpdateState; pause?: (ms: number) => Promise<void> } = {}) {
   let config = structuredClone(CONFIGS[scenario]);
   // Kept in memory as main keeps them encrypted on disk; only which slots are stored ever leaves.
   let secrets: SecretMap<string> = { b: { password: "saved" }, a2: { password: "saved" }, h: { profile: "client\nremote home.example.net\n" } };
@@ -105,6 +110,8 @@ export function createFakeApi({ scenario = "daily", pause = async () => {} }: { 
     else delete statuses[vpnId];
     listeners.status.forEach((listener) => listener(structuredClone(statuses)));
   };
+
+  const updater = createFakeUpdater(update, pause);
 
   // As in the engine: a connect already running is shared by repeated requests, and a disconnect cancels it.
   const inFlight = new Map<string, Promise<ConnectResult>>();
@@ -234,12 +241,22 @@ export function createFakeApi({ scenario = "daily", pause = async () => {} }: { 
       helper = "not-installed";
       return { ok: true };
     },
-    appInfo: async () => ({ version: "0.1.0", packaged: true, platform: "linux" }),
+    appInfo: async () => ({ version: "0.1.0", platform: "linux" }),
     showConfig: async () => {},
     fitWindow: async () => {},
     onConnectionStatus: (listener) => subscribe(listeners.status, listener),
     onTraffic: (listener) => subscribe(listeners.traffic, listener),
     onConfigChanged: (listener) => subscribe(listeners.config, listener),
+    ...updater.api,
+    // Like main before it quits: every VPN off, one at a time.
+    restartToUpdate: async () => {
+      await updater.api.restartToUpdate();
+      if ((await updater.api.updateState()).state !== "restarting") return;
+      for (const vpnId of Object.keys(statuses)) {
+        await pause(1200);
+        setStatus(vpnId, undefined);
+      }
+    },
   };
 
   return {
@@ -263,6 +280,8 @@ export function createFakeApi({ scenario = "daily", pause = async () => {} }: { 
     /** The next connect starts, then fails with this message (as a rejected login does). */
     failNextConnect: (message: string) => void (failNextConnect = message),
     rejectNextSave: (message: string) => void (rejectNextSave = message),
+    setUpdate: updater.setUpdate,
+    failNextDownload: updater.failNextDownload,
     /** From now on saves wait; the returned function lets the oldest waiting one finish. */
     holdSaves: () => {
       heldSaves = [];

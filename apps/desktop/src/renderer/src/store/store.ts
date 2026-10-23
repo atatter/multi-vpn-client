@@ -3,6 +3,7 @@ import type { MainApi } from "../../../preload/index.ts";
 import type { AppInfo, Loaded } from "../../../shared/ipc-contract.ts";
 import { isOn } from "../domain/connection.ts";
 import { setupBlocker } from "../domain/setup-copy.ts";
+import { updateNotice } from "../domain/update-copy.ts";
 import type { AppModel } from "./app-model.ts";
 import { messageOf } from "./errors.ts";
 
@@ -15,7 +16,7 @@ export type AppView = { phase: "loading" } | { phase: "failed"; error: string } 
 export type AppStore = ReturnType<typeof createAppStore>;
 
 /** The store's own state; the view adds the commands to it. */
-interface State extends Pick<AppModel, "connections" | "helper" | "docker" | "dockerStart" | "waiting" | "prompt" | "notice"> {
+interface State extends Pick<AppModel, "connections" | "helper" | "docker" | "dockerStart" | "update" | "waiting" | "prompt" | "notice"> {
   loaded: (Loaded & { info: AppInfo }) | undefined;
   loadError: string | undefined;
 }
@@ -42,6 +43,7 @@ export function createAppStore(api: MainApi) {
     helper: undefined,
     docker: undefined,
     dockerStart: { starting: false, error: undefined },
+    update: { state: "idle" },
     waiting: new Set(),
     prompt: undefined,
     notice: undefined,
@@ -274,6 +276,14 @@ export function createAppStore(api: MainApi) {
         (error: unknown) => update({ loadError: messageOf(error) }),
       );
       void api.connectionStatuses().then((connections) => update({ connections }));
+      // An update event can overtake this answer, and the next may be 6 hours away: the event is newer.
+      let heardUpdate = false;
+      void api.updateState().then((current) => {
+        if (heardUpdate) return;
+        // A window opened again (macOS keeps the app running) still says a download failed.
+        const notice = updateNotice(current);
+        update(notice ? { update: current, notice } : { update: current });
+      });
       const unsubscribe = [
         api.onConnectionStatus((connections) => update({ connections })),
         api.onTraffic((snapshot) => {
@@ -282,6 +292,14 @@ export function createAppStore(api: MainApi) {
         }),
         // The app learned what a server sends: take only that, so a save still on its way isn't undone on screen.
         api.onConfigChanged((saved) => updateLoaded((loaded) => ({ config: { ...loaded.config, vpns: keepServerRoutes(saved.vpns, loaded.config.vpns) } }))),
+        // A failed download shows in the error strip too; it goes again once the update moves on, as it's no longer true.
+        api.onUpdate((next) => {
+          heardUpdate = true;
+          update((current) => {
+            const stale = current.notice !== undefined && current.notice === updateNotice(current.update);
+            return { update: next, notice: updateNotice(next) ?? (stale ? undefined : current.notice) };
+          });
+        }),
       ];
 
       // A helper that isn't responding may just be starting, so it's checked again until it answers.

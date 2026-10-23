@@ -11,8 +11,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { parseArgs } from "node:util";
-import { ensureInstalled, readOptional } from "../src/install.ts";
-import { Manifest, needsNoSandbox, targetOf, versionsDir } from "../src/release.ts";
+import { ensureInstalled, Manifest, targetOf, versionsDir } from "@repo/release";
+import { needsNoSandbox, readOptional } from "../src/start.ts";
 
 const { values } = parseArgs({ options: { package: { type: "string" }, archives: { type: "string" } } });
 const { package: packageDir, archives } = values;
@@ -48,7 +48,6 @@ const executable = await ensureInstalled({
   dir: versionsDir(env, platform, scratch),
   platform,
   env,
-  log: (line) => console.log(line),
 });
 server.close();
 

@@ -19,7 +19,7 @@ To build and smoke-test the archives without releasing, run the Release workflow
 
 - **Build or smoke test failed:** nothing was published. Fix it, delete the tag (`git push origin :v0.2.0`), and tag again.
 - **The GitHub Release exists but npm publishing failed:** re-run the failed job. The archives stay as they are.
-- **A published archive is broken:** release a new version. Never replace a release asset: the npm package of that version pins the old checksums, so the launcher would refuse the new file, and replacing assets is exactly what the pinned checksums guard against.
+- **A published archive is broken:** release a new version. Never replace a release asset: the npm package of that version pins the old checksums, so the launcher would refuse the new file, and replacing assets is exactly what the pinned checksums guard against. Deprecating it doesn't help users who already updated: the launcher never starts a version older than one on disk.
 - **The notices step fails after a Bun update:** `apps/desktop/scripts/notices.mts` needs the new version's WebKit and tinycc commits (`scripts/build/deps/{webkit,tinycc}.ts` at Bun's release tag) and its `LICENSE.md` in `apps/desktop/licenses/`.
 
 ## One-time setup

@@ -1,18 +1,19 @@
 // `npx multi-vpn-client`: downloads this version of the app once, checks it against the checksums this package was
-// published with, and starts it. `npx multi-vpn-client triage` starts the user's coding agent with the triage playbook
-// instead, and `npx multi-vpn-client uninstall` removes the app and everything it put on the machine. Built into one
-// file by `bun build` (see package.json); scripts/pack.ts adds the release.json and PLAYBOOK.md it reads.
+// published with, and starts it; or starts a newer version the app already updated itself to.
+// `npx multi-vpn-client triage` starts the user's coding agent with the triage playbook instead, and
+// `npx multi-vpn-client uninstall` removes the app and everything it put on the machine. Built into one file by
+// `bun build` (see package.json); scripts/pack.ts adds the release.json and PLAYBOOK.md it reads.
 import { appDir } from "@repo/core/store";
 import { spawn } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { copyFile, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { homedir, release, tmpdir, version as osVersion } from "node:os";
 import { dirname, join } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { ensureInstalled, readOptional } from "./install.ts";
-import { Manifest, needsNoSandbox, targetOf, versionsDir } from "./release.ts";
+import { ensureInstalled, executableIn, installedVersions, Manifest, targetOf, versionsDir } from "@repo/release";
+import { needsNoSandbox, readOptional, versionToStart } from "./start.ts";
 import { AGENTS, contextText, findOnPath, isAgent, pickAgent, SEED_PROMPT, type Agent } from "./triage.ts";
 import { heldLock, keepQuestion, npxEntry, survey, uninstallSteps, type Step } from "./uninstall.ts";
 
@@ -29,7 +30,7 @@ uninstall removes the app from this computer: the network helper, the downloaded
 the VPN container images. It asks before deleting your VPNs and their saved passwords.
 
 Options:
-  --version   Print the version this launcher starts
+  --version   Print this launcher's version
   --help      Show this help`;
 
 function readManifest(): Manifest {
@@ -43,14 +44,12 @@ function readManifest(): Manifest {
 async function start(args: string[]): Promise<void> {
   const manifest = readManifest();
   const { platform } = process;
-  const executable = await ensureInstalled({
-    manifest,
-    target: targetOf(platform, process.arch),
-    dir: versionsDir(process.env, platform, homedir()),
-    platform,
-    env: process.env,
-    log: (line) => console.error(line),
-  });
+  const dir = versionsDir(process.env, platform, homedir());
+  const { version, download } = versionToStart(manifest.version, await installedVersions(dir, platform));
+  if (download) console.error(`Downloading Multi VPN Client ${version}…`);
+  const executable = download
+    ? await ensureInstalled({ manifest, target: targetOf(platform, process.arch), dir, platform, env: process.env })
+    : executableIn(join(dir, version), platform);
   const noSandbox = needsNoSandbox(platform, readOptional("/proc/sys/kernel/apparmor_restrict_unprivileged_userns"));
   if (noSandbox) console.error("AppArmor blocks Electron's sandbox here, so the window runs without it.");
   const app = spawn(executable, noSandbox ? ["--no-sandbox", ...args] : args, { detached: true, stdio: "ignore" });
@@ -59,7 +58,7 @@ async function start(args: string[]): Promise<void> {
     app.once("error", reject);
   });
   app.unref();
-  console.error(`Started Multi VPN Client ${manifest.version}.`);
+  console.error(`Started Multi VPN Client ${version}.`);
 }
 
 async function triage(args: string[]): Promise<void> {
@@ -72,12 +71,6 @@ async function triage(args: string[]): Promise<void> {
   await copyFile(fileURLToPath(new URL("./PLAYBOOK.md", import.meta.url)), join(folder, "PLAYBOOK.md"));
   const sourceDir = join(dirname(versions), "source");
   await mkdir(sourceDir, { recursive: true });
-  let installedVersions: string[] = [];
-  try {
-    installedVersions = readdirSync(versions).filter((entry) => !entry.startsWith("."));
-  } catch {
-    // Nothing unpacked yet.
-  }
   await writeFile(
     join(folder, "CONTEXT.md"),
     contextText({
@@ -88,7 +81,7 @@ async function triage(args: string[]): Promise<void> {
       osVersion: osVersion(),
       node: process.version,
       versionsDir: versions,
-      installedVersions,
+      installedVersions: await installedVersions(versions, platform),
       sourceDir,
     }),
   );
