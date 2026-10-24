@@ -282,6 +282,7 @@ export function createFakeApi({
     rejectNextSave: (message: string) => void (rejectNextSave = message),
     setUpdate: updater.setUpdate,
     failNextDownload: updater.failNextDownload,
+    askRestart: updater.askRestart,
     /** From now on saves wait; the returned function lets the oldest waiting one finish. */
     holdSaves: () => {
       heldSaves = [];

@@ -1,7 +1,8 @@
 import { type ConnectionStatus, newVpn } from "@repo/core";
 import type { NativeImage } from "electron";
+import type { UpdateState } from "../../shared/ipc-contract.ts";
 import { describe, expect, it } from "vitest";
-import { idsOn, namesOn, countHeadline, trayMenu } from "./menu.ts";
+import { idsOn, namesOn, countHeadline, trayMenu, updateItem } from "./menu.ts";
 
 const vpn = (id: string, name: string) => newVpn("openvpn", { id, name });
 
@@ -29,8 +30,28 @@ describe("the VPNs that are on", () => {
   });
 });
 
+describe("the update's item", () => {
+  const actions = { download: () => {}, askRestart: () => {} };
+  const item = (update: UpdateState) => updateItem(update, actions);
+
+  it("is there for an update to download, being downloaded or restarting into, and not otherwise", () => {
+    expect(item({ state: "available", version: "0.2.0", size: 180_000_000 })).toMatchObject({ label: "Update to 0.2.0 (180 MB)", click: actions.download });
+    expect(item({ state: "available", version: "0.2.0", size: undefined })?.label).toBe("Update to 0.2.0");
+    expect(item({ state: "downloading", version: "0.2.0", percent: 42 })).toEqual({ label: "Downloading 0.2.0… 42%", enabled: false });
+    expect(item({ state: "download-failed", version: "0.2.0", error: "HTTP 404." })).toMatchObject({ label: "Couldn't download 0.2.0. Try again", click: actions.download });
+    expect(item({ state: "restarting", version: "0.2.0" })).toEqual({ label: "Restarting to update to 0.2.0…", enabled: false });
+    for (const update of [{ state: "off" }, { state: "idle" }, { state: "checking" }, { state: "current", checkedAt: 0 }, { state: "check-failed", error: "Offline." }] as const) {
+      expect(item(update)).toBeUndefined();
+    }
+  });
+
+  it("only asks about restarting, since restarting turns the VPNs off", () => {
+    expect(item({ state: "ready", version: "0.2.0" })).toMatchObject({ label: "Restart to update to 0.2.0…", click: actions.askRestart });
+  });
+});
+
 describe("the tray menu", () => {
-  const parts = { dot: {} as NativeImage, open: () => {}, quit: () => {} };
+  const parts = { dot: {} as NativeImage, update: undefined, open: () => {}, quit: () => {} };
 
   it("lists the VPNs that are on, then opening the window and quitting", () => {
     const menu = trayMenu({ ...parts, count: 2, names: ["Client A", "Client B"], quitShortcut: "Command+Q" });
@@ -42,5 +63,10 @@ describe("the tray menu", () => {
     const menu = trayMenu({ ...parts, count: 0, names: [], quitShortcut: undefined });
     expect(menu.map((item) => item.label ?? item.type)).toEqual(["No VPNs on", "separator", "Open Multi VPN Client", "separator", "Quit and turn off VPNs"]);
     expect(menu.at(-1)).not.toHaveProperty("accelerator");
+  });
+
+  it("puts the update in its own section between the VPNs and opening the window", () => {
+    const menu = trayMenu({ ...parts, count: 1, names: ["Client A"], update: { label: "Restart to update to 0.2.0…" }, quitShortcut: undefined });
+    expect(menu.map((item) => item.label ?? item.type)).toEqual(["1 VPN on", "Client A", "separator", "Restart to update to 0.2.0…", "separator", "Open Multi VPN Client", "separator", "Quit and turn off VPNs"]);
   });
 });

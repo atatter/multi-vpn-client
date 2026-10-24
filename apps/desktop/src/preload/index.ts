@@ -43,6 +43,7 @@ const api = {
   onTraffic: (listener: (snapshot: IpcEvents["traffic:update"]) => void) => on("traffic:update", listener),
   onConfigChanged: (listener: (config: IpcEvents["config:changed"]) => void) => on("config:changed", listener),
   onUpdate: (listener: (state: IpcEvents["update:changed"]) => void) => on("update:changed", listener),
+  onAskRestart: (listener: () => void) => on("update:ask-restart", listener),
 };
 
 export type MainApi = typeof api;

@@ -69,7 +69,10 @@ const updater = createUpdater({
   target,
   latest: latestRelease,
   download: (release, onProgress) => ensureInstalled({ manifest: release, target, dir: versions, platform, env: process.env, onProgress, remove }),
-  onChange: (state) => broadcast("update:changed", state),
+  onChange: (state) => {
+    broadcast("update:changed", state);
+    tray?.update();
+  },
 });
 
 /** Quits through before-quit, which turns every VPN off, and starts the downloaded version. They stay off. */
@@ -111,7 +114,18 @@ void app.whenReady().then(() => {
   window.on("session-end", () => {
     windowMayClose = true;
   });
-  tray = createTray({ window, statuses: connections.statuses, open: () => void showWindow(), quit: () => app.quit() });
+  tray = createTray({
+    window,
+    statuses: connections.statuses,
+    updateState: updater.state,
+    download: () => void updater.download(),
+    askRestart: () => {
+      void showWindow();
+      broadcast("update:ask-restart", null);
+    },
+    open: () => void showWindow(),
+    quit: () => app.quit(),
+  });
   // A config that can't be read shows in the window; until a save fixes it, the menu has the count without names.
   void loadConfig(configPath).then(tray.setConfig, () => {});
   void connections.removeLeftovers();

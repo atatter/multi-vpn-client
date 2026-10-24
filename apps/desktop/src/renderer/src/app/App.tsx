@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AppContext } from "../store/app-model.ts";
 import type { Screen } from "../store/screen.ts";
 import type { AppStore, Navigation } from "../store/store.ts";
 import { FrameContext, type FrameEnvironment } from "@repo/ui/frame-context.ts";
+import { RestartPopover } from "./RestartPopover.tsx";
 import { ScreenView } from "./ScreenView.tsx";
 
 /**
@@ -19,6 +20,11 @@ export function App({ store }: { store: AppStore }) {
   useLayoutEffect(() => {
     if (view.phase !== "ready" && root.current) void store.api.fitWindow(root.current.offsetHeight);
   }, [view.phase, store]);
+
+  const [askingRestart, setAskingRestart] = useState(false);
+  const closeRestart = useCallback(() => setAskingRestart(false), []);
+  // The tray's "Restart to update" asks over whichever screen shows, so nothing on it, such as unsaved edits, is lost.
+  useEffect(() => store.api.onAskRestart(() => setAskingRestart(true)), [store]);
 
   // Restarting turns VPNs off and quits: nothing else may start meanwhile. `inert` stops clicks and focus, not
   // listeners on window: without this, Escape would still go back and a dropped file would still open a form.
@@ -50,12 +56,14 @@ export function App({ store }: { store: AppStore }) {
   const go = (next: FrameEnvironment["direction"], change: (current: Screen[]) => Screen[]) => {
     setDirection(next);
     view.cancelPrompt();
+    setAskingRestart(false);
     setStack(change);
   };
   const navigation: Navigation = {
     push: (screen) => go("push", (current) => [...current, screen]),
     back: () => go("pop", (current) => (current.length > 1 ? current.slice(0, -1) : current)),
     home: () => go("pop", () => [{ name: "list" }]),
+    askRestart: () => setAskingRestart(true),
   };
   const frame: FrameEnvironment = {
     platform: view.info.platform,
@@ -73,6 +81,7 @@ export function App({ store }: { store: AppStore }) {
           <div key={`${stack.length}-${top.name}`}>
             <ScreenView screen={top} />
           </div>
+          {askingRestart && <RestartPopover onClose={closeRestart} />}
           {/* Dims the window to say so; what shows the restart's steps sits above it (z-30). */}
           {restarting && <div className="fixed inset-0 z-20 bg-bg/60" />}
         </div>

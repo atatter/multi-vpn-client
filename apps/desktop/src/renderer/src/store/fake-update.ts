@@ -20,6 +20,7 @@ export function createFakeUpdater(initial: UpdateState, pause: (ms: number) => P
   let update = initial;
   let failNextDownload: string | undefined;
   const listeners = new Set<(state: UpdateState) => void>();
+  const askRestartListeners = new Set<() => void>();
   const setUpdate = (next: UpdateState) => {
     update = next;
     listeners.forEach((listener) => listener(next));
@@ -54,6 +55,10 @@ export function createFakeUpdater(initial: UpdateState, pause: (ms: number) => P
       listeners.add(listener);
       return () => void listeners.delete(listener);
     },
+    onAskRestart: (listener: () => void) => {
+      askRestartListeners.add(listener);
+      return () => void askRestartListeners.delete(listener);
+    },
   } satisfies Partial<MainApi>;
 
   return {
@@ -62,5 +67,7 @@ export function createFakeUpdater(initial: UpdateState, pause: (ms: number) => P
     setUpdate,
     /** The next download runs to the end, then fails with this message. */
     failNextDownload: (message: string) => void (failNextDownload = message),
+    /** The tray's "Restart to update" was clicked. */
+    askRestart: () => askRestartListeners.forEach((listener) => listener()),
   };
 }

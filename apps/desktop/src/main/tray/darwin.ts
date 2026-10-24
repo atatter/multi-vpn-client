@@ -9,8 +9,8 @@ import type { TrayPlatform } from "./index.ts";
  */
 export const darwinTray: TrayPlatform = {
   registerDesktopApp() {},
-  icon(count) {
-    const image = imageOf(tunnelLayers(count, [0, 0, 0]), 16);
+  icon(count, hasUpdate) {
+    const image = imageOf(tunnelLayers(count, [0, 0, 0], hasUpdate), 16);
     image.setTemplateImage(true);
     return image;
   },

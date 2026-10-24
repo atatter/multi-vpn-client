@@ -10,7 +10,7 @@ import { countHeadline } from "./menu.ts";
  */
 export const win32Tray: TrayPlatform = {
   registerDesktopApp() {},
-  icon: (count) => imageOf(tunnelLayers(count, nativeTheme.shouldUseDarkColorsForSystemIntegratedUI ? [255, 255, 255] : [0, 0, 0]), 16),
+  icon: (count, hasUpdate) => imageOf(tunnelLayers(count, nativeTheme.shouldUseDarkColorsForSystemIntegratedUI ? [255, 255, 255] : [0, 0, 0], hasUpdate), 16),
   badge(count, window) {
     window.setOverlayIcon(count > 0 ? imageOf(badgeLayers(count), 16) : null, count > 0 ? countHeadline(count) : "");
   },

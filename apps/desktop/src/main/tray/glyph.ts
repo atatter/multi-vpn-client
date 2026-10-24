@@ -63,11 +63,14 @@ export function numeral(label: string, centerX: number, baseline: number, scale:
   });
 }
 
-/** The tray icon: the tunnel with the count inside, one color on transparent. */
-export function tunnelLayers(count: number, color: Rgb): Layer[] {
+/**
+ * The tray icon: the tunnel with the count inside, one color on transparent. `hasUpdate` adds a dot on the arch's
+ * top-right shoulder. It joins the arch: a dot standing free above the right leg reads as an "i" at 16 px.
+ */
+export function tunnelLayers(count: number, color: Rgb, hasUpdate: boolean): Layer[] {
   const label = countLabel(count);
   const digits = label.length > 1 ? { strokes: numeral(label, 32, 51, 0.46), width: 4 } : { strokes: numeral(label, 32, 51, 0.7), width: 5 };
-  return [{ strokes: TUNNEL, width: 7, color }, { ...digits, color }];
+  return [{ strokes: TUNNEL, width: 7, color }, { ...digits, color }, ...(hasUpdate ? [{ strokes: [point(50, 14)], width: 24, color }] : [])];
 }
 
 /** The menu's mark for a VPN that's on. */
