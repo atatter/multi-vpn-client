@@ -23,7 +23,9 @@ Changes to the window need before and after screenshots, and a short recording w
 ## Pull requests
 
 - One problem per pull request. A second fix or an unrelated cleanup goes in its own.
+- Name your branch `<your-github-login>/<short-description>`, e.g. `atatter/dns-leak-on-disconnect`. Bots like Dependabot keep their own prefix.
 - The title is a conventional commit in plain language that says what changed for the user, e.g. `fix(desktop): connecting from a VPN's page no longer leaves unsaved changes behind`.
+- Pull requests are squash-merged: the title becomes the single commit on `main`, and the branch is deleted.
 - Fill in the template: the problem, the change, and how you checked it. If an AI agent wrote the change, say which one.
 
 The maintainer reviews every pull request and decides what gets merged.
