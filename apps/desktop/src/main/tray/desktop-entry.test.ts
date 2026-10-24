@@ -2,15 +2,8 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { desktopEntry, syncDesktopEntry, xdgDataHome } from "./desktop-entry.ts";
-
-describe("xdgDataHome", () => {
-  it("is XDG_DATA_HOME when it's an absolute path, and ~/.local/share otherwise", () => {
-    expect(xdgDataHome({ XDG_DATA_HOME: "/data" }, "/home/ann")).toBe("/data");
-    expect(xdgDataHome({ XDG_DATA_HOME: "relative" }, "/home/ann")).toBe(join("/home/ann", ".local", "share"));
-    expect(xdgDataHome({}, "/home/ann")).toBe(join("/home/ann", ".local", "share"));
-  });
-});
+import { desktopEntryFiles } from "@repo/core/store";
+import { desktopEntry, syncDesktopEntry } from "./desktop-entry.ts";
 
 describe("desktopEntry", () => {
   it("starts the build that runs, and names the window the dock matches", () => {
@@ -37,16 +30,16 @@ describe("syncDesktopEntry", () => {
   });
   afterEach(() => rm(home, { recursive: true, force: true }));
 
-  const entryPath = () => join(home, "applications", "dev.multi-vpn-client.desktop");
+  const files = () => desktopEntryFiles({ XDG_DATA_HOME: home }, "/unused");
 
   it("writes the entry and its icon, and rewrites only when the build that runs moves", async () => {
-    expect(await syncDesktopEntry({ dataHome: home, command: ["/v1/app"], iconSource })).toBe(true);
-    expect(await readFile(join(home, "icons/hicolor/512x512/apps/dev.multi-vpn-client.png"), "utf8")).toBe("png");
-    expect(await readFile(entryPath(), "utf8")).toContain('Exec="/v1/app"');
+    expect(await syncDesktopEntry({ files: files(), command: ["/v1/app"], iconSource })).toBe(true);
+    expect(await readFile(files().icon, "utf8")).toBe("png");
+    expect(await readFile(files().entry, "utf8")).toContain('Exec="/v1/app"');
 
-    expect(await syncDesktopEntry({ dataHome: home, command: ["/v1/app"], iconSource })).toBe(false);
+    expect(await syncDesktopEntry({ files: files(), command: ["/v1/app"], iconSource })).toBe(false);
 
-    expect(await syncDesktopEntry({ dataHome: home, command: ["/v2/app"], iconSource })).toBe(true);
-    expect(await readFile(entryPath(), "utf8")).toContain('Exec="/v2/app"');
+    expect(await syncDesktopEntry({ files: files(), command: ["/v2/app"], iconSource })).toBe(true);
+    expect(await readFile(files().entry, "utf8")).toContain('Exec="/v2/app"');
   });
 });

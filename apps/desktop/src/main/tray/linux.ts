@@ -1,7 +1,8 @@
+import { DESKTOP_ID, desktopEntryFiles } from "@repo/core/store";
 import { app } from "electron";
 import { homedir } from "node:os";
 import { APP_ICON } from "../window.ts";
-import { DESKTOP_ID, syncDesktopEntry, xdgDataHome } from "./desktop-entry.ts";
+import { syncDesktopEntry } from "./desktop-entry.ts";
 import { tunnelLayers } from "./glyph.ts";
 import { imageOf } from "./images.ts";
 import type { TrayPlatform } from "./index.ts";
@@ -17,7 +18,7 @@ export const linuxTray: TrayPlatform = {
     // Only a packaged build: a development one would point the user's app grid at a checkout.
     if (!app.isPackaged) return;
     const command: [string, ...string[]] = [process.execPath, ...(app.commandLine.hasSwitch("no-sandbox") ? ["--no-sandbox"] : [])];
-    syncDesktopEntry({ dataHome: xdgDataHome(process.env, homedir()), command, iconSource: APP_ICON }).catch((error: unknown) => {
+    syncDesktopEntry({ files: desktopEntryFiles(process.env, homedir()), command, iconSource: APP_ICON }).catch((error: unknown) => {
       console.error("Couldn't write the desktop entry, so the dock shows no count:", error);
     });
   },

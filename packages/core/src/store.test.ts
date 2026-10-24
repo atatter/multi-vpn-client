@@ -6,7 +6,7 @@ import { ZodError } from "zod";
 import { describe, expect, it } from "vitest";
 import type { Config } from "./config.ts";
 import { newVpn } from "@repo/vpns";
-import { appDir, defaultConfigPath, loadConfig, moveAppDir, saveConfig } from "./store.ts";
+import { appDir, defaultConfigPath, desktopEntryFiles, loadConfig, moveAppDir, saveConfig } from "./store.ts";
 
 const tempFile = async () => join(await mkdtemp(join(tmpdir(), "mvpn-")), "nested", "config.json");
 
@@ -95,5 +95,14 @@ describe("store", () => {
     await mkdir(join(config, "multi-vpn-client"));
     moveAppDir({ XDG_CONFIG_HOME: config }, "linux");
     expect(appDir({ XDG_CONFIG_HOME: config }, "linux")).toBe(join(config, "multi-vpn-client"));
+  });
+});
+
+describe("desktopEntryFiles", () => {
+  it("are in XDG_DATA_HOME when it's an absolute path, and ~/.local/share otherwise", () => {
+    expect(desktopEntryFiles({ XDG_DATA_HOME: "/data" }, "/home/ann").entry).toBe(join("/data", "applications", "dev.multi-vpn-client.desktop"));
+    const share = join("/home/ann", ".local", "share");
+    expect(desktopEntryFiles({ XDG_DATA_HOME: "relative" }, "/home/ann").icon).toBe(join(share, "icons", "hicolor", "512x512", "apps", "dev.multi-vpn-client.png"));
+    expect(desktopEntryFiles({}, "/home/ann").entry).toBe(join(share, "applications", "dev.multi-vpn-client.desktop"));
   });
 });

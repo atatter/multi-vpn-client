@@ -1,18 +1,7 @@
 import { APP_NAME } from "@repo/core";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { dirname, isAbsolute, join } from "node:path";
-
-/**
- * Linux docks badge only an app with a desktop entry, and match its window to the entry by this id: Electron's
- * desktop name, which is also the window's app id on Wayland and its WM_CLASS on X11.
- */
-export const DESKTOP_ID = "dev.multi-vpn-client";
-
-/** $XDG_DATA_HOME, or its default. A relative path is invalid there and ignored (XDG Base Directory spec). */
-export const xdgDataHome = (env: NodeJS.ProcessEnv, home: string) => {
-  const value = env.XDG_DATA_HOME;
-  return value && isAbsolute(value) ? value : join(home, ".local", "share");
-};
+import { DESKTOP_ID, type desktopEntryFiles } from "@repo/core/store";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 
 // Desktop Entry spec: Exec quotes each argument and escapes ", `, $ and \ inside the quotes, and a literal % is %%.
 // Every value then escapes \ and line breaks again.
@@ -43,8 +32,12 @@ async function writeIfChanged(path: string, content: Buffer) {
   if (current?.equals(content)) return false;
   await mkdir(dirname(path), { recursive: true });
   const temp = `${path}.${process.pid}.tmp`;
-  await writeFile(temp, content);
-  await rename(temp, path);
+  try {
+    await writeFile(temp, content);
+    await rename(temp, path);
+  } finally {
+    await rm(temp, { force: true });
+  }
   return true;
 }
 
@@ -52,9 +45,16 @@ async function writeIfChanged(path: string, content: Buffer) {
  * Keeps the current user's desktop entry and its icon pointing at the build that runs: the npm launcher unpacks each
  * version into its own folder. Returns whether the entry changed.
  */
-export async function syncDesktopEntry({ dataHome, command, iconSource }: { dataHome: string; command: readonly [string, ...string[]]; iconSource: string }) {
+export async function syncDesktopEntry({
+  files: { entry, icon },
+  command,
+  iconSource,
+}: {
+  files: ReturnType<typeof desktopEntryFiles>;
+  command: readonly [string, ...string[]];
+  iconSource: string;
+}) {
   // A real file: the app's own icon sits inside its archive, where a dock can't read it.
-  const icon = join(dataHome, "icons", "hicolor", "512x512", "apps", `${DESKTOP_ID}.png`);
   await writeIfChanged(icon, await readFile(iconSource));
-  return writeIfChanged(join(dataHome, "applications", `${DESKTOP_ID}.desktop`), Buffer.from(desktopEntry({ command, icon })));
+  return writeIfChanged(entry, Buffer.from(desktopEntry({ command, icon })));
 }

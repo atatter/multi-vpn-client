@@ -5,14 +5,15 @@ import { Config, emptyConfig } from "./config.ts";
 import { readJsonIfExists, writeJsonAtomic } from "./fs.ts";
 
 /**
- * Node-only config persistence for the desktop main process. Import via
- * "@repo/core/store" (not from the browser bundle).
+ * Node-only: the app's folder, its config, and the Linux desktop entry's paths, for the desktop main process and the
+ * launcher. Import via "@repo/core/store" (not from the browser bundle).
  */
+
+// Empty or relative values are ignored (as the XDG spec requires), never resolved against the cwd.
+const absolute = (value: string | undefined) => (value && isAbsolute(value) ? value : undefined);
 
 /** Per-user app data: %APPDATA% on Windows, Application Support on macOS, XDG on Linux. */
 function appDataBase(env: NodeJS.ProcessEnv, platform: NodeJS.Platform): string {
-  // Empty or relative values are ignored (as the XDG spec requires), never resolved against the cwd.
-  const absolute = (value: string | undefined) => (value && isAbsolute(value) ? value : undefined);
   if (platform === "win32") return absolute(env.APPDATA) ?? join(homedir(), "AppData", "Roaming");
   const home = absolute(env.HOME) ?? homedir();
   if (platform === "darwin") return join(home, "Library", "Application Support");
@@ -38,6 +39,24 @@ const folders = (env: NodeJS.ProcessEnv, platform: NodeJS.Platform) => {
 export function appDir(env = process.env, platform = process.platform): string {
   const { current, old } = folders(env, platform);
   return existsSync(old) && !existsSync(join(current, "config.json")) ? old : current;
+}
+
+/**
+ * Linux docks badge only an app with a desktop entry, and match its window to the entry by this id: Electron's
+ * desktop name, which is also the window's app id on Wayland and its WM_CLASS on X11.
+ */
+export const DESKTOP_ID = "dev.multi-vpn-client";
+
+/**
+ * The desktop entry and its icon that a packaged Linux app writes for the current user, in $XDG_DATA_HOME or its
+ * default. Uninstall removes them.
+ */
+export function desktopEntryFiles(env: NodeJS.ProcessEnv, home: string) {
+  const dataHome = absolute(env.XDG_DATA_HOME) ?? join(home, ".local", "share");
+  return {
+    entry: join(dataHome, "applications", `${DESKTOP_ID}.desktop`),
+    icon: join(dataHome, "icons", "hicolor", "512x512", "apps", `${DESKTOP_ID}.png`),
+  };
 }
 
 /** The per-user config file, in the app's folder. MVPN_CONFIG overrides it (for testing). */

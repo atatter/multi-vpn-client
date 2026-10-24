@@ -8,6 +8,7 @@ import { formatBytes, heldLock, keepQuestion, npxEntry, singletonLockHeld, unins
 const everything: Found = {
   platform: "darwin",
   helper: true,
+  desktopEntry: [],
   cache: { dir: "/cache/Multi VPN Client", versions: 2, bytes: 360e6 },
   docker: { docker: createDocker("docker"), images: [{ ref: "mvpn-openvpn:abc", bytes: 600e6 }, { ref: "mvpn-checkpoint:def", bytes: 500e6 }] },
   appFolder: "/data/Multi VPN Client",
@@ -40,6 +41,11 @@ describe("uninstallSteps", () => {
   it("says up front that the images stay while Docker isn't running, and how to remove them", () => {
     const [step] = uninstallSteps({ ...everything, helper: false, cache: undefined, docker: { problem: "Docker isn't reachable." } }, false);
     expect(step).toMatchObject({ what: "any VPN container images", reason: "Docker isn't reachable.", manual: expect.stringContaining("Start Docker") });
+  });
+
+  it("removes the Linux desktop entry after the versions it starts", () => {
+    const entry = ["/home/ann/.local/share/applications/dev.multi-vpn-client.desktop", "/home/ann/.local/share/icons/hicolor/512x512/apps/dev.multi-vpn-client.png"];
+    expect(whats({ ...everything, platform: "linux", desktopEntry: entry }, false).slice(1, 3)).toEqual(["2 downloaded versions, 360 MB", "the app's entry in your app list"]);
   });
 
   it("only removes what's there", () => {
