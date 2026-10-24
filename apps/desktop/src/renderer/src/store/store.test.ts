@@ -1,4 +1,4 @@
-import type { Config } from "@repo/core";
+import type { Config, DockerState } from "@repo/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createFakeApi, type FakeApi, type Scenario } from "./fake-api.ts";
 import { type AppView, createAppStore } from "./store.ts";
@@ -155,6 +155,86 @@ describe("setup", () => {
     expect(app().waiting).toEqual(new Set());
     expect(fake.calls.connects).toEqual([{ vpnId: "h", password: null }]);
     expect(app().connections.h?.state).toBe("connected");
+  });
+
+  it("checks Docker when the user comes back to or clicks in the window, unless a check is running or just answered", async () => {
+    const fake = createFakeApi();
+    const dockerState = vi.fn<typeof fake.api.dockerState>(fake.api.dockerState);
+    const target = new EventTarget();
+    const store = createAppStore({ ...fake.api, dockerState });
+    stops.push(store.start(target));
+    await settle();
+    target.dispatchEvent(new Event("focus"));
+    expect(dockerState).toHaveBeenCalledOnce();
+
+    fake.setDocker("stopped");
+    await vi.advanceTimersByTimeAsync(5000);
+    target.dispatchEvent(new Event("focus"));
+    target.dispatchEvent(new Event("pointerdown"));
+    await settle();
+    expect(dockerState).toHaveBeenCalledTimes(2);
+    expect(ready(store.getState()).docker).toBe("stopped");
+  });
+
+  it("shows Docker running the moment starting it finishes, so its button doesn't flash back", async () => {
+    const fake = createFakeApi({ scenario: "daily", pause: timedPause });
+    fake.setDocker("stopped");
+    const store = createAppStore({ ...fake.api, dockerState: () => timedPause(100).then(fake.api.dockerState) });
+    stops.push(store.start());
+    await vi.advanceTimersByTimeAsync(100);
+    const app = () => ready(store.getState());
+    // What the window shows at the moment the button stops being busy.
+    const started = app().startDocker().then(() => ({ dockerStart: app().dockerStart, docker: app().docker }));
+    await vi.advanceTimersByTimeAsync(900);
+    expect(await started).toEqual({ dockerStart: { starting: false, error: undefined }, docker: "running" });
+  });
+
+  it("shows the newest Docker check's answer, even when an older one answers after it", async () => {
+    const fake = createFakeApi();
+    const answers: ((docker: DockerState) => void)[] = [];
+    const store = createAppStore({ ...fake.api, dockerState: () => new Promise((resolve) => answers.push(resolve)) });
+    stops.push(store.start());
+    await settle();
+    const started = ready(store.getState()).startDocker();
+    await settle();
+    answers[1]?.("running");
+    answers[0]?.("stopped");
+    await started;
+    expect(ready(store.getState()).docker).toBe("running");
+  });
+
+  it("starts Docker once, however many screens ask, and every screen shows it starting", async () => {
+    const { fake, app } = await start("daily", (fake) => fake.setDocker("stopped"), timedPause);
+    const startDocker = vi.spyOn(fake.api, "startDocker");
+    const first = app().startDocker();
+    expect(app().startDocker()).toBe(first);
+    expect(app().dockerStart.starting).toBe(true);
+    await vi.advanceTimersByTimeAsync(800);
+    await first;
+    expect(startDocker).toHaveBeenCalledOnce();
+    expect(app().dockerStart.starting).toBe(false);
+  });
+
+  it("keeps a failed start's error for every screen until Docker runs", async () => {
+    const fake = createFakeApi();
+    fake.setDocker("stopped");
+    const store = createAppStore({ ...fake.api, startDocker: async () => ({ ok: false, error: "Docker didn't start within 2 minutes." }) });
+    stops.push(store.start());
+    await settle();
+    await ready(store.getState()).startDocker();
+    expect(ready(store.getState()).dockerStart.error).toBe("Docker didn't start within 2 minutes.");
+    fake.setDocker("running");
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(ready(store.getState()).dockerStart.error).toBeUndefined();
+  });
+
+  it("drops the error of a start that timed out just as Docker came up", async () => {
+    const fake = createFakeApi();
+    const store = createAppStore({ ...fake.api, startDocker: async () => ({ ok: false, error: "Docker didn't start within 2 minutes." }) });
+    stops.push(store.start());
+    await settle();
+    await ready(store.getState()).startDocker();
+    expect(ready(store.getState()).dockerStart).toEqual({ starting: false, error: undefined });
   });
 
   it("checks a helper that isn't responding again every 3 seconds", async () => {

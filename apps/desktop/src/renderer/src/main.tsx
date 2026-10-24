@@ -6,7 +6,7 @@ import "./styles.css";
 
 // One store per window, started here rather than in an effect, so StrictMode's double effects can't start it twice.
 const store = createAppStore(window.main);
-store.start();
+store.start(window);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

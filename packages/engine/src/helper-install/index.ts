@@ -46,6 +46,9 @@ const platformInstaller = () => INSTALLERS[process.platform];
 
 export const helperLogHint = () => platformInstaller()?.logHint ?? "";
 
+/** Whether the helper's service is on this machine, responding or not. */
+export const helperInstalled = () => platformInstaller()?.isInstalled() ?? false;
+
 const HelperSecret = z.object({ token: z.string().min(1) });
 const secretPath = (dataDir: string) => join(dataDir, "helper.json");
 

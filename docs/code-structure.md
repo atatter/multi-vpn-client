@@ -6,6 +6,8 @@ Where code goes, how files are split and named. `pnpm lint` (oxlint, configured 
 
 Each package runs in one kind of process, so the package boundary is the process boundary. Internal packages use the `@repo/*` scope; it's never published, so a product rename never touches imports.
 
+`@repo/engine` runs in the main process, except `@repo/engine/uninstall`, which the launcher's `uninstall` command uses outside the app.
+
 `@repo/core`'s main entry runs in the renderer too. Node-only code goes behind its own entry point (`@repo/core/store`, `/host`, `/secret-store`, `/fs`, `/helper-crypto`), never in the main entry.
 
 The VPN kinds are the exception: one kind's code runs in every process, so it stays in one folder and splits by file instead.
@@ -39,6 +41,7 @@ The renderer never imports Node, `electron`, `@repo/engine` or `@repo/vpns/engin
 Global state is a last resort. The store holds only what several screens need, or what async work can change after a screen is gone:
 - **What main reports:** settings, connections, Docker, helper.
 - **The waiting list:** VPNs turned on before setup was done.
+- **Starting Docker:** it can outlast the screen that started it.
 - **Open prompts.**
 - **The error notice.**
 

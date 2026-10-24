@@ -7,6 +7,8 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
+    "@repo/core": "workspace:*",
+    "@repo/engine": "workspace:*",
     "zod": "4.6.7"
   },
   "devDependencies": {
