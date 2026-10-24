@@ -3,6 +3,8 @@ import type { UpdateState } from "../shared/ipc-contract.ts";
 
 /** How often a running app asks npm for a newer version. Settings → About says it in words. */
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
+/** npm often answers within a frame or two: "Checking npm…" stays at least this long, so a click visibly did something. */
+const CHECKING_AT_LEAST_MS = 1000;
 
 export type Updater = ReturnType<typeof createUpdater>;
 
@@ -22,8 +24,9 @@ export function createUpdater(deps: {
   download: (release: Manifest, onProgress: (share: number) => void) => Promise<unknown>;
   onChange: (state: UpdateState) => void;
   now?: () => number;
+  wait?: (ms: number) => Promise<void>;
 }) {
-  const { now = Date.now } = deps;
+  const { now = Date.now, wait = (ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)) } = deps;
   let state: UpdateState = deps.packaged ? { state: "idle" } : { state: "off" };
   let release: Manifest | undefined;
 
@@ -37,8 +40,10 @@ export function createUpdater(deps: {
   async function check() {
     if (!(state.state === "idle" || state.state === "current" || state.state === "check-failed")) return;
     set({ state: "checking" });
+    const answer = deps.latest();
+    await Promise.allSettled([answer, wait(CHECKING_AT_LEAST_MS)]);
     try {
-      const found = await deps.latest();
+      const found = await answer;
       if (compareVersions(found.version, deps.version) <= 0) return set({ state: "current", checkedAt: now() });
       release = found;
       set({ state: "available", version: found.version, size: found.archives[deps.target]?.size });

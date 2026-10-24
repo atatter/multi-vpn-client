@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -116,7 +116,7 @@ describe("the versions on disk", () => {
     const versions = await mkdtemp(join(tmpdir(), "mvpn-versions-"));
     for (const version of ["0.1.0", "0.9.0", "0.10.0", "0.11.0"]) await unpacked(versions, version);
     await mkdir(join(versions, ".download-x"));
-    await removeOlderVersions(versions, "0.10.0");
+    await removeOlderVersions(versions, "0.10.0", (path) => rm(path, { recursive: true, force: true }));
     expect((await readdir(versions)).toSorted()).toEqual([".download-x", "0.10.0", "0.11.0"]);
   });
 });

@@ -18,14 +18,20 @@ interface InstallOptions {
   env: NodeJS.ProcessEnv;
   /** The share of the archive downloaded so far, from 0 to 1. */
   onProgress?: (share: number) => void;
+  /** Deletes the temporary folder. Inside Electron, pass original-fs's: see removeOlderVersions. */
+  remove?: Remove;
 }
+
+/** Deletes a folder and everything in it. */
+export type Remove = (path: string) => Promise<void>;
+const removeWithNode: Remove = (path) => rm(path, { recursive: true, force: true });
 
 /**
  * Makes sure the manifest's version is unpacked and returns its executable. The archive is downloaded, checked
  * against the manifest's checksum, unpacked into a temporary folder and only then renamed into place, so a version
  * folder that exists is always complete. Other versions are left alone: one of them may be running.
  */
-export async function ensureInstalled({ manifest, target, dir, platform, env, onProgress }: InstallOptions): Promise<string> {
+export async function ensureInstalled({ manifest, target, dir, platform, env, onProgress, remove = removeWithNode }: InstallOptions): Promise<string> {
   const archive = manifest.archives[target];
   if (!archive) throw new Error(`Multi VPN Client ${manifest.version} isn't available for ${target}. It's built for ${Object.keys(manifest.archives).join(", ")}.`);
   const versionDir = join(dir, manifest.version);
@@ -48,7 +54,7 @@ export async function ensureInstalled({ manifest, target, dir, platform, env, on
       if (!existsSync(executableIn(versionDir, platform))) throw error;
     });
   } finally {
-    await rm(work, { recursive: true, force: true });
+    await remove(work);
   }
   return executableIn(versionDir, platform);
 }
@@ -62,10 +68,12 @@ export async function installedVersions(dir: string, platform: NodeJS.Platform):
 /**
  * Removes the versions older than `version`. Only the app calls it, for its own version, once it holds the
  * single-instance lock: then no older version can be running. Best effort, as a Windows file may still be in use.
+ * Inside Electron, `remove` must use original-fs: Electron's fs takes each version's app.asar for a folder and can't
+ * delete it.
  */
-export async function removeOlderVersions(dir: string, version: string): Promise<void> {
+export async function removeOlderVersions(dir: string, version: string, remove: Remove): Promise<void> {
   for (const entry of await readdir(dir).catch(() => [])) {
-    if (isVersion(entry) && compareVersions(entry, version) < 0) await rm(join(dir, entry), { recursive: true, force: true }).catch(() => undefined);
+    if (isVersion(entry) && compareVersions(entry, version) < 0) await remove(join(dir, entry)).catch(() => undefined);
   }
 }
 

@@ -9,7 +9,11 @@ const release = (version: string): Manifest => ({
 });
 
 /** An updater for 0.1.0 over a fake npm and download: `npm` is what npm answers next. */
-function setup({ packaged = true, npm = (): Promise<Manifest> => Promise.resolve(release("0.2.0")) } = {}) {
+function setup({
+  packaged = true,
+  npm = (): Promise<Manifest> => Promise.resolve(release("0.2.0")),
+  wait = (_ms: number) => Promise.resolve(),
+} = {}) {
   const states: UpdateState[] = [];
   const downloads: { finish: () => void; fail: (error: Error) => void; progress: (done: number) => void }[] = [];
   const updater = createUpdater({
@@ -21,6 +25,7 @@ function setup({ packaged = true, npm = (): Promise<Manifest> => Promise.resolve
       new Promise((resolve, reject) => downloads.push({ finish: () => resolve(undefined), fail: reject, progress })),
     onChange: (state) => states.push(state),
     now: () => 1000,
+    wait,
   });
   return { updater, states, downloads };
 }
@@ -59,6 +64,21 @@ describe("checking for a newer version", () => {
     answer = () => Promise.resolve(release("0.2.0"));
     await updater.check();
     expect(updater.state()).toMatchObject({ state: "available" });
+  });
+
+  it("keeps saying it's checking for a second, even when npm answers at once", async () => {
+    for (const npm of [() => Promise.resolve(release("0.2.0")), () => Promise.reject(new Error("offline"))]) {
+      let done = () => {};
+      const waits: number[] = [];
+      const { updater } = setup({ npm, wait: (ms) => (waits.push(ms), new Promise<void>((resolve) => (done = resolve))) });
+      const checked = updater.check();
+      await settle();
+      expect(updater.state()).toEqual({ state: "checking" });
+      expect(waits).toEqual([1000]);
+      done();
+      await checked;
+      expect(updater.state().state).not.toBe("checking");
+    }
   });
 
   it("doesn't forget a known update when asked again", async () => {

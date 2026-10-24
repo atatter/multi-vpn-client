@@ -1,9 +1,10 @@
 import { createSecretStore, defaultSecretsPath } from "@repo/core/secret-store";
 import { defaultConfigPath, loadConfig, moveAppDir } from "@repo/core/store";
 import { createConnectionManager } from "@repo/engine";
-import { ensureInstalled, executableIn, latestRelease, removeOlderVersions, targetOf, versionsDir } from "@repo/release";
+import { ensureInstalled, executableIn, latestRelease, type Remove, removeOlderVersions, targetOf, versionsDir } from "@repo/release";
 import { app, BrowserWindow, shell } from "electron";
 import { mkdirSync } from "node:fs";
+import { promises as originalFs } from "node:original-fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { bundledBinary } from "./binaries.ts";
@@ -51,12 +52,14 @@ const connections = createConnectionManager({
 const { platform } = process;
 const versions = versionsDir(process.env, platform, homedir());
 const target = targetOf(platform, process.arch);
+// Electron's fs takes a version's app.asar for a folder and can't delete it; original-fs sees the file.
+const remove: Remove = (path) => originalFs.rm(path, { recursive: true, force: true });
 const updater = createUpdater({
   version: app.getVersion(),
   packaged: app.isPackaged,
   target,
   latest: latestRelease,
-  download: (release, onProgress) => ensureInstalled({ manifest: release, target, dir: versions, platform, env: process.env, onProgress }),
+  download: (release, onProgress) => ensureInstalled({ manifest: release, target, dir: versions, platform, env: process.env, onProgress, remove }),
   onChange: (state) => broadcast("update:changed", state),
 });
 
@@ -90,7 +93,7 @@ void app.whenReady().then(() => {
   void connections.removeLeftovers();
   updater.start();
   // Holding the single-instance lock, no older version can be running, so what an update replaced can go.
-  if (app.isPackaged) void removeOlderVersions(versions, app.getVersion());
+  if (app.isPackaged) void removeOlderVersions(versions, app.getVersion(), remove);
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
@@ -106,5 +109,7 @@ app.on("before-quit", (event) => {
   if (shuttingDown) return;
   shuttingDown = true;
   event.preventDefault();
-  void connections.shutdown().finally(() => app.quit());
+  // Quit again on a later tick. ⌘Q comes from native code, and with nothing to turn off, shutdown settles before
+  // that first quit returns: quitting inside it ends up recorded as cancelled, leaving the app running without a window.
+  void connections.shutdown().finally(() => setImmediate(() => app.quit()));
 });
