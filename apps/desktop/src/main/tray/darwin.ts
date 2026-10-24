@@ -18,6 +18,12 @@ export const darwinTray: TrayPlatform = {
   badge(count) {
     app.dock?.setBadge(countLabel(count));
   },
+  // The Dock icon, hidden with the window, comes back with its badge label kept but not drawn, and the Dock draws a
+  // badge only when the label changes: so it's cleared and set again.
+  windowShown(count) {
+    app.dock?.setBadge("");
+    app.dock?.setBadge(countLabel(count));
+  },
   clickOpens: false,
   quitShortcut: "Command+Q",
 };

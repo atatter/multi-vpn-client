@@ -17,6 +17,8 @@ export interface TrayPlatform {
   icon(count: number, hasUpdate: boolean): NativeImage;
   /** Shows the count on the app's icon in the Dock or taskbar; 0 clears it. */
   badge(count: number, window: BrowserWindow): void;
+  /** Runs each time the window shows again: puts the count back where the OS lost it while the window was hidden. */
+  windowShown(count: number, window: BrowserWindow): void;
   /** Whether a click on the tray icon opens the window. Where it doesn't, the click opens the menu. */
   clickOpens: boolean;
   /** The quit shortcut the menu shows, where the app has one. */
@@ -51,8 +53,7 @@ export function createTray(deps: {
   let hasUpdate = false;
   if (trayPlatform.clickOpens) tray.on("click", deps.open);
   nativeTheme.on("updated", () => tray.setImage(trayPlatform.icon(count, hasUpdate)));
-  // Windows drops the taskbar overlay while the window is hidden.
-  deps.window.on("show", () => trayPlatform.badge(count, deps.window));
+  deps.window.on("show", () => trayPlatform.windowShown(count, deps.window));
 
   function update() {
     const ids = idsOn(deps.statuses());

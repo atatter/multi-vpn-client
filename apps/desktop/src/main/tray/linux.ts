@@ -27,6 +27,9 @@ export const linuxTray: TrayPlatform = {
   badge(count) {
     app.setBadgeCount(count);
   },
+  windowShown(count, window) {
+    linuxTray.badge(count, window);
+  },
   // Electron reports the desktop activating the icon as a click; a desktop that opens the menu instead sends none.
   clickOpens: true,
   quitShortcut: undefined,
