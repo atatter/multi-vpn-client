@@ -72,6 +72,14 @@ It downloads the app for your machine once per version, checks it against the ch
 
 On first launch, start Docker and install the network helper from the setup card. Then add a VPN: type the address you'd use in its official app (the app works out the type), drop its `.ovpn` file on the window, or pick the type yourself.
 
+To remove it, quit the app and run:
+
+```sh
+npx multi-vpn-client uninstall
+```
+
+It removes the network helper (it asks for your password), the downloaded versions and the VPN container images. It asks before deleting your VPNs and their saved passwords; by default they stay, for when you install it again.
+
 ## Something wrong?
 
 ```sh

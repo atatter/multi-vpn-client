@@ -50,8 +50,11 @@ export interface VpnImage {
   dockerfile: string;
 }
 
+/** Every VPN image's name starts with this, which is how uninstall finds them all, older builds included. */
+export const VPN_IMAGE_PREFIX = "mvpn-";
+
 /** Content-addressed, so changing the Dockerfile rebuilds automatically. */
-export const vpnImage = (name: string, dockerfile: string): VpnImage => ({
+export const vpnImage = (name: `${typeof VPN_IMAGE_PREFIX}${string}`, dockerfile: string): VpnImage => ({
   tag: `${name}:${createHash("sha256").update(dockerfile).digest("hex").slice(0, 12)}`,
   dockerfile,
 });

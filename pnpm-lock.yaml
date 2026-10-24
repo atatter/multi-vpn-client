@@ -238,6 +238,12 @@ importers:
 
   apps/launcher:
     dependencies:
+      '@repo/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@repo/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       zod:
         specifier: 4.6.7
         version: 4.6.7

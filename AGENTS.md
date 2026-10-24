@@ -101,12 +101,12 @@ Most code changes need no documentation change. Agents can read the code, and th
 Each package runs in one kind of process. Folders, layers and file patterns are in [docs/code-structure.md](docs/code-structure.md), and `pnpm lint` enforces the import rules.
 
 - `packages/core`: config schema, route compiler, types. The main entry also runs in the renderer.
-- `packages/engine`: containers, the connection manager, talking to the helper. Main process only.
+- `packages/engine`: containers, the connection manager, talking to the helper. Main process only, except `@repo/engine/uninstall`.
 - `packages/vpns`: every VPN kind, one folder each, written against `packages/vpn-sdk`. A kind's files split by process.
 - `packages/ui`: the window's design kit.
 - `packages/helper`, `packages/card-bridge`: standalone binaries, built with bun.
 - `apps/desktop`: Electron main, preload and renderer.
-- `apps/launcher`: the `npx multi-vpn-client` command, published to npm. It downloads the release archive `apps/desktop/electron-builder.yml` builds for the machine, checks it against the checksums it was published with, and starts it. `triage` starts the user's coding agent with `.github/triage/PLAYBOOK.md`; keep the playbook's paths and rules true when the code they name changes.
+- `apps/launcher`: the `npx multi-vpn-client` command, published to npm. It downloads the release archive `apps/desktop/electron-builder.yml` builds for the machine, checks it against the checksums it was published with, and starts it. `triage` starts the user's coding agent with `.github/triage/PLAYBOOK.md`; keep the playbook's paths and rules true when the code they name changes. `uninstall` removes everything the app and the launcher put on the machine, so a new place the app writes to needs a step there.
 
 ## Taste
 
