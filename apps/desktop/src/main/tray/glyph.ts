@@ -1,6 +1,6 @@
 import { crc32, deflateSync } from "node:zlib";
 
-// The tray icon, the Windows taskbar badge and the menu's dot, drawn here at whatever size each OS asks for.
+// The tray icon, the menu's dot and the strokes win32.ts draws its taskbar badge from, at whatever size each OS asks for.
 // Electron only loads PNG and JPEG, so a count can't come from an SVG; everything is round-capped strokes on a
 // 64-unit square. The tunnel is resources/icon.svg's, wider and without its lanes, to fit the count.
 
@@ -24,7 +24,7 @@ const TUNNEL: Stroke[] = [
 
 const line = (x1: number, y1: number, x2: number, y2: number): Stroke => ({ line: [[x1, y1], [x2, y2]] });
 const arc = (x: number, y: number, radius: number, from: number, to: number): Stroke => ({ arc: { center: [x, y], radius, from, to } });
-const point = (x: number, y: number): Stroke => line(x, y, x, y);
+export const point = (x: number, y: number): Stroke => line(x, y, x, y);
 
 // Numerals in an 18 × 26 box, baseline at 26: a rounded geometric face that matches the tunnel's strokes.
 const NUMERAL_WIDTH = 18;
@@ -47,7 +47,7 @@ const NUMERALS: Record<string, Stroke[]> = {
 export const countLabel = (count: number) => (count <= 0 ? "" : count > 9 ? "9+" : String(count));
 
 /** A label's strokes, centered on `centerX` and sitting on `baseline`, `scale` times the 18 × 26 box. */
-function numeral(label: string, centerX: number, baseline: number, scale: number): Stroke[] {
+export function numeral(label: string, centerX: number, baseline: number, scale: number): Stroke[] {
   const gap = 4;
   const width = label.length * NUMERAL_WIDTH + (label.length - 1) * gap;
   const left = centerX - (width * scale) / 2;
@@ -68,17 +68,6 @@ export function tunnelLayers(count: number, color: Rgb): Layer[] {
   const label = countLabel(count);
   const digits = label.length > 1 ? { strokes: numeral(label, 32, 51, 0.46), width: 4 } : { strokes: numeral(label, 32, 51, 0.7), width: 5 };
   return [{ strokes: TUNNEL, width: 7, color }, { ...digits, color }];
-}
-
-/** The Windows taskbar badge: a red disc with a dark rim, so it stays apart from the app icon under it, and the white count. */
-export function badgeLayers(count: number): Layer[] {
-  const label = countLabel(count);
-  const digits = label.length > 1 ? { strokes: numeral(label, 32, 42, 0.75), width: 5 } : { strokes: numeral(label, 32, 45, 1), width: 6 };
-  return [
-    { strokes: [point(32, 32)], width: 64, color: [28, 28, 28] },
-    { strokes: [point(32, 32)], width: 56, color: [209, 52, 56] },
-    { ...digits, color: [255, 255, 255] },
-  ];
 }
 
 /** The menu's mark for a VPN that's on. */
