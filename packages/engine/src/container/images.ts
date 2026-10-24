@@ -1,4 +1,4 @@
-import type { VpnImage } from "@repo/vpn-sdk/container";
+import { VPN_IMAGE_PREFIX, type VpnImage } from "@repo/vpn-sdk/container";
 import type { OneOffRun } from "@repo/vpn-sdk/engine";
 import type { Docker } from "../docker.ts";
 import { dnsFlags } from "./start.ts";
@@ -32,4 +32,13 @@ export async function runInImage(docker: Docker, image: VpnImage, { entrypoint, 
   await ensureVpnImage(docker, image, () => undefined);
   const envFlags = Object.entries(env).flatMap(([key, value]) => ["--env", `${key}=${value}`]);
   return docker.run(["run", "--rm", ...dnsFlags([]), ...envFlags, "--entrypoint", entrypoint, image.tag, ...args]);
+}
+
+/** Every VPN image on this machine, built by any version of the app, with its size in bytes. */
+export async function listVpnImages(docker: Docker) {
+  const listed = await docker.runChecked(["image", "ls", "--filter", `reference=${VPN_IMAGE_PREFIX}*`, "--format", "{{.Repository}}:{{.Tag}}"]);
+  const refs = listed.split("\n").filter(Boolean);
+  if (refs.length === 0) return [];
+  const sizes = (await docker.runChecked(["image", "inspect", "--format", "{{.Size}}", ...refs])).split("\n");
+  return refs.map((ref, index) => ({ ref, bytes: Number(sizes[index]) || 0 }));
 }
