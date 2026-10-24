@@ -7,6 +7,6 @@
     "typecheck": "tsc -p ."
   },
   "devDependencies": {
-    "bun": "1.4.3"
+    "bun": "1.4.4"
   }
 }
