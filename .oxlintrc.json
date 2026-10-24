@@ -68,6 +68,7 @@
                 "group": [
                   "@repo/engine",
                   "@repo/engine/*",
+                  "@repo/release",
                   "@repo/core/store",
                   "@repo/core/host",
                   "@repo/core/secret-store",
@@ -152,6 +153,7 @@
                 "group": [
                   "@repo/engine",
                   "@repo/engine/*",
+                  "@repo/release",
                   "@repo/core/store",
                   "@repo/core/host",
                   "@repo/core/secret-store",
@@ -253,6 +255,7 @@
                 "group": [
                   "@repo/engine",
                   "@repo/engine/*",
+                  "@repo/release",
                   "@repo/core/store",
                   "@repo/core/host",
                   "@repo/core/secret-store",
@@ -356,6 +359,7 @@
                 "group": [
                   "@repo/engine",
                   "@repo/engine/*",
+                  "@repo/release",
                   "@repo/core/store",
                   "@repo/core/host",
                   "@repo/core/secret-store",
@@ -448,6 +452,7 @@
         "packages/engine/**",
         "packages/helper/**",
         "packages/card-bridge/**",
+        "packages/release/**",
         "apps/launcher/**"
       ],
       "rules": {
@@ -720,6 +725,7 @@
                   "@repo/vpns/*",
                   "@repo/engine",
                   "@repo/engine/*",
+                  "@repo/release",
                   "@repo/core/store",
                   "@repo/core/host",
                   "@repo/core/secret-store",
@@ -783,6 +789,7 @@
                   "@repo/vpns/*",
                   "@repo/engine",
                   "@repo/engine/*",
+                  "@repo/release",
                   "@repo/core/store",
                   "@repo/core/host",
                   "@repo/core/secret-store",

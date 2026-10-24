@@ -1,7 +1,7 @@
 import type { Config, DockerState, SecretChanges, SecretStatus, TrafficSnapshot } from "@repo/core";
 import { createContext, useContext, useSyncExternalStore } from "react";
 import type { MainApi } from "../../../preload/index.ts";
-import type { AppInfo, ConnectionStatuses, HelperInfo } from "../../../shared/ipc-contract.ts";
+import type { AppInfo, ConnectionStatuses, HelperInfo, UpdateState } from "../../../shared/ipc-contract.ts";
 import type { Prompt, Screen } from "./screen.ts";
 
 export interface AppModel {
@@ -20,6 +20,10 @@ export interface AppModel {
   trafficFeed: { subscribe: (listener: () => void) => () => void; get: () => TrafficSnapshot };
   helper: HelperInfo | undefined;
   docker: DockerState | undefined;
+  /** Starting Docker, from whichever screen: every screen shows it, and its error until Docker runs or is started again. */
+  dockerStart: { starting: boolean; error: string | undefined };
+  /** Updating the app, as main reports it. Its actions go straight to `api`. */
+  update: UpdateState;
   /** VPNs turned on before Docker or the network helper were ready: they connect by themselves once both are. */
   waiting: ReadonlySet<string>;
   prompt: Prompt | undefined;
@@ -50,8 +54,8 @@ export interface AppModel {
   cancelPrompt: () => void;
   /** Runs a network helper action; resolves to its error, if any. */
   runHelper: (action: "install" | "uninstall") => Promise<string | undefined>;
-  /** Starts Docker; resolves to the error, if any. */
-  startDocker: () => Promise<string | undefined>;
+  /** Starts Docker, or joins the start already running; dockerStart shows how it goes. */
+  startDocker: () => Promise<void>;
 }
 
 export const AppContext = createContext<AppModel | null>(null);

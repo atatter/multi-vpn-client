@@ -64,6 +64,6 @@ Facts collected by \`multi-vpn-client triage\` when this session started.
 - Triage launcher version: ${facts.launcherVersion} (the \`multi-vpn-client\` command that started this session, not necessarily the app version the problem happened on)
 - OS: ${facts.platform} ${facts.arch}, ${facts.osVersion} (${facts.osRelease})
 - Node: ${facts.node}
-- Versions the launcher has unpacked: ${facts.installedVersions.length > 0 ? facts.installedVersions.join(", ") : "none"}, in ${facts.versionsDir}
+- Versions unpacked (by the launcher or the app's updater): ${facts.installedVersions.length > 0 ? facts.installedVersions.join(", ") : "none"}, in ${facts.versionsDir}
 - Source folder for clones: ${facts.sourceDir}
 `;

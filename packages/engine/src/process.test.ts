@@ -8,3 +8,9 @@ describe("shQuote", () => {
     expect((await run("/bin/sh", ["-c", `printf %s ${shQuote(value)}`])).stdout).toBe(value);
   });
 });
+
+describe("run", () => {
+  it.skipIf(process.platform === "win32")("kills a command that outlives its timeout and reports it as failed", async () => {
+    expect((await run("/bin/sh", ["-c", "sleep 5; true"], undefined, 50)).code).not.toBe(0);
+  });
+});

@@ -1,29 +1,36 @@
 // `npx multi-vpn-client`: downloads this version of the app once, checks it against the checksums this package was
-// published with, and starts it. `npx multi-vpn-client triage` starts the user's coding agent with the triage playbook
-// instead. Built into one file by `bun build` (see package.json); scripts/pack.ts adds the release.json and
-// PLAYBOOK.md it reads.
+// published with, and starts it; or starts a newer version the app already updated itself to.
+// `npx multi-vpn-client triage` starts the user's coding agent with the triage playbook instead, and
+// `npx multi-vpn-client uninstall` removes the app and everything it put on the machine. Built into one file by
+// `bun build` (see package.json); scripts/pack.ts adds the release.json and PLAYBOOK.md it reads.
+import { appDir } from "@repo/core/store";
 import { spawn } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { copyFile, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { homedir, release, tmpdir, version as osVersion } from "node:os";
 import { dirname, join } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { ensureInstalled, readOptional } from "./install.ts";
-import { Manifest, needsNoSandbox, targetOf, versionsDir } from "./release.ts";
+import { ensureInstalled, executableIn, installedVersions, Manifest, targetOf, versionsDir } from "@repo/release";
+import { needsNoSandbox, readOptional, versionToStart } from "./start.ts";
 import { AGENTS, contextText, findOnPath, isAgent, pickAgent, SEED_PROMPT, type Agent } from "./triage.ts";
+import { heldLock, keepQuestion, npxEntry, survey, uninstallSteps, type Step } from "./uninstall.ts";
 
 const USAGE = `Usage: npx multi-vpn-client [options]
        npx multi-vpn-client triage [--agent claude|codex]
+       npx multi-vpn-client uninstall
 
 Downloads Multi VPN Client (once per version) and starts it. Other options are passed on to the app.
 
 triage starts Claude Code or Codex on this machine to find out what's wrong with the app,
 and to help file a GitHub issue about it.
 
+uninstall removes the app from this computer: the network helper, the downloaded versions and
+the VPN container images. It asks before deleting your VPNs and their saved passwords.
+
 Options:
-  --version   Print the version this launcher starts
+  --version   Print this launcher's version
   --help      Show this help`;
 
 function readManifest(): Manifest {
@@ -37,14 +44,12 @@ function readManifest(): Manifest {
 async function start(args: string[]): Promise<void> {
   const manifest = readManifest();
   const { platform } = process;
-  const executable = await ensureInstalled({
-    manifest,
-    target: targetOf(platform, process.arch),
-    dir: versionsDir(process.env, platform, homedir()),
-    platform,
-    env: process.env,
-    log: (line) => console.error(line),
-  });
+  const dir = versionsDir(process.env, platform, homedir());
+  const { version, download } = versionToStart(manifest.version, await installedVersions(dir, platform));
+  if (download) console.error(`Downloading Multi VPN Client ${version}…`);
+  const executable = download
+    ? await ensureInstalled({ manifest, target: targetOf(platform, process.arch), dir, platform, env: process.env })
+    : executableIn(join(dir, version), platform);
   const noSandbox = needsNoSandbox(platform, readOptional("/proc/sys/kernel/apparmor_restrict_unprivileged_userns"));
   if (noSandbox) console.error("AppArmor blocks Electron's sandbox here, so the window runs without it.");
   const app = spawn(executable, noSandbox ? ["--no-sandbox", ...args] : args, { detached: true, stdio: "ignore" });
@@ -53,7 +58,7 @@ async function start(args: string[]): Promise<void> {
     app.once("error", reject);
   });
   app.unref();
-  console.error(`Started Multi VPN Client ${manifest.version}.`);
+  console.error(`Started Multi VPN Client ${version}.`);
 }
 
 async function triage(args: string[]): Promise<void> {
@@ -66,12 +71,6 @@ async function triage(args: string[]): Promise<void> {
   await copyFile(fileURLToPath(new URL("./PLAYBOOK.md", import.meta.url)), join(folder, "PLAYBOOK.md"));
   const sourceDir = join(dirname(versions), "source");
   await mkdir(sourceDir, { recursive: true });
-  let installedVersions: string[] = [];
-  try {
-    installedVersions = readdirSync(versions).filter((entry) => !entry.startsWith("."));
-  } catch {
-    // Nothing unpacked yet.
-  }
   await writeFile(
     join(folder, "CONTEXT.md"),
     contextText({
@@ -82,7 +81,7 @@ async function triage(args: string[]): Promise<void> {
       osVersion: osVersion(),
       node: process.version,
       versionsDir: versions,
-      installedVersions,
+      installedVersions: await installedVersions(versions, platform),
       sourceDir,
     }),
   );
@@ -124,10 +123,65 @@ Start any coding agent in that folder and ask it to follow PLAYBOOK.md.`);
   });
 }
 
+/** Asks a yes/no question that defaults to no. */
+async function confirm(question: string): Promise<boolean> {
+  const prompt = createInterface({ input: process.stdin, output: process.stdout });
+  const answer = await prompt.question(`${question} [y/N] `);
+  prompt.close();
+  return /^y(es)?$/i.test(answer.trim());
+}
+
+async function uninstall(): Promise<void> {
+  const { platform, env } = process;
+  // A scratch config means a developer's test copy; its folder isn't one uninstall may delete.
+  if (env.MVPN_CONFIG) throw new Error("MVPN_CONFIG is set, so this isn't the app's real data. Unset it to uninstall.");
+  const lock = heldLock(appDir(env, platform), platform);
+  if (lock) throw new Error(`Multi VPN Client is running. Quit it, which turns its VPNs off, then run uninstall again.\nIf it isn't running, delete ${lock} first.`);
+  const found = await survey(env, platform, homedir());
+  const launcher = npxEntry(fileURLToPath(import.meta.url));
+  const launcherNote = launcher && `This command itself is in npm's npx cache and can't remove itself while it runs. Delete the folder ${launcher} to remove it.`;
+
+  const question = keepQuestion(found);
+  const planned = uninstallSteps(found, false);
+  if (planned.length === 0 && !question) {
+    console.log("Multi VPN Client isn't on this computer.");
+    if (launcherNote) console.log(launcherNote);
+    return;
+  }
+  if (!process.stdin.isTTY) throw new Error("uninstall asks before it removes anything, so run it in a terminal.");
+  const list = (steps: Step[]) => steps.map((step) => `  • ${step.what}${"reason" in step ? `: ${step.reason}` : ""}`).join("\n");
+  const removable = planned.filter((step) => "run" in step);
+  if (removable.length > 0) console.log(`This removes Multi VPN Client from this computer:\n${list(removable)}`);
+  if (removable.length < planned.length) console.log(`It can't remove these now:\n${list(planned.filter((step) => "reason" in step))}`);
+  const deleteVpns = question !== undefined && (await confirm(question));
+  const steps = uninstallSteps(found, deleteVpns);
+  if (steps.some((step) => "run" in step) && !(await confirm("Continue?"))) {
+    console.log("Nothing was removed.");
+    return;
+  }
+
+  const leftovers: Extract<Step, { reason: string }>[] = [];
+  for (const step of steps) {
+    if ("reason" in step) {
+      leftovers.push(step);
+      continue;
+    }
+    console.log(`Removing ${step.what}…`);
+    await step.run().catch((error: unknown) => leftovers.push({ what: step.what, manual: step.manual, reason: error instanceof Error ? error.message : String(error) }));
+  }
+  if (leftovers.length > 0) {
+    console.log(`\nThese are still on this computer:\n${leftovers.map(({ what, reason, manual }) => `  • ${what}: ${reason}\n    ${manual}`).join("\n")}`);
+    process.exitCode = 1;
+  } else console.log("\nMulti VPN Client is removed.");
+  if (question && !deleteVpns) console.log(`Your VPNs and saved passwords are still in ${found.appFolder}, for when you install it again.`);
+  if (launcherNote) console.log(launcherNote);
+}
+
 async function main(args: string[]): Promise<void> {
   if (args[0] === "--help" || args[0] === "-h") console.log(USAGE);
   else if (args[0] === "--version") console.log(readManifest().version);
   else if (args[0] === "triage") await triage(args.slice(1));
+  else if (args[0] === "uninstall") await uninstall();
   else await start(args);
 }
 

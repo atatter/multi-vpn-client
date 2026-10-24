@@ -3,6 +3,7 @@ import type { MainApi } from "../../../preload/index.ts";
 import type { AppInfo, Loaded } from "../../../shared/ipc-contract.ts";
 import { isOn } from "../domain/connection.ts";
 import { setupBlocker } from "../domain/setup-copy.ts";
+import { updateNotice } from "../domain/update-copy.ts";
 import type { AppModel } from "./app-model.ts";
 import { messageOf } from "./errors.ts";
 
@@ -15,7 +16,7 @@ export type AppView = { phase: "loading" } | { phase: "failed"; error: string } 
 export type AppStore = ReturnType<typeof createAppStore>;
 
 /** The store's own state; the view adds the commands to it. */
-interface State extends Pick<AppModel, "connections" | "helper" | "docker" | "waiting" | "prompt" | "notice"> {
+interface State extends Pick<AppModel, "connections" | "helper" | "docker" | "dockerStart" | "update" | "waiting" | "prompt" | "notice"> {
   loaded: (Loaded & { info: AppInfo }) | undefined;
   loadError: string | undefined;
 }
@@ -25,6 +26,9 @@ const NO_TRAFFIC: TrafficSnapshot = { rates: {}, destinations: [] };
 const HELPER_RECHECK_MS = 3000;
 
 const DOCKER_RECHECK_MS = { running: 30_000, other: 3000 };
+
+/** A Docker check this recent is fresh enough when the user looks at the window. */
+const DOCKER_FRESH_MS = 5000;
 
 /**
  * The window's state and everything it can do, given the bridge to the main process. Plain TS, so it runs
@@ -38,6 +42,8 @@ export function createAppStore(api: MainApi) {
     connections: {},
     helper: undefined,
     docker: undefined,
+    dockerStart: { starting: false, error: undefined },
+    update: { state: "idle" },
     waiting: new Set(),
     prompt: undefined,
     notice: undefined,
@@ -86,8 +92,33 @@ export function createAppStore(api: MainApi) {
     update(change);
     connectWaiting();
   };
-  const refreshHelper = () => void api.helperState().then((helper) => setSetup({ helper }));
-  const refreshDocker = () => api.dockerState().then((docker) => setSetup({ docker }), () => setSetup({ docker: "missing" }));
+  const refreshHelper = () => api.helperState().then((helper) => setSetup({ helper }));
+
+  // Docker is checked in the background, often while it isn't running (someone may be starting it) and rarely
+  // once it is, and again right away when the user looks at the window.
+  let dockerChecks = 0;
+  let dockerChecking = false;
+  let dockerCheckedAt = -Infinity;
+  let dockerTimer: ReturnType<typeof setTimeout> | undefined;
+  let watchingDocker = false;
+  /** Checks Docker now and schedules the next background check. A newer check overrides an older one's answer. */
+  async function refreshDocker() {
+    const check = ++dockerChecks;
+    clearTimeout(dockerTimer);
+    dockerChecking = true;
+    const docker = await api.dockerState().catch(() => "missing" as const);
+    if (check !== dockerChecks) return;
+    dockerChecking = false;
+    dockerCheckedAt = Date.now();
+    setSetup({ docker });
+    // A failed start's error is stale once Docker runs, however it was started.
+    if (docker === "running" && state.dockerStart.error) update({ dockerStart: { starting: false, error: undefined } });
+    if (watchingDocker) dockerTimer = setTimeout(() => void refreshDocker(), docker === "running" ? DOCKER_RECHECK_MS.running : DOCKER_RECHECK_MS.other);
+  }
+  /** The user is looking: check Docker, unless a check is running or has just answered. */
+  const checkDockerIfStale = () => {
+    if (!dockerChecking && Date.now() - dockerCheckedAt >= DOCKER_FRESH_MS) void refreshDocker();
+  };
 
   /** Shows what's on disk, unless `stillWanted` says otherwise by the time it's read. */
   const reload = async (stillWanted: () => boolean) => {
@@ -138,17 +169,26 @@ export function createAppStore(api: MainApi) {
 
   const withoutWaiting = (vpnId: string) => update((current) => ({ waiting: new Set([...current.waiting].filter((id) => id !== vpnId)) }));
 
-  /** Runs a setup fix; resolves to its error, if any, and checks the state again either way. */
-  const runFix = async (fix: () => Promise<{ ok: true } | { ok: false; error: string }>, recheck: () => unknown) => {
-    try {
-      const result = await fix();
-      return result.ok ? undefined : result.error;
-    } catch (error) {
-      return messageOf(error);
-    } finally {
-      recheck();
-    }
+  /**
+   * Runs a setup fix; resolves to its error, if any, and checks the state again either way. It resolves only
+   * after the check, so the fix's button doesn't flash back between "busy" and the new state.
+   */
+  const runFix = async (fix: () => Promise<{ ok: true } | { ok: false; error: string }>, recheck: () => Promise<unknown>) => {
+    const problem = await fix().then((result) => (result.ok ? undefined : result.error), messageOf);
+    await recheck().catch(() => undefined);
+    return problem;
   };
+
+  /** One start at a time, whichever screen asked: a second click joins the first. */
+  let dockerStarting: Promise<void> | undefined;
+  const startDocker = () =>
+    (dockerStarting ??= (async () => {
+      update({ dockerStart: { starting: true, error: undefined } });
+      const error = await runFix(api.startDocker, refreshDocker);
+      dockerStarting = undefined;
+      // A start that timed out just as Docker came up has nothing left to report.
+      update({ dockerStart: { starting: false, error: state.docker === "running" ? undefined : error } });
+    })());
 
   // Created once: the view hands out the same functions on every change.
   const commands = {
@@ -205,7 +245,7 @@ export function createAppStore(api: MainApi) {
     },
     cancelPrompt: () => update({ prompt: undefined }),
     runHelper: (action) => runFix(action === "install" ? api.installHelper : api.uninstallHelper, refreshHelper),
-    startDocker: () => runFix(api.startDocker, refreshDocker),
+    startDocker,
   } satisfies Omit<AppModel, keyof State | keyof Loaded | keyof Navigation | "configPath" | "info">;
 
   function viewOf(current: State): AppView {
@@ -225,14 +265,25 @@ export function createAppStore(api: MainApi) {
       listeners.add(listener);
       return () => void listeners.delete(listener);
     },
-    /** Loads the settings, follows main's events and keeps checking setup. Once per store; returns `stop`. */
-    start(): () => void {
+    /**
+     * Loads the settings, follows main's events and keeps checking setup, sooner when `activity` (the window)
+     * says the user is looking. Once per store; returns `stop`.
+     */
+    start(activity?: EventTarget): () => void {
       if (stop) return stop;
       Promise.all([api.loadConfig(), api.appInfo()]).then(
         ([loaded, info]) => update({ loaded: { ...loaded, info } }),
         (error: unknown) => update({ loadError: messageOf(error) }),
       );
       void api.connectionStatuses().then((connections) => update({ connections }));
+      // An update event can overtake this answer, and the next may be an hour away: the event is newer.
+      let heardUpdate = false;
+      void api.updateState().then((current) => {
+        if (heardUpdate) return;
+        // A window opened again (macOS keeps the app running) still says a download failed.
+        const notice = updateNotice(current);
+        update(notice ? { update: current, notice } : { update: current });
+      });
       const unsubscribe = [
         api.onConnectionStatus((connections) => update({ connections })),
         api.onTraffic((snapshot) => {
@@ -241,26 +292,34 @@ export function createAppStore(api: MainApi) {
         }),
         // The app learned what a server sends: take only that, so a save still on its way isn't undone on screen.
         api.onConfigChanged((saved) => updateLoaded((loaded) => ({ config: { ...loaded.config, vpns: keepServerRoutes(saved.vpns, loaded.config.vpns) } }))),
+        // A failed download shows in the error strip too; it goes again once the update moves on, as it's no longer true.
+        api.onUpdate((next) => {
+          heardUpdate = true;
+          update((current) => {
+            const stale = current.notice !== undefined && current.notice === updateNotice(current.update);
+            return { update: next, notice: updateNotice(next) ?? (stale ? undefined : current.notice) };
+          });
+        }),
       ];
 
       // A helper that isn't responding may just be starting, so it's checked again until it answers.
-      refreshHelper();
-      const helperTimer = setInterval(() => state.helper?.state === "not-responding" && refreshHelper(), HELPER_RECHECK_MS);
+      void refreshHelper();
+      const helperTimer = setInterval(() => state.helper?.state === "not-responding" && void refreshHelper(), HELPER_RECHECK_MS);
 
-      // Docker is checked often while it isn't running (someone may be starting it), rarely once it is.
-      let dockerTimer: ReturnType<typeof setTimeout> | undefined;
-      let stopped = false;
-      const checkDocker = () =>
-        void refreshDocker().then(() => {
-          if (!stopped) dockerTimer = setTimeout(checkDocker, state.docker === "running" ? DOCKER_RECHECK_MS.running : DOCKER_RECHECK_MS.other);
-        });
-      checkDocker();
+      watchingDocker = true;
+      void refreshDocker();
+      // The user is looking when they come back to the window or click in it; typing isn't, or every key would
+      // check. Focus isn't captured, or every field focused inside would count; clicks are, so no handler stops them.
+      const listening = new AbortController();
+      activity?.addEventListener("focus", checkDockerIfStale, { signal: listening.signal });
+      activity?.addEventListener("pointerdown", checkDockerIfStale, { capture: true, signal: listening.signal });
 
       stop = () => {
-        stopped = true;
+        watchingDocker = false;
         unsubscribe.forEach((off) => off());
         clearInterval(helperTimer);
         clearTimeout(dockerTimer);
+        listening.abort();
       };
       return stop;
     },

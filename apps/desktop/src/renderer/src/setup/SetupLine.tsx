@@ -6,7 +6,6 @@ import { useSetupAction } from "./use-setup-action.ts";
 /** Returning users only need the one thing that's wrong, not the first-run checklist. */
 export function SetupLine() {
   const app = useApp();
-  const docker = useSetupAction(app.startDocker);
   const helper = useSetupAction(() => app.runHelper("install"));
   const { docker: dockerProblem, helper: helperProblem } = setupProblems(app.docker, app.helper?.state);
   if (!dockerProblem && !helperProblem) return null;
@@ -25,7 +24,7 @@ export function SetupLine() {
   );
   return (
     <div role="status" className="mx-[var(--in)] my-2.5 grid gap-1 rounded-lg bg-sodium/11 px-[11px] py-2 text-[13px]">
-      {dockerProblem && line(dockerProblem.line, dockerProblem.action?.link, docker.busy, SETUP_BUSY.docker, docker.error, docker.go)}
+      {dockerProblem && line(dockerProblem.line, dockerProblem.action?.link, app.dockerStart.starting, SETUP_BUSY.docker, app.dockerStart.error, () => void app.startDocker())}
       {helperProblem && line(helperProblem.line, helperProblem.action?.link, helper.busy, SETUP_BUSY.helper, helper.error, helper.go)}
     </div>
   );

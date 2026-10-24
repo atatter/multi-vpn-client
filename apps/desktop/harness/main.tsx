@@ -3,24 +3,28 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "../src/renderer/src/app/App.tsx";
 import { createFakeApi, HOSTS, SCENARIOS } from "../src/renderer/src/store/fake-api.ts";
+import { UPDATES } from "../src/renderer/src/store/fake-update.ts";
 import { createAppStore } from "../src/renderer/src/store/store.ts";
 import "./styles.css";
 
 /**
  * The real renderer over the fake main process, in a browser. Pick a scenario with the URL hash
- * (#first, #daily, #overlap, #shared, #broke). Waits take real time, connected VPNs carry made-up
- * traffic, and `window.fake` holds the fake's controls (e.g. `fake.failNextConnect("…")`).
+ * (#first, #daily, #overlap, #shared, #broke) and an update state with ?update= (a key of UPDATES, e.g.
+ * ?update=ready#daily). Waits take real time, connected VPNs carry made-up traffic, and `window.fake` holds the
+ * fake's controls (e.g. `fake.failNextConnect("…")`, `fake.setUpdate(UPDATES.available)`).
  */
 const hash = location.hash.slice(1);
+const updateName = new URLSearchParams(location.search).get("update");
 const fake = createFakeApi({
   scenario: SCENARIOS.find((name) => name === hash) ?? "daily",
+  update: Object.entries(UPDATES).find(([name]) => name === updateName)?.[1] ?? UPDATES.idle,
   pause: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 });
-Object.assign(window, { fake });
+Object.assign(window, { fake, UPDATES });
 
 // The frame around the window (index.html) sizes it, as main sizes the real window.
 const store = createAppStore({ ...fake.api, fitWindow: async (height) => window.parent.postMessage({ fit: height }, "*") });
-store.start();
+store.start(window);
 
 // About a second of traffic at a time for each connected VPN, to its usual hosts.
 const rates: TrafficSnapshot["rates"] = {};

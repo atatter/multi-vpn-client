@@ -1,13 +1,14 @@
 // Assembles the npm package `multi-vpn-client` from the bundled launcher (pnpm --filter @repo/launcher build), the
-// triage playbook, and a release's archives, with each archive's SHA-256 in release.json:
+// triage playbook, and a release's archives, with each archive's SHA-256 and size in release.json and in
+// package.json's `release`, where the app reads it from npm's registry to update itself:
 //   node apps/launcher/scripts/pack.ts --version 1.2.3 --archives apps/desktop/dist --out npm-package
 // Every machine in ARCHIVE_TYPES must have its archive; --partial allows missing ones, for trying a local build.
 import { createHash } from "node:crypto";
 import { createReadStream, existsSync, realpathSync } from "node:fs";
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { ARCHIVE_TYPES, archiveFile, isTarget, Manifest } from "../src/release.ts";
+import { ARCHIVE_TYPES, archiveFile, isTarget, Manifest } from "@repo/release";
 
 const { values } = parseArgs({
   options: { version: { type: "string" }, archives: { type: "string" }, out: { type: "string" }, partial: { type: "boolean", default: false } },
@@ -28,7 +29,7 @@ for (const target of Object.keys(ARCHIVE_TYPES).filter(isTarget)) {
     if (partial) continue;
     throw new Error(`${file} is missing from ${archives}.`);
   }
-  manifest.archives[target] = { file, sha256: await sha256(join(archives, file)) };
+  manifest.archives[target] = { file, sha256: await sha256(join(archives, file)), size: (await stat(join(archives, file))).size };
 }
 if (Object.keys(manifest.archives).length === 0) throw new Error(`No archives for ${version} in ${archives}.`);
 Manifest.parse(manifest);
@@ -65,6 +66,7 @@ await writeFile(
       bin: { "multi-vpn-client": "bin.mjs" },
       files: ["bin.mjs", "release.json", "PLAYBOOK.md", "THIRD_PARTY_NOTICES.txt"],
       engines: { node: ">=22" },
+      release: manifest,
     },
     null,
     2,

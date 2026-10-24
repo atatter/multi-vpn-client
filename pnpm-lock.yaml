@@ -190,6 +190,9 @@ importers:
       '@repo/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@repo/release':
+        specifier: workspace:*
+        version: link:../../packages/release
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -238,6 +241,15 @@ importers:
 
   apps/launcher:
     dependencies:
+      '@repo/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@repo/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@repo/release':
+        specifier: workspace:*
+        version: link:../../packages/release
       zod:
         specifier: 4.6.7
         version: 4.6.7
@@ -291,6 +303,12 @@ importers:
       bun:
         specifier: 1.4.3
         version: 1.4.3
+
+  packages/release:
+    dependencies:
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
 
   packages/ui:
     dependencies:

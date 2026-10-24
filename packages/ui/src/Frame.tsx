@@ -52,7 +52,7 @@ export function Frame({
 
   return (
     <div className="flex max-h-screen flex-col">
-      <header ref={part(0)} className="titlebar-insets flex h-11 shrink-0 items-center gap-2.5 border-b border-rule bg-bg [-webkit-app-region:drag]">
+      <header ref={part(0)} className="titlebar-insets flex h-11 shrink-0 items-center gap-2 border-b border-rule bg-bg [-webkit-app-region:drag]">
         {onBack === undefined ? (
           bar
         ) : (

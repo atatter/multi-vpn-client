@@ -1,16 +1,20 @@
 import { isAbsolute, join } from "node:path";
 import { z } from "zod";
 
+const Version = z.string().regex(/^\d+\.\d+\.\d+$/);
+
 /**
- * The release a launcher starts, written by scripts/pack.ts into release.json beside the bundled launcher. It ships
- * inside the npm package, so the checksums are fixed when the package is published: whoever can replace a GitHub
- * Release asset still can't make the launcher run it.
+ * A release's archives and their checksums, written by apps/launcher/scripts/pack.ts into the npm package: as
+ * release.json beside the bundled launcher, and as package.json's `release`, which the registry serves (see
+ * latest.ts). The checksums are fixed when the package is published: whoever can replace a GitHub Release asset
+ * still can't make the launcher or the app run it.
  */
 export const Manifest = z.object({
-  version: z.string().regex(/^\d+\.\d+\.\d+$/),
+  version: Version,
   archives: z.record(
     z.string(),
-    z.object({ file: z.string().regex(/^[\w.-]+$/), sha256: z.string().regex(/^[0-9a-f]{64}$/) }),
+    // `size` in bytes.
+    z.object({ file: z.string().regex(/^[\w.-]+$/), sha256: z.string().regex(/^[0-9a-f]{64}$/), size: z.number().int().positive() }),
   ),
 });
 export type Manifest = z.infer<typeof Manifest>;
@@ -55,10 +59,15 @@ export function executableIn(versionDir: string, platform: NodeJS.Platform): str
   return join(versionDir, "multi-vpn-client");
 }
 
-/**
- * Electron's sandbox needs unprivileged user namespaces or a setuid-root chrome-sandbox. Ubuntu 23.10+ blocks the
- * first with AppArmor, and an unpacked archive can't have the second, so there the window runs without Chromium's
- * sandbox. It's still context-isolated and only ever loads the app's own files.
- */
-export const needsNoSandbox = (platform: NodeJS.Platform, restrictUserns: string | undefined) =>
-  platform === "linux" && restrictUserns?.trim() === "1";
+/** Whether a folder in versionsDir is a version, not a download in progress (`.download-…`) or anything else. */
+export const isVersion = (name: string) => Version.safeParse(name).success;
+
+/** Orders "x.y.z" versions by number: negative when `a` is older than `b`, 0 when equal. */
+export function compareVersions(a: string, b: string): number {
+  const [left, right] = [a, b].map((version) => version.split(".").map(Number));
+  for (let index = 0; index < 3; index++) {
+    const difference = (left?.[index] ?? 0) - (right?.[index] ?? 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
+}

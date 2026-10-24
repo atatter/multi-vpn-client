@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AppContext } from "../store/app-model.ts";
 import type { Screen } from "../store/screen.ts";
 import type { AppStore, Navigation } from "../store/store.ts";
@@ -19,6 +19,23 @@ export function App({ store }: { store: AppStore }) {
   useLayoutEffect(() => {
     if (view.phase !== "ready" && root.current) void store.api.fitWindow(root.current.offsetHeight);
   }, [view.phase, store]);
+
+  // Restarting turns VPNs off and quits: nothing else may start meanwhile. `inert` stops clicks and focus, not
+  // listeners on window: without this, Escape would still go back and a dropped file would still open a form.
+  const restarting = view.phase === "ready" && view.update.state === "restarting";
+  useEffect(() => {
+    if (!restarting) return;
+    const swallow = (event: Event) => {
+      event.stopImmediatePropagation();
+      // A file dropped and not handled opens in the window. Keys keep their defaults, such as the OS's quit.
+      if (event.type !== "keydown") event.preventDefault();
+    };
+    const types = ["keydown", "dragenter", "dragover", "drop"];
+    for (const type of types) window.addEventListener(type, swallow, true);
+    return () => {
+      for (const type of types) window.removeEventListener(type, swallow, true);
+    };
+  }, [restarting]);
 
   if (view.phase === "failed") {
     return (
@@ -51,11 +68,13 @@ export function App({ store }: { store: AppStore }) {
   return (
     <AppContext value={{ ...view, ...navigation }}>
       <FrameContext value={frame}>
-        <div ref={root}>
+        <div ref={root} inert={restarting}>
           {/* Keyed by depth, so each push or pop mounts the screen fresh and plays its slide. */}
           <div key={`${stack.length}-${top.name}`}>
             <ScreenView screen={top} />
           </div>
+          {/* Dims the window to say so; what shows the restart's steps sits above it (z-30). */}
+          {restarting && <div className="fixed inset-0 z-20 bg-bg/60" />}
         </div>
       </FrameContext>
     </AppContext>

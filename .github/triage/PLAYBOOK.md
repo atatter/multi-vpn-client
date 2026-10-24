@@ -88,8 +88,8 @@ You may be on macOS, Linux or Windows. Use the platform's own tools for services
 
 Search the existing issues in atatter/multi-vpn-client (use `gh`, or GitHub's public search if `gh` isn't set up).
 Check whether a newer release fixes the problem: compare versions, and read the release notes and recent commits that
-touch the relevant code. If the user is behind and the fix shipped, say so and tell them how to update: run
-`npx multi-vpn-client@latest`, or download the newest archive.
+touch the relevant code. If the user is behind and the fix shipped, say so and tell them how to update: Update in
+Settings → About where their version has it, or run `npx multi-vpn-client@latest`, or download the newest archive.
 
 ## 7. Offer outcomes
 

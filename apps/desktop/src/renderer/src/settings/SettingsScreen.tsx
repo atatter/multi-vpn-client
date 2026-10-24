@@ -4,6 +4,7 @@ import { ChevronIcon } from "@repo/ui/icons.tsx";
 import { cell, cells, cx, groupTitle, hint } from "@repo/ui/tokens.ts";
 import { SetupSection } from "./SetupSection.tsx";
 import { StorageSection } from "./StorageSection.tsx";
+import { VersionRow } from "./VersionRow.tsx";
 
 /** Settings only holds settings: help, what connecting needs, where things are stored, the version. */
 export function SettingsScreen() {
@@ -35,13 +36,9 @@ export function SettingsScreen() {
         <StorageSection />
         <section className="mt-5">
           <h2 className={groupTitle}>About</h2>
-          <div className={cells}>
-            <div className={cell}>
-              <span>
-                Version {app.info.version}
-                {!app.info.packaged && <span className={hint}>Development build, run from source</span>}
-              </span>
-            </div>
+          {/* Above the window's dimming while restarting, since the Version row shows the steps. */}
+          <div className={cx(cells, app.update.state === "restarting" && "relative z-30")}>
+            <VersionRow />
           </div>
         </section>
       </div>
