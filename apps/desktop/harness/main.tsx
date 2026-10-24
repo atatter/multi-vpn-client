@@ -20,7 +20,7 @@ Object.assign(window, { fake });
 
 // The frame around the window (index.html) sizes it, as main sizes the real window.
 const store = createAppStore({ ...fake.api, fitWindow: async (height) => window.parent.postMessage({ fit: height }, "*") });
-store.start();
+store.start(window);
 
 // About a second of traffic at a time for each connected VPN, to its usual hosts.
 const rates: TrafficSnapshot["rates"] = {};

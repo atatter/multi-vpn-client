@@ -6,10 +6,13 @@ export interface RunResult {
   stderr: string;
 }
 
-/** Runs a command to completion (no shell), optionally feeding stdin. Never throws on a non-zero exit. */
-export function run(command: string, args: readonly string[], input?: string | Buffer): Promise<RunResult> {
+/**
+ * Runs a command to completion (no shell), optionally feeding stdin. Never throws on a non-zero exit; a
+ * command still running after `timeoutMs` is killed and reads as failed.
+ */
+export function run(command: string, args: readonly string[], input?: string | Buffer, timeoutMs?: number): Promise<RunResult> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: ["pipe", "pipe", "pipe"] });
+    const child = spawn(command, args, { stdio: ["pipe", "pipe", "pipe"], timeout: timeoutMs });
     const stdout: Buffer[] = [];
     const stderr: Buffer[] = [];
     child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
