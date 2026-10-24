@@ -13,6 +13,7 @@ import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { ensureInstalled, executableIn, installedVersions, Manifest, targetOf, versionsDir } from "@repo/release";
+import { terminalOutput } from "./output.ts";
 import { needsNoSandbox, readOptional, versionToStart } from "./start.ts";
 import { AGENTS, contextText, findAgents, orList, pickAgent, SEED_PROMPT, type Agent } from "./triage.ts";
 import { heldLock, keepQuestion, npxEntry, survey, uninstallSteps, type Step } from "./uninstall.ts";
@@ -41,24 +42,28 @@ function readManifest(): Manifest {
   }
 }
 
+const output = terminalOutput(process.stderr);
+
 async function start(args: string[]): Promise<void> {
   const manifest = readManifest();
   const { platform } = process;
   const dir = versionsDir(process.env, platform, homedir());
+  const target = targetOf(platform, process.arch);
+  const archive = manifest.archives[target];
   const { version, download } = versionToStart(manifest.version, await installedVersions(dir, platform));
-  if (download) console.error(`Downloading Multi VPN Client ${version}…`);
+  if (download) output.log(`Downloading Multi VPN Client ${version}…`);
   const executable = download
-    ? await ensureInstalled({ manifest, target: targetOf(platform, process.arch), dir, platform, env: process.env })
+    ? await ensureInstalled({ manifest, target, dir, platform, env: process.env, onProgress: (share) => archive && output.progress(share, archive.size) })
     : executableIn(join(dir, version), platform);
   const noSandbox = needsNoSandbox(platform, readOptional("/proc/sys/kernel/apparmor_restrict_unprivileged_userns"));
-  if (noSandbox) console.error("AppArmor blocks Electron's sandbox here, so the window runs without it.");
+  if (noSandbox) output.log("AppArmor blocks Electron's sandbox here, so the window runs without it.");
   const app = spawn(executable, noSandbox ? ["--no-sandbox", ...args] : args, { detached: true, stdio: "ignore" });
   await new Promise<void>((resolve, reject) => {
     app.once("spawn", resolve);
     app.once("error", reject);
   });
   app.unref();
-  console.error(`Started Multi VPN Client ${version}.`);
+  output.log(`Started Multi VPN Client ${version}.`);
 }
 
 async function triage(args: string[]): Promise<void> {
@@ -183,6 +188,6 @@ async function main(args: string[]): Promise<void> {
 }
 
 await main(process.argv.slice(2)).catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  output.log(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 });
