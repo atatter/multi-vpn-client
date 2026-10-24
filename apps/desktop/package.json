@@ -3,7 +3,7 @@
   "productName": "Multi VPN Client",
   "description": "Stay connected to several corporate VPNs at once, each carrying the sites you choose.",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "./out/main/index.js",
   "scripts": {
     "postinstall": "install-electron",
