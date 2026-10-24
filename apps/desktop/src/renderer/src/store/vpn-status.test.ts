@@ -22,7 +22,7 @@ async function appFor(scenario: Scenario, prepare?: (fake: ReturnType<typeof cre
   await vi.advanceTimersByTimeAsync(0);
   const view = store.getState();
   if (view.phase !== "ready") throw new Error(`The app isn't ready: ${view.phase}`);
-  return { ...view, push: () => {}, back: () => {}, home: () => {}, askRestart: () => {} };
+  return { ...view, push: () => {}, back: () => {}, home: () => {} };
 }
 
 const layerOf = (app: AppModel, vpnId: string) =>

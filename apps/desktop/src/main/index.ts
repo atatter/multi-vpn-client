@@ -119,10 +119,7 @@ void app.whenReady().then(() => {
     statuses: connections.statuses,
     updateState: updater.state,
     download: () => void updater.download(),
-    askRestart: () => {
-      void showWindow();
-      broadcast("update:ask-restart", null);
-    },
+    restart: restartToUpdate,
     open: () => void showWindow(),
     quit: () => app.quit(),
   });

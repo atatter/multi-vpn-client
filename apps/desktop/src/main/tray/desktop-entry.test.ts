@@ -7,8 +7,8 @@ import { desktopEntry, syncDesktopEntry, xdgDataHome } from "./desktop-entry.ts"
 describe("xdgDataHome", () => {
   it("is XDG_DATA_HOME when it's an absolute path, and ~/.local/share otherwise", () => {
     expect(xdgDataHome({ XDG_DATA_HOME: "/data" }, "/home/ann")).toBe("/data");
-    expect(xdgDataHome({ XDG_DATA_HOME: "relative" }, "/home/ann")).toBe("/home/ann/.local/share");
-    expect(xdgDataHome({}, "/home/ann")).toBe("/home/ann/.local/share");
+    expect(xdgDataHome({ XDG_DATA_HOME: "relative" }, "/home/ann")).toBe(join("/home/ann", ".local", "share"));
+    expect(xdgDataHome({}, "/home/ann")).toBe(join("/home/ann", ".local", "share"));
   });
 });
 

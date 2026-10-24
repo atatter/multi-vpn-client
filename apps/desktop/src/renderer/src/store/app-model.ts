@@ -35,8 +35,6 @@ export interface AppModel {
   push: (screen: Screen) => void;
   back: () => void;
   home: () => void;
-  /** Shows the restart question over the screen, as the tray's "Restart to update" does too. */
-  askRestart: () => void;
   /** Saves the whole config plus secret edits; shows the problem and returns false if it's rejected. */
   save: (config: Config, secrets?: SecretChanges) => Promise<boolean>;
   /** On turns a VPN on; on a VPN that's on (connecting, connected or failed) turns it off. */

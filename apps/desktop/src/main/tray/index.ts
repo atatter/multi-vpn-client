@@ -38,8 +38,8 @@ export function createTray(deps: {
   /** The updater's state: the icon gets a dot and the menu an item while there's an update. */
   updateState(): UpdateState;
   download(): void;
-  /** Shows the window asking whether to restart into the downloaded version. */
-  askRestart(): void;
+  /** Turns every VPN off and restarts into the downloaded version. */
+  restart(): void;
   open(): void;
   quit(): void;
 }) {

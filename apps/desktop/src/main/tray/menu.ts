@@ -16,9 +16,9 @@ export const countHeadline = (count: number) => (count === 0 ? "No VPNs on" : co
 
 /**
  * The update's one menu item; undefined whenever the window's update button is hidden too (renderer/src/domain/update-copy.ts).
- * Restarting turns the VPNs off, so that item only opens the window on the question that says so.
+ * Like quitting, restarting turns the VPNs off without asking, so the item says so.
  */
-export function updateItem(update: UpdateState, actions: { download(): void; askRestart(): void }): MenuItemConstructorOptions | undefined {
+export function updateItem(update: UpdateState, actions: { download(): void; restart(): void }): MenuItemConstructorOptions | undefined {
   switch (update.state) {
     case "available":
       return { label: `Update to ${update.version}${update.size ? ` (${Math.round(update.size / 1e6)} MB)` : ""}`, click: actions.download };
@@ -27,7 +27,7 @@ export function updateItem(update: UpdateState, actions: { download(): void; ask
     case "download-failed":
       return { label: `Couldn't download ${update.version}. Try again`, click: actions.download };
     case "ready":
-      return { label: `Restart to update to ${update.version}…`, click: actions.askRestart };
+      return { label: "Restart to update and turn off VPNs", click: actions.restart };
     case "restarting":
       return { label: `Restarting to update to ${update.version}…`, enabled: false };
     default:

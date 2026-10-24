@@ -7,8 +7,8 @@ import { updateNotice } from "../domain/update-copy.ts";
 import type { AppModel } from "./app-model.ts";
 import { messageOf } from "./errors.ts";
 
-/** Moving between screens and the restart question over them: App's own state, not the store's. The store's view is everything else. */
-export type Navigation = Pick<AppModel, "push" | "back" | "home" | "askRestart">;
+/** Moving between screens: App's own state, not the store's. The store's view is everything else. */
+export type Navigation = Pick<AppModel, "push" | "back" | "home">;
 
 /** What the window shows: still loading, settings that couldn't load, or the app. Replaced on every change, never mutated. */
 export type AppView = { phase: "loading" } | { phase: "failed"; error: string } | ({ phase: "ready" } & Omit<AppModel, keyof Navigation>);

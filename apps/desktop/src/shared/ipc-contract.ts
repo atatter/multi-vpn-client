@@ -84,8 +84,6 @@ export interface IpcEvents {
   /** The app changed the saved config itself, e.g. learned what a VPN's server sends. */
   "config:changed": Config;
   "update:changed": UpdateState;
-  /** The tray's "Restart to update": the window asks the restart question, which says the VPNs turn off. */
-  "update:ask-restart": null;
 }
 
 export type ConnectionStatuses = Record<string, ConnectionStatus>;

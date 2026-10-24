@@ -31,7 +31,7 @@ describe("the VPNs that are on", () => {
 });
 
 describe("the update's item", () => {
-  const actions = { download: () => {}, askRestart: () => {} };
+  const actions = { download: () => {}, restart: () => {} };
   const item = (update: UpdateState) => updateItem(update, actions);
 
   it("is there for an update to download, being downloaded or restarting into, and not otherwise", () => {
@@ -45,8 +45,8 @@ describe("the update's item", () => {
     }
   });
 
-  it("only asks about restarting, since restarting turns the VPNs off", () => {
-    expect(item({ state: "ready", version: "0.2.0" })).toMatchObject({ label: "Restart to update to 0.2.0…", click: actions.askRestart });
+  it("says that restarting turns the VPNs off, as quitting does", () => {
+    expect(item({ state: "ready", version: "0.2.0" })).toMatchObject({ label: "Restart to update and turn off VPNs", click: actions.restart });
   });
 });
 
@@ -66,7 +66,7 @@ describe("the tray menu", () => {
   });
 
   it("puts the update in its own section between the VPNs and opening the window", () => {
-    const menu = trayMenu({ ...parts, count: 1, names: ["Client A"], update: { label: "Restart to update to 0.2.0…" }, quitShortcut: undefined });
-    expect(menu.map((item) => item.label ?? item.type)).toEqual(["1 VPN on", "Client A", "separator", "Restart to update to 0.2.0…", "separator", "Open Multi VPN Client", "separator", "Quit and turn off VPNs"]);
+    const menu = trayMenu({ ...parts, count: 1, names: ["Client A"], update: { label: "Restart to update and turn off VPNs" }, quitShortcut: undefined });
+    expect(menu.map((item) => item.label ?? item.type)).toEqual(["1 VPN on", "Client A", "separator", "Restart to update and turn off VPNs", "separator", "Open Multi VPN Client", "separator", "Quit and turn off VPNs"]);
   });
 });
