@@ -117,6 +117,7 @@ Each package runs in one kind of process. Folders, layers and file patterns are 
 - `packages/release`: what a release is (archives, checksums, the versions folder) and how one is downloaded and unpacked. The launcher and the app's updater share it.
 - `apps/desktop`: Electron main, preload and renderer.
 - `apps/launcher`: the `npx multi-vpn-client` command, published to npm. It starts the newest version already unpacked, the app's own updates included; otherwise it downloads the release archive `apps/desktop/electron-builder.yml` builds for the machine, checks it against the checksums it was published with, and starts that. `triage` starts the user's coding agent with `.github/triage/PLAYBOOK.md`; keep the playbook's paths and rules true when the code they name changes. `uninstall` removes everything the app and the launcher put on the machine, so a new place the app writes to needs a step there.
+- `.agents/skills/<name>/`: agent skills, shared by every coding agent. Claude Code reads only `.claude/skills/`, so each skill also gets a symlink there: `.claude/skills/<name>` → `../../.agents/skills/<name>`.
 
 ## Taste
 
