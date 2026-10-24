@@ -70,9 +70,18 @@ The most common defect is a change that works on the path you tested and is miss
 - Never make a PR or commit unless the developer asks.
 - Branches are `<github-login>/<short-kebab-slug>` for the developer you work for (`gh api user --jq .login`). If you start on a branch named any other way, rename it with `git branch -m` before the first push.
 - Conventional commit titles in plain language that say what changed for the user, e.g. `fix(desktop): connecting from a VPN's page no longer leaves unsaved changes behind`. PRs are squash-merged, so the title is the commit on `main`.
-- Body: the problem in a sentence or two, then how you fixed it. Describe only what the diff changes, not everything done in the session; settings changed elsewhere or work on other branches don't belong. End with the model and harness that did the work.
+- Body, in this order, and nothing else:
+  1. `Closes #N` when it resolves an issue. If the branch doesn't name one, look for it with `gh issue list --search`.
+  2. The problem, as the user meets it, in a sentence or two.
+  3. What the change does: at most five short lines, one per thing a user or reviewer will notice; fold the rest into those or drop it. Name code only where a reviewer needs it to find their way, such as a new entry point or the existing code it reuses; file names, exit codes and other internals stay in the diff.
+  4. What the user now sees: before/after images of the window, uploaded to GitHub and never committed, or terminal output in a code block, cut to the first screen the user sees, such as a prompt; what happens after they answer is already in the list. If you can't run it, write the output from the strings in the code; never leave a placeholder.
+  5. Where it departs from what the issue asked: what the issue asked, what the change does instead, and the fact that forced it, in a sentence. A choice the issue left open isn't a departure.
+  6. The model and harness that did the work.
+- A reviewer reads it on a clock. Leave out what the title, the diff or CI already say: test and verification sections, file lists, README, help text and doc updates, what didn't change, guards only developers or scripts hit, and how each OS gets to the same result. No headings or bold labels; a body that needs them is too long.
+- State only what you know. You know what you ran; you don't know what others tested, so never write "not tested". When the body needs a fact you don't have, such as why something departs from the issue, ask the developer instead of guessing or leaving a placeholder.
+- Plain words with one meaning. Reread each line as someone who hasn't seen the code; if a word can be read as its opposite, such as "keeps" for something deleted along with its folder, rephrase it.
+- Describe only what the diff changes, not everything done in the session; settings changed elsewhere or work on other branches don't belong.
 - Open a real PR, not a draft.
-- UI changes need before/after images, uploaded to GitHub, never committed.
 - One request is one PR. Split only when the maintainer asks.
 
 ## Documentation
