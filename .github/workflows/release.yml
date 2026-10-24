@@ -1,12 +1,10 @@
-# Builds and smoke-tests the release archives on each OS. On a v* tag it also publishes them: the GitHub Release first
-# (the npm launcher downloads from it), then the npm package, after a maintainer approves the `npm` environment.
+# Builds and smoke-tests the release archives on each OS. Run by hand on main, it also drafts the GitHub Release; once
+# the `npm` environment is approved it publishes the release, commits the new version to main, then publishes to npm.
 # How to cut a release: docs/releasing.md. Actions are pinned to commit SHAs, and release builds use no caches, so
 # nothing a pull request wrote can end up in a release.
 name: Release
 
 on:
-  push:
-    tags: ["v*.*.*"]
   pull_request:
     paths:
       - .github/workflows/release.yml
@@ -23,6 +21,12 @@ on:
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
   workflow_dispatch:
+    inputs:
+      bump:
+        description: Which part of the version to raise. Releases only from main; on other branches it just builds.
+        type: choice
+        options: [patch, minor, major]
+        default: patch
 
 permissions: {}
 
@@ -39,19 +43,32 @@ jobs:
       contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
+      previous: ${{ steps.version.outputs.previous }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # One version for everything: the app, every archive, the GitHub Release and the npm package.
+      # One version for everything: the app, every archive, the GitHub Release and the npm package. apps/desktop's
+      # package.json holds the last released version; the next one raises it by the bump. Pull requests build as the
+      # next patch.
       - id: version
         run: |
-          version=$(node -p 'require("./apps/desktop/package.json").version')
-          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME doesn't match the version in apps/desktop/package.json ($version)."
+          current=$(node -p 'require("./apps/desktop/package.json").version')
+          if ! [[ "$current" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::apps/desktop/package.json has version '$current', not x.y.z."
             exit 1
           fi
+          IFS=. read -r major minor patch <<< "$current"
+          case "$BUMP" in
+            major) version="$((major + 1)).0.0" ;;
+            minor) version="$major.$((minor + 1)).0" ;;
+            patch) version="$major.$minor.$((patch + 1))" ;;
+            *) echo "::error::Unknown bump '$BUMP'."; exit 1 ;;
+          esac
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "previous=v$current" >> "$GITHUB_OUTPUT"
+        env:
+          BUMP: ${{ inputs.bump || 'patch' }}
 
   build:
     name: Build (${{ matrix.os }})
@@ -80,12 +97,18 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - run: pnpm install --frozen-lockfile
+      # package.json holds the last released version; electron-builder and the notices read the new one from it.
+      - run: npm pkg set version="$VERSION"
+        shell: bash
+        working-directory: apps/desktop
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
       # The helper and card bridge for every architecture of this OS, then the archives with notices.
       - run: pnpm package
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
           # electron-builder skips signing on pull requests, which leaves Electron's own signature broken by the fuses.
-          # The signature is ad-hoc and this job holds no secrets, so PR builds sign exactly like tag builds.
+          # The signature is ad-hoc and this job holds no secrets, so PR builds sign exactly like release builds.
           CSC_FOR_PULL_REQUEST: "true"
       - name: Verify the macOS signatures, including the bundled helper and card bridge
         if: runner.os == 'macOS'
@@ -150,9 +173,9 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  github-release:
-    name: GitHub Release
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+  draft:
+    name: Draft the GitHub Release
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     needs: [version, pack]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -168,31 +191,57 @@ jobs:
         with:
           name: notices
           path: release
-      - name: Create the release with the archives, their checksums and the notices
+      # A draft is private and has no tag yet. It shows the maintainer exactly what will be published: the version, the
+      # notes (the merged pull request titles since the last release) and the files.
+      - name: Draft the release with the archives, their checksums, the notices and the merged pull requests
         working-directory: release
         run: |
+          existing=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq ".[] | select(.tag_name == \"v$VERSION\") | .html_url")
+          if [ -n "$existing" ]; then
+            echo "::error::v$VERSION already has a release or draft: $existing. Delete the draft and run again."
+            exit 1
+          fi
+          # Without this, releasing again with nothing merged would ship the same code as a new version. The version
+          # commits the publish job makes don't count as new.
+          new=$(gh api "repos/$GITHUB_REPOSITORY/compare/$PREVIOUS...$GITHUB_SHA" \
+            --jq '[.commits[] | select(.commit.message | startswith("chore: release ") | not)] | length')
+          if [ "$new" = 0 ]; then
+            echo "::error::Nothing was merged since $PREVIOUS, so there's nothing new to release."
+            exit 1
+          fi
           sha256sum multi-vpn-client-* > SHA256SUMS
-          cat > ../notes.md <<EOF
-          Run it with \`npx multi-vpn-client@$VERSION\` (Node 22 or newer, and Docker). The launcher downloads the archive for your machine from this release and checks it against the checksum published with the npm package.
+          notes="Run it with \`npx multi-vpn-client@$VERSION\` (Node 22 or newer, and Docker). The launcher downloads the archive for your machine from this release and checks it against the checksum published with the npm package.
 
-          The archives below are the same app for downloading by hand. They aren't signed with a developer certificate yet: macOS blocks the app until you allow it in System Settings → Privacy & Security, and Windows SmartScreen asks before running it. SHA256SUMS lists their checksums. THIRD_PARTY_NOTICES.txt lists the licenses of what's inside.
-          EOF
-          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --title "Multi VPN Client $VERSION" --notes-file ../notes.md ./*
+          The archives below are the same app for downloading by hand. They aren't signed with a developer certificate yet: macOS blocks the app until you allow it in System Settings → Privacy & Security, and Windows SmartScreen asks before running it. SHA256SUMS lists their checksums. THIRD_PARTY_NOTICES.txt lists the licenses of what's inside."
+          url=$(gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --draft --target "$GITHUB_SHA" \
+            --title "Multi VPN Client $VERSION" --notes "$notes" \
+            --generate-notes --notes-start-tag "$PREVIOUS" ./*)
+          echo "Check [the draft of v$VERSION]($url), then approve the \`npm\` deployment to publish it." >> "$GITHUB_STEP_SUMMARY"
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
+          PREVIOUS: ${{ needs.version.outputs.previous }}
 
-  npm:
-    name: Publish to npm
-    needs: [github-release, pack]
+  publish:
+    name: Publish
+    needs: [version, draft]
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Waits for a maintainer's approval. npm's trusted publisher accepts this workflow file in this environment only.
+    # The release's one approval: the environment's only required reviewer is atatter. npm's trusted publisher accepts
+    # this workflow file in this environment only, so renaming either breaks publishing.
     environment: npm
     permissions:
       contents: read
       id-token: write
     steps:
+      # The release app's key is a secret of the `npm` environment, so only this job can use it, after approval. The
+      # app bypasses the main and release-tag rulesets, which the workflow's own token can't.
+      - id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
@@ -202,6 +251,32 @@ jobs:
         with:
           name: npm-package
           path: npm-package
+      # Publishing the draft creates the tag on the commit that was built. A tag pushed meanwhile would take its place, so
+      # it must be absent or already on that commit (as it is when this job re-runs after publishing).
+      - run: |
+          tagged=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v$VERSION" --jq ".[] | select(.ref == \"refs/tags/v$VERSION\") | .object.sha")
+          if [ -n "$tagged" ] && [ "$tagged" != "$GITHUB_SHA" ]; then
+            echo "::error::v$VERSION is already tagged on $tagged, not on the commit that was built ($GITHUB_SHA)."
+            exit 1
+          fi
+          gh release edit "v$VERSION" --repo "$GITHUB_REPOSITORY" --draft=false
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+      # The next release counts up from main's package.json. Skipped when a re-run finds main already there.
+      - name: Commit the version to main
+        run: |
+          file=apps/desktop/package.json
+          gh api "repos/$GITHUB_REPOSITORY/contents/$file?ref=main" > current.json
+          jq -r .content current.json | base64 -d > package.json
+          if [ "$(jq -r .version package.json)" != "$VERSION" ]; then
+            npm pkg set version="$VERSION"
+            gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/$file" -f branch=main -f message="chore: release $VERSION" \
+              -f sha="$(jq -r .sha current.json)" -f content="$(base64 -w 0 package.json)" --silent
+          fi
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          VERSION: ${{ needs.version.outputs.version }}
       # Trusted publishing (OIDC): no npm token exists. Nothing is checked out or installed in this job.
       - run: npm publish --access public --provenance
         working-directory: npm-package
