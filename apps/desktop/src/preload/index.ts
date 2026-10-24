@@ -35,9 +35,14 @@ const api = {
   appInfo: () => invoke("app:info"),
   showConfig: () => invoke("app:show-config"),
   fitWindow: (...args: IpcContract["window:fit"]["args"]) => invoke("window:fit", ...args),
+  updateState: () => invoke("update:state"),
+  checkForUpdate: () => invoke("update:check"),
+  downloadUpdate: () => invoke("update:download"),
+  restartToUpdate: () => invoke("update:restart"),
   onConnectionStatus: (listener: (statuses: IpcEvents["vpn:status"]) => void) => on("vpn:status", listener),
   onTraffic: (listener: (snapshot: IpcEvents["traffic:update"]) => void) => on("traffic:update", listener),
   onConfigChanged: (listener: (config: IpcEvents["config:changed"]) => void) => on("config:changed", listener),
+  onUpdate: (listener: (state: IpcEvents["update:changed"]) => void) => on("update:changed", listener),
 };
 
 export type MainApi = typeof api;

@@ -9,6 +9,7 @@ import { SlidersIcon, TunnelIcon } from "@repo/ui/icons.tsx";
 import { cx, iconButton, link } from "@repo/ui/tokens.ts";
 import { useFileDrop } from "@repo/ui/use-file-drop.ts";
 import { DropCover } from "./DropCover.tsx";
+import { UpdateButton } from "./UpdateButton.tsx";
 import { VpnList } from "./VpnList.tsx";
 
 /** The main screen: what's on, in priority order (top wins), then everything that's off, in a fixed order. */
@@ -17,8 +18,9 @@ export function HomeScreen() {
   const dropping = useFileDrop((files) => openDropped(app, files));
   const bar = (
     <>
-      {/* No title or search box, only Settings: the list is the whole screen. */}
+      {/* No title or search box, only Settings (and an update, when there is one): the list is the whole screen. */}
       <span className="flex-1" />
+      <UpdateButton />
       <button type="button" className={iconButton} aria-label="Settings" title="Settings" onClick={() => app.push({ name: "settings" })}>
         <SlidersIcon />
       </button>

@@ -338,3 +338,30 @@ describe("prompts", () => {
     expect(app().connections.c?.state).toBe("connected");
   });
 });
+
+describe("updating the app", () => {
+  it("shows a failed download in the error strip, and drops it once the update moves on", async () => {
+    const { fake, app } = await start();
+    fake.setUpdate({ state: "available", version: "0.2.0", size: undefined });
+    fake.failNextDownload("HTTP 404.");
+    await app().api.downloadUpdate();
+    expect(app().notice).toBe("Couldn't download 0.2.0: HTTP 404.");
+    expect(app().update).toEqual({ state: "download-failed", version: "0.2.0", error: "HTTP 404." });
+    await app().api.downloadUpdate();
+    expect(app().notice).toBeUndefined();
+    expect(app().update).toEqual({ state: "ready", version: "0.2.0" });
+  });
+
+  it("shows a download that failed before the window opened", async () => {
+    const { app } = await start("daily", (fake) => fake.setUpdate({ state: "download-failed", version: "0.2.0", error: "HTTP 404." }));
+    expect(app().notice).toBe("Couldn't download 0.2.0: HTTP 404.");
+  });
+
+  it("leaves other notices alone", async () => {
+    const { app } = await start();
+    app().showNotice("That file isn't a VPN profile.");
+    await app().api.checkForUpdate();
+    expect(app().notice).toBe("That file isn't a VPN profile.");
+    expect(app().update).toEqual({ state: "available", version: "0.2.0", size: 180_000_000 });
+  });
+});
