@@ -14,16 +14,16 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { ensureInstalled, executableIn, installedVersions, Manifest, targetOf, versionsDir } from "@repo/release";
 import { needsNoSandbox, readOptional, versionToStart } from "./start.ts";
-import { AGENTS, contextText, findOnPath, isAgent, pickAgent, SEED_PROMPT, type Agent } from "./triage.ts";
+import { AGENTS, contextText, findAgents, orList, pickAgent, SEED_PROMPT, type Agent } from "./triage.ts";
 import { heldLock, keepQuestion, npxEntry, survey, uninstallSteps, type Step } from "./uninstall.ts";
 
 const USAGE = `Usage: npx multi-vpn-client [options]
-       npx multi-vpn-client triage [--agent claude|codex]
+       npx multi-vpn-client triage [--agent claude|codex|cursor]
        npx multi-vpn-client uninstall
 
 Downloads Multi VPN Client (once per version) and starts it. Other options are passed on to the app.
 
-triage starts Claude Code or Codex on this machine to find out what's wrong with the app,
+triage starts Claude Code, Codex, or Cursor Agent on this machine to find out what's wrong with the app,
 and to help file a GitHub issue about it.
 
 uninstall removes the app from this computer: the network helper, the downloaded versions and
@@ -86,15 +86,12 @@ async function triage(args: string[]): Promise<void> {
     }),
   );
 
-  const found = new Map<Agent, string>();
-  for (const agent of Object.keys(AGENTS).filter(isAgent)) {
-    const path = findOnPath(agent, process.env, platform);
-    if (path) found.set(agent, path);
-  }
+  const found = findAgents(process.env, platform);
   const pick = pickAgent([...found.keys()], values.agent);
   if ("error" in pick) throw new Error(pick.error);
   if ("none" in pick) {
-    console.log(`Neither Claude Code (claude) nor Codex (codex) is installed. The triage playbook and this machine's facts are in
+    const known = orList(Object.values(AGENTS).map(({ name, command }) => `${name} (${command})`));
+    console.log(`Couldn't find ${known} on PATH. The triage playbook and this machine's facts are in
   ${folder}
 Start any coding agent in that folder and ask it to follow PLAYBOOK.md.`);
     return;
@@ -102,9 +99,9 @@ Start any coding agent in that folder and ask it to follow PLAYBOOK.md.`);
   let agent: Agent;
   if ("agent" in pick) agent = pick.agent;
   else {
-    if (!process.stdin.isTTY) throw new Error("Both claude and codex are installed. Choose one with --agent claude or --agent codex.");
+    if (!process.stdin.isTTY) throw new Error(`Several agents are installed. Choose one with ${orList(pick.ask.map((id) => `--agent ${id}`))}.`);
     const question = createInterface({ input: process.stdin, output: process.stdout });
-    const answer = (await question.question(`Start ${pick.ask.map((id, index) => `${index + 1}) ${AGENTS[id]}`).join(" or ")}? `)).trim();
+    const answer = (await question.question(`Start ${orList(pick.ask.map((id, index) => `${index + 1}) ${AGENTS[id].name}`))}? `)).trim();
     question.close();
     const chosen = pick.ask[Number(answer) - 1];
     if (!chosen) throw new Error("No agent chosen.");
@@ -112,9 +109,9 @@ Start any coding agent in that folder and ask it to follow PLAYBOOK.md.`);
   }
 
   const command = found.get(agent);
-  if (!command) throw new Error(`${AGENTS[agent]} isn't on PATH.`);
-  console.log(`Starting ${AGENTS[agent]} with the triage playbook. It will ask what went wrong.`);
-  // npm-installed agents are .cmd files on Windows, which only start through cmd.exe; SEED_PROMPT is safe to pass there.
+  if (!command) throw new Error(`${AGENTS[agent].name} isn't on PATH.`);
+  console.log(`Starting ${AGENTS[agent].name} with the triage playbook. It will ask what went wrong.`);
+  // On Windows, agents from npm and Cursor are .cmd files, which only start through cmd.exe; SEED_PROMPT is safe to pass there.
   const viaShell = platform === "win32" && /\.(cmd|bat)$/i.test(command);
   const session = spawn(command, [viaShell ? `"${SEED_PROMPT}"` : SEED_PROMPT], { cwd: folder, stdio: "inherit", shell: viaShell });
   process.exitCode = await new Promise<number>((resolve, reject) => {

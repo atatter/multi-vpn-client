@@ -86,7 +86,7 @@ It removes the network helper (it asks for your password), the downloaded versio
 npx multi-vpn-client triage
 ```
 
-This starts Claude Code or Codex on your machine with this app's troubleshooting playbook. It asks what went wrong, then looks at Docker, the network helper, your VPN containers, your config and your routes. It checks whether a newer version already fixes the problem and drafts a GitHub issue with gateway addresses, usernames and IP addresses replaced by placeholders. It never opens your saved passwords, it asks before running anything that changes your machine, and it posts nothing until you say yes. Without either agent installed, it prints a folder with the playbook; start any coding agent there.
+This starts Claude Code, Codex or Cursor Agent on your machine with this app's troubleshooting playbook. It asks what went wrong, then looks at Docker, the network helper, your VPN containers, your config and your routes. It checks whether a newer version already fixes the problem and drafts a GitHub issue with gateway addresses, usernames and IP addresses replaced by placeholders. It never opens your saved passwords, it asks before running anything that changes your machine, and it posts nothing until you say yes. Without any of them installed, it prints a folder with the playbook; start any coding agent there.
 
 Keep the app open while you do this. A VPN's connection log is only on its page in the app and isn't saved to disk.
 
