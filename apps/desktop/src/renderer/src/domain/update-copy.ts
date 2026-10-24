@@ -13,7 +13,7 @@ export function versionRow(update: UpdateState, now: number): { line: string; fa
     case "off":
       return { line: "Dev build, updates are off" };
     case "idle":
-      return { line: "Checks npm at start and every 6 hours", action: check };
+      return { line: "Checks npm hourly and when you open the window", action: check };
     case "checking":
       return { line: "Checking npm…", action: { ...check, disabled: true } };
     case "current":

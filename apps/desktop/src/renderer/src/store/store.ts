@@ -276,7 +276,7 @@ export function createAppStore(api: MainApi) {
         (error: unknown) => update({ loadError: messageOf(error) }),
       );
       void api.connectionStatuses().then((connections) => update({ connections }));
-      // An update event can overtake this answer, and the next may be 6 hours away: the event is newer.
+      // An update event can overtake this answer, and the next may be an hour away: the event is newer.
       let heardUpdate = false;
       void api.updateState().then((current) => {
         if (heardUpdate) return;

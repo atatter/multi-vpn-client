@@ -55,7 +55,10 @@ export interface HelperInfo {
 
 export type HelperActionResult = { ok: true } | { ok: false; error: string };
 
-/** Where updating the app stands. Main checks npm at start and every 6 hours; nothing downloads until the user asks. */
+/**
+ * Where updating the app stands. Main checks npm at start, every hour and when the window comes to the front; nothing
+ * downloads until the user asks.
+ */
 export type UpdateState =
   /** A development build, which never updates. */
   | { state: "off" }

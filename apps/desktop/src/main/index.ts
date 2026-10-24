@@ -92,6 +92,7 @@ void app.whenReady().then(() => {
   createWindow();
   void connections.removeLeftovers();
   updater.start();
+  app.on("browser-window-focus", updater.windowFocused);
   // Holding the single-instance lock, no older version can be running, so what an update replaced can go.
   if (app.isPackaged) void removeOlderVersions(versions, app.getVersion(), remove);
   app.on("activate", () => {

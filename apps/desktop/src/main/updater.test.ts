@@ -1,5 +1,5 @@
 import type { Manifest } from "@repo/release";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { UpdateState } from "../shared/ipc-contract.ts";
 import { createUpdater } from "./updater.ts";
 
@@ -13,18 +13,19 @@ function setup({
   packaged = true,
   npm = (): Promise<Manifest> => Promise.resolve(release("0.2.0")),
   wait = (_ms: number) => Promise.resolve(),
+  now = (): number => 1000,
 } = {}) {
   const states: UpdateState[] = [];
-  const downloads: { finish: () => void; fail: (error: Error) => void; progress: (done: number) => void }[] = [];
+  const downloads: { version: string; finish: () => void; fail: (error: Error) => void; progress: (done: number) => void }[] = [];
   const updater = createUpdater({
     version: "0.1.0",
     packaged,
     target: "linux-x64",
     latest: () => npm(),
     download: (manifest, progress) =>
-      new Promise((resolve, reject) => downloads.push({ finish: () => resolve(undefined), fail: reject, progress })),
+      new Promise((resolve, reject) => downloads.push({ version: manifest.version, finish: () => resolve(undefined), fail: reject, progress })),
     onChange: (state) => states.push(state),
-    now: () => 1000,
+    now,
     wait,
   });
   return { updater, states, downloads };
@@ -34,9 +35,12 @@ const settle = () => new Promise((resolve) => setTimeout(resolve));
 
 describe("checking for a newer version", () => {
   it("never happens in a development build", async () => {
-    const { updater, states } = setup({ packaged: false });
+    let asked = 0;
+    const { updater, states } = setup({ packaged: false, npm: () => (asked++, Promise.resolve(release("0.2.0"))) });
     updater.start();
+    updater.windowFocused();
     await updater.check();
+    expect(asked).toBe(0);
     expect(updater.state()).toEqual({ state: "off" });
     expect(states).toEqual([]);
   });
@@ -88,6 +92,101 @@ describe("checking for a newer version", () => {
     await updater.check();
     expect(asked).toBe(1);
     expect(updater.state()).toMatchObject({ state: "available" });
+  });
+});
+
+describe("checking by itself", () => {
+  const minutes = (n: number) => n * 60_000;
+
+  it("shows nothing until npm answers at start, then a newer version", async () => {
+    const { updater, states } = setup();
+    updater.start();
+    await settle();
+    expect(states).toEqual([{ state: "available", version: "0.2.0", size: 180_000_000 }]);
+  });
+
+  it("shows why the first check failed, but leaves what's shown when a later one fails", async () => {
+    let clock = 0;
+    let answer = (): Promise<Manifest> => Promise.reject(new Error("Couldn't reach npm. Check the internet connection."));
+    const { updater } = setup({ npm: () => answer(), now: () => clock });
+    updater.start();
+    await settle();
+    expect(updater.state()).toMatchObject({ state: "check-failed" });
+    answer = () => Promise.resolve(release("0.1.0"));
+    clock = minutes(15);
+    updater.windowFocused();
+    await settle();
+    expect(updater.state()).toEqual({ state: "current", checkedAt: minutes(15) });
+    answer = () => Promise.reject(new Error("offline"));
+    clock = minutes(30);
+    updater.windowFocused();
+    await settle();
+    expect(updater.state()).toEqual({ state: "current", checkedAt: minutes(15) });
+  });
+
+  it("asks when the window comes to the front, unless npm was asked in the last 15 minutes", async () => {
+    let clock = 0;
+    let asked = 0;
+    const { updater } = setup({ npm: () => (asked++, Promise.resolve(release("0.1.0"))), now: () => clock });
+    updater.start();
+    await settle();
+    clock = minutes(14);
+    updater.windowFocused();
+    await settle();
+    expect(asked).toBe(1);
+    clock = minutes(15);
+    updater.windowFocused();
+    await settle();
+    expect(asked).toBe(2);
+  });
+
+  it("asks every hour", async () => {
+    vi.useFakeTimers();
+    try {
+      let asked = 0;
+      const { updater } = setup({ npm: () => (asked++, Promise.resolve(release("0.1.0"))) });
+      updater.start();
+      await vi.advanceTimersByTimeAsync(minutes(59));
+      expect(asked).toBe(1);
+      await vi.advanceTimersByTimeAsync(minutes(1));
+      expect(asked).toBe(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("offers an even newer version, and downloads that one", async () => {
+    let clock = 0;
+    let newest = "0.2.0";
+    const { updater, downloads } = setup({ npm: () => Promise.resolve(release(newest)), now: () => clock });
+    updater.start();
+    await settle();
+    newest = "0.2.1";
+    clock = minutes(15);
+    updater.windowFocused();
+    await settle();
+    expect(updater.state()).toEqual({ state: "available", version: "0.2.1", size: 180_000_000 });
+    void updater.download();
+    expect(downloads.map((download) => download.version)).toEqual(["0.2.1"]);
+  });
+
+  it("stops once a download starts, even when npm answers after it", async () => {
+    let clock = 0;
+    let answer: (manifest: Manifest) => void = () => {};
+    let asked = 0;
+    const npm = () => (asked++ === 0 ? Promise.resolve(release("0.2.0")) : new Promise<Manifest>((resolve) => (answer = resolve)));
+    const { updater } = setup({ npm, now: () => clock });
+    updater.start();
+    await settle();
+    clock = minutes(15);
+    updater.windowFocused();
+    void updater.download();
+    answer(release("0.2.1"));
+    await settle();
+    expect(updater.state()).toMatchObject({ state: "downloading", version: "0.2.0" });
+    clock = minutes(30);
+    updater.windowFocused();
+    expect(asked).toBe(2);
   });
 });
 
