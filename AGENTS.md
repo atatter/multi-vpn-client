@@ -68,8 +68,9 @@ The most common defect is a change that works on the path you tested and is miss
 ## Pull requests
 
 - Never make a PR or commit unless the developer asks.
-- Conventional commit titles in plain language that say what changed for the user, e.g. `fix(desktop): connecting from a VPN's page no longer leaves unsaved changes behind`.
-- Body: the problem in a sentence or two, then how you fixed it. End with the model and harness that did the work.
+- Branches are `<github-login>/<short-kebab-slug>` for the developer you work for (`gh api user --jq .login`). If you start on a branch named any other way, rename it with `git branch -m` before the first push.
+- Conventional commit titles in plain language that say what changed for the user, e.g. `fix(desktop): connecting from a VPN's page no longer leaves unsaved changes behind`. PRs are squash-merged, so the title is the commit on `main`.
+- Body: the problem in a sentence or two, then how you fixed it. Describe only what the diff changes, not everything done in the session; settings changed elsewhere or work on other branches don't belong. End with the model and harness that did the work.
 - Open a real PR, not a draft.
 - UI changes need before/after images, uploaded to GitHub, never committed.
 - One request is one PR. Split only when the maintainer asks.
