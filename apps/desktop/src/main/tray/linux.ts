@@ -24,6 +24,7 @@ export const linuxTray: TrayPlatform = {
   },
   // GNOME's symbolic icons leave room inside their 16px box; without the margin the tunnel looks a size larger.
   icon: (count, hasUpdate) => imageOf(tunnelLayers(count, [255, 255, 255], hasUpdate), 16, 6),
+  watchColors() {},
   badge(count) {
     app.setBadgeCount(count);
   },
