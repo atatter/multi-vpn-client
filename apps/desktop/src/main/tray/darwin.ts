@@ -10,7 +10,8 @@ import type { TrayPlatform } from "./index.ts";
 export const darwinTray: TrayPlatform = {
   registerDesktopApp() {},
   icon(count, hasUpdate) {
-    const image = imageOf(tunnelLayers(count, [0, 0, 0], hasUpdate), 16);
+    // Menu bar icons fill their 16 pt square; the tunnel leaves room around itself, so it's drawn a little larger.
+    const image = imageOf(tunnelLayers(count, [0, 0, 0], hasUpdate), 16, -3);
     image.setTemplateImage(true);
     return image;
   },

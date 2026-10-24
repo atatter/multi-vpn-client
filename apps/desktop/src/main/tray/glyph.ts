@@ -94,7 +94,7 @@ const SAMPLES = 4;
 
 /**
  * Rasterizes layers into a `size`-pixel square of straight (not premultiplied) RGBA, 4 × 4 samples per pixel, with
- * `margin` design units of empty space around the 64-unit square.
+ * `margin` design units of empty space around the 64-unit square; a negative margin crops into it instead.
  */
 export function rasterize(layers: Layer[], size: number, margin = 0): Uint8Array {
   const pixels = new Uint8Array(size * size * 4);
