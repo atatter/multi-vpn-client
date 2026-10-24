@@ -6,7 +6,6 @@ import { useSetupAction } from "./use-setup-action.ts";
 /** First launch: everything that must be in place before the first connection, in one card, instead of failing later. */
 export function SetupCard() {
   const app = useApp();
-  const docker = useSetupAction(app.startDocker);
   const helper = useSetupAction(() => app.runHelper("install"));
   const helperState = app.helper?.state;
   const dockerReady = app.docker === "running";
@@ -36,7 +35,7 @@ export function SetupCard() {
     <section aria-label="Finish setting up" className="mx-[var(--in)] mt-3 rounded-[10px] border border-sodium/35 bg-[color-mix(in_srgb,var(--sodium)_7%,var(--field))]">
       <h2 className="px-3 pt-2.5 pb-0.5 text-sm font-semibold">Two things before the first connection</h2>
       <p className="px-3 pb-1.5 text-[13px] text-muted">You can add VPNs now. They connect as soon as these are done.</p>
-      {app.docker && step(dockerReady, docker.busy, "Docker", dockerReady ? "Running" : docker.busy ? SETUP_BUSY.docker : (problems.docker?.card ?? ""), problems.docker?.action?.button, docker.error, docker.go)}
+      {app.docker && step(dockerReady, app.dockerStart.starting, "Docker", dockerReady ? "Running" : app.dockerStart.starting ? SETUP_BUSY.docker : (problems.docker?.card ?? ""), problems.docker?.action?.button, app.dockerStart.error, () => void app.startDocker())}
       {helperState && step(helperReady, helper.busy, "Network helper", helperReady ? "Installed" : helper.busy ? SETUP_BUSY.helper : (problems.helper?.card ?? ""), problems.helper?.action?.button, helper.error, helper.go)}
     </section>
   );

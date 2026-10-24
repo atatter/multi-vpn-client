@@ -39,6 +39,7 @@ The renderer never imports Node, `electron`, `@repo/engine` or `@repo/vpns/engin
 Global state is a last resort. The store holds only what several screens need, or what async work can change after a screen is gone:
 - **What main reports:** settings, connections, Docker, helper.
 - **The waiting list:** VPNs turned on before setup was done.
+- **Starting Docker:** it can outlast the screen that started it.
 - **Open prompts.**
 - **The error notice.**
 
