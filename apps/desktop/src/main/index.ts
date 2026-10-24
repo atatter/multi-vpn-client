@@ -2,7 +2,7 @@ import { createSecretStore, defaultSecretsPath } from "@repo/core/secret-store";
 import { defaultConfigPath, loadConfig, moveAppDir } from "@repo/core/store";
 import { createConnectionManager } from "@repo/engine";
 import { ensureInstalled, executableIn, latestRelease, type Remove, removeOlderVersions, targetOf, versionsDir } from "@repo/release";
-import { app, BrowserWindow, shell } from "electron";
+import { app, shell } from "electron";
 import { mkdirSync } from "node:fs";
 import { promises as originalFs } from "node:original-fs";
 import { homedir } from "node:os";
@@ -16,8 +16,9 @@ import { registerSetupHandlers } from "./ipc/setup.ts";
 import { registerUpdateHandlers } from "./ipc/update.ts";
 import { registerVpnHandlers } from "./ipc/vpn.ts";
 import { keychain } from "./secrets.ts";
+import { createTray, trayPlatform } from "./tray/index.ts";
 import { createUpdater } from "./updater.ts";
-import { APP_ICON, createWindow, focusWindow, followTheme } from "./window.ts";
+import { APP_ICON, createWindow, followTheme, hideWindow, showWindow } from "./window.ts";
 
 // The main process's composition root: builds the services, registers the IPC handlers, runs the app's lifecycle.
 
@@ -32,6 +33,11 @@ app.setPath("userData", folder);
 // MVPN_CONFIG overrides the location.
 const configPath = defaultConfigPath();
 const secrets = createSecretStore(defaultSecretsPath(configPath), keychain);
+let tray: ReturnType<typeof createTray> | undefined;
+// Quitting turns the VPNs off first (before-quit below). Only then may the window close: with no `window-all-closed`
+// listener, Electron quits once it has, so a window closed earlier would end the app before the VPNs are off.
+let shuttingDown = false;
+let windowMayClose = false;
 
 const connections = createConnectionManager({
   dataDir: dirname(configPath),
@@ -39,7 +45,10 @@ const connections = createConnectionManager({
   cardBridgeBinary: bundledBinary("card-bridge"),
   loadConfig: () => loadConfig(configPath),
   readSecret: (vpnId, key) => secrets.read(vpnId, key),
-  onChange: (statuses) => broadcast("vpn:status", statuses),
+  onChange: (statuses) => {
+    broadcast("vpn:status", statuses);
+    tray?.update();
+  },
   onTraffic: (snapshot) => broadcast("traffic:update", snapshot),
   saveServerRoutes: (vpnId, serverRoutes) => saveServerRoutes(configPath, vpnId, serverRoutes),
   // Sign-in pages come from the VPN client; only https ones are opened, in the user's own browser.
@@ -60,7 +69,10 @@ const updater = createUpdater({
   target,
   latest: latestRelease,
   download: (release, onProgress) => ensureInstalled({ manifest: release, target, dir: versions, platform, env: process.env, onProgress, remove }),
-  onChange: (state) => broadcast("update:changed", state),
+  onChange: (state) => {
+    broadcast("update:changed", state);
+    tray?.update();
+  },
 });
 
 /** Quits through before-quit, which turns every VPN off, and starts the downloaded version. They stay off. */
@@ -73,44 +85,63 @@ function restartToUpdate() {
   app.quit();
 }
 
-registerConfigHandlers({ configPath, secrets, connections });
+registerConfigHandlers({ configPath, secrets, connections, onSaved: (config) => tray?.setConfig(config) });
 registerVpnHandlers({ configPath, connections });
 registerSetupHandlers({ connections });
 registerAppHandlers({ configPath });
 registerUpdateHandlers({ updater, restart: restartToUpdate });
 followTheme();
 
-// One instance only: two would fight over the helper session and each other's containers.
+// One instance only: two would fight over the helper session and each other's containers. Starting the app again
+// brings the window back, also from the tray.
 const primaryInstance = app.requestSingleInstanceLock();
-if (!primaryInstance) app.quit();
-app.on("second-instance", focusWindow);
+if (primaryInstance) trayPlatform.registerDesktopApp();
+else app.quit();
+app.on("second-instance", () => void showWindow());
 
 void app.whenReady().then(() => {
   if (!primaryInstance) return;
   // macOS ignores a window's icon; outside a packaged app the Dock would show Electron's. A packaged app has its own.
   if (!app.isPackaged) app.dock?.setIcon(APP_ICON);
-  createWindow();
+  const window = createWindow();
+  // ✕ hides the window: the app stays in the tray and the VPNs stay on.
+  window.on("close", (event) => {
+    if (windowMayClose) return;
+    event.preventDefault();
+    hideWindow();
+  });
+  // Windows ends the session without quitting the app first: a hidden window mustn't hold up the log-off.
+  window.on("session-end", () => {
+    windowMayClose = true;
+  });
+  tray = createTray({
+    window,
+    statuses: connections.statuses,
+    updateState: updater.state,
+    download: () => void updater.download(),
+    restart: restartToUpdate,
+    open: () => void showWindow(),
+    quit: () => app.quit(),
+  });
+  // A config that can't be read shows in the window; until a save fixes it, the menu has the count without names.
+  void loadConfig(configPath).then(tray.setConfig, () => {});
   void connections.removeLeftovers();
   updater.start();
   app.on("browser-window-focus", updater.windowFocused);
   // Holding the single-instance lock, no older version can be running, so what an update replaced can go.
   if (app.isPackaged) void removeOlderVersions(versions, app.getVersion(), remove);
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
+  app.on("activate", () => void showWindow());
 });
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
-});
-
-// Disconnect everything (containers, routing helper) before quitting.
-let shuttingDown = false;
+// Quitting is the tray's menu, or ⌘Q on macOS. Disconnect everything (containers, routing helper) first.
 app.on("before-quit", (event) => {
   if (shuttingDown) return;
   shuttingDown = true;
   event.preventDefault();
-  // Quit again on a later tick. ⌘Q comes from native code, and with nothing to turn off, shutdown settles before
-  // that first quit returns: quitting inside it ends up recorded as cancelled, leaving the app running without a window.
-  void connections.shutdown().finally(() => setImmediate(() => app.quit()));
+  void connections.shutdown().finally(() => {
+    windowMayClose = true;
+    // A later tick: ⌘Q comes from native code, and with nothing to turn off, shutdown settles before that first quit
+    // returns; quitting inside it ends up recorded as cancelled, leaving the app running without a window.
+    setImmediate(() => app.quit());
+  });
 });

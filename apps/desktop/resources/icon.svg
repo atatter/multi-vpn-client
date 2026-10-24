@@ -12,7 +12,7 @@
   </defs>
   <rect x="100" y="100" width="824" height="824" rx="200" fill="url(#background)" filter="url(#shadow)"/>
   <rect x="102" y="102" width="820" height="820" rx="198" fill="none" stroke="#0B1F44" stroke-opacity="0.14" stroke-width="4"/>
-  <!-- The tunnel and its three lanes, the same glyph as trayTemplate.svg and TunnelIcon in packages/ui/src/icons.tsx. -->
+  <!-- The tunnel and its three lanes, the same glyph as TunnelIcon in packages/ui/src/icons.tsx. The tray draws it wider and without lanes, to fit a count (apps/desktop/src/main/tray/glyph.ts). -->
   <g transform="translate(176 176) scale(10.5)" fill="none" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 51V33a20 20 0 0 1 40 0V51" stroke="#2357C6"/>
     <path d="M22 51v-7" stroke="#16935F"/>

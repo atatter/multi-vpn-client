@@ -1,5 +1,5 @@
 import { APP_NAME } from "@repo/core";
-import { appDir } from "@repo/core/store";
+import { appDir, desktopEntryFiles } from "@repo/core/store";
 import { createDocker, findDocker, helperInstalled, listVpnImages, removeStaleContainers, uninstallHelper, type Docker } from "@repo/engine/uninstall";
 import { execFile } from "node:child_process";
 import { closeSync, existsSync, openSync, readlinkSync } from "node:fs";
@@ -18,6 +18,8 @@ const keychain = (command: "find-generic-password" | "delete-generic-password") 
 export interface Found {
   platform: NodeJS.Platform;
   helper: boolean;
+  /** The Linux desktop entry and its icon that put the app in the app grid and let the dock badge it. */
+  desktopEntry: string[];
   /** The launcher's cache folder: unpacked versions, and the source triage clones. */
   cache: { dir: string; versions: number; bytes: number } | undefined;
   /** VPN container images, or why Docker couldn't list them. Undefined when Docker isn't installed. */
@@ -97,6 +99,7 @@ export async function survey(env: NodeJS.ProcessEnv, platform: NodeJS.Platform, 
   return {
     platform,
     helper: helperInstalled(),
+    desktopEntry: Object.values(desktopEntryFiles(env, home)).filter((path) => existsSync(path)),
     cache: existsSync(cacheDir)
       ? { dir: cacheDir, versions: (await readdir(versions).catch(() => [])).filter((entry) => !entry.startsWith(".")).length, bytes: await folderBytes(cacheDir) }
       : undefined,
@@ -167,6 +170,15 @@ export function uninstallSteps(found: Found, deleteVpns: boolean): Step[] {
     const { dir, versions, bytes } = found.cache;
     const what = versions > 0 ? `${plural(versions, "downloaded version")}, ${formatBytes(bytes)}` : `the launcher's downloads, ${formatBytes(bytes)}`;
     steps.push({ what, run: () => rm(dir, { recursive: true, force: true }), manual: `Delete the folder ${dir}` });
+  }
+  if (found.desktopEntry.length > 0) {
+    steps.push({
+      what: "the app's entry in your app list",
+      run: async () => {
+        for (const path of found.desktopEntry) await rm(path, { force: true });
+      },
+      manual: `Delete ${found.desktopEntry.join(" and ")}`,
+    });
   }
   const docker = found.docker;
   if (docker && "problem" in docker) {
