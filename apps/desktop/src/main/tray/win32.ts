@@ -14,6 +14,10 @@ export const win32Tray: TrayPlatform = {
   badge(count, window) {
     window.setOverlayIcon(count > 0 ? imageOf(badgeLayers(count), 16) : null, count > 0 ? countHeadline(count) : "");
   },
+  // The taskbar drops the overlay while the window is hidden.
+  windowShown(count, window) {
+    win32Tray.badge(count, window);
+  },
   clickOpens: true,
   quitShortcut: undefined,
 };
