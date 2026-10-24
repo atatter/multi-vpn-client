@@ -16,7 +16,7 @@ const read = (...path: string[]) => readFileSync(join(...path), "utf8");
  * entry and licenses/bun-<version>-LICENSE.md, or this script stops the release.
  */
 const BUN_SOURCES: Record<string, { webkit: string; tinycc: string }> = {
-  "1.4.3": { webkit: "0c06faadf65bf8e8c8ad3a5a8aca83e1e9ed653f", tinycc: "05f0fafaa3be31e31d7b4b5c17dc60f62c991171" },
+  "1.4.4": { webkit: "d6375c72affe0f70222cdcb45012b10f0bf3a9d5", tinycc: "05f0fafaa3be31e31d7b4b5c17dc60f62c991171" },
 };
 
 const PackageJson = z.object({
