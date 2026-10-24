@@ -21,4 +21,4 @@ Running the workflow on any other branch only builds and tests. Pull requests th
 - **A build or test failed:** no draft was made. Fix it on `main` and start again.
 - **The draft is wrong:** cancel the run (`atatter` can also reject it under **Review deployments**). Delete the draft on the Releases page, fix the problem and start again. A run stops if a draft for its version already exists.
 - **The release is public but npm publishing failed:** re-run the failed job. It's safe to re-run.
-- **A published release is broken:** release a new version. Never replace a file on a published release: the npm package of that version checks downloads against the original checksums, so the launcher would refuse the new file.
+- **A published release is broken:** release a new version. Never replace a file on a published release: the npm package of that version checks downloads against the original checksums, so the launcher would refuse the new file. Deprecating it doesn't help users who already updated: the launcher never starts a version older than one on disk.

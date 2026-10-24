@@ -54,6 +54,6 @@ describe("what the agent is told", () => {
       sourceDir: "/cache/source",
     });
     expect(text).toContain("Triage launcher version: 1.2.3 (the `multi-vpn-client` command that started this session, not necessarily");
-    expect(text).toContain("Versions the launcher has unpacked: none, in /cache/versions");
+    expect(text).toContain("Versions unpacked (by the launcher or the app's updater): none, in /cache/versions");
   });
 });

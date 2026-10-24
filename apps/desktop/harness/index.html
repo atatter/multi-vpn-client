@@ -13,7 +13,7 @@
     <iframe id="window" title="Multi VPN Client"></iframe>
     <script type="module">
       const frame = document.getElementById("window");
-      frame.src = `app.html${location.hash}`;
+      frame.src = `app.html${location.search}${location.hash}`;
       addEventListener("message", (event) => {
         if (typeof event.data?.fit === "number") frame.style.height = `${Math.min(event.data.fit, 760)}px`;
       });

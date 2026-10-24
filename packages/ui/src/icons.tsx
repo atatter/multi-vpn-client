@@ -8,6 +8,18 @@ export const SlidersIcon = () => (
   </svg>
 );
 
+export const DownloadIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M8 2.5v7.5M4.75 7 8 10.25 11.25 7M2.75 13.25h10.5" />
+  </svg>
+);
+
+export const RestartIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M13.5 8A5.5 5.5 0 1 1 11.9 4.1M13.5 2.5v3.25h-3.25" />
+  </svg>
+);
+
 export const BackIcon = () => (
   <svg width="10" height="16" viewBox="0 0 10 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
     <path d="M8 2L2 8l6 6" />

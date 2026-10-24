@@ -18,6 +18,7 @@
     "@fontsource/barlow-semi-condensed": "5.3.0",
     "@repo/core": "workspace:*",
     "@repo/engine": "workspace:*",
+    "@repo/release": "workspace:*",
     "@repo/ui": "workspace:*",
     "@repo/vpn-sdk": "workspace:*",
     "@repo/vpns": "workspace:*",

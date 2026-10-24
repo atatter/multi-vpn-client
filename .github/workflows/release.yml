@@ -14,6 +14,7 @@ on:
       - apps/desktop/scripts/**
       - apps/desktop/licenses/**
       - apps/launcher/**
+      - packages/release/**
       - packages/helper/scripts/**
       - packages/card-bridge/scripts/**
       - package.json

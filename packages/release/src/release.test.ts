@@ -1,10 +1,10 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { archiveUrl, executableIn, Manifest, needsNoSandbox, versionsDir } from "./release.ts";
+import { archiveUrl, compareVersions, executableIn, isVersion, Manifest, versionsDir } from "./release.ts";
 
 const manifest: Manifest = {
   version: "1.2.3",
-  archives: { "linux-x64": { file: "multi-vpn-client-1.2.3-linux-x64.tar.gz", sha256: "a".repeat(64) } },
+  archives: { "linux-x64": { file: "multi-vpn-client-1.2.3-linux-x64.tar.gz", sha256: "a".repeat(64), size: 180_000_000 } },
 };
 const archive = manifest.archives["linux-x64"]!;
 
@@ -14,6 +14,11 @@ describe("the release manifest", () => {
     expect(Manifest.safeParse({ ...manifest, archives: { "linux-x64": { ...archive, file: "../evil" } } }).success).toBe(false);
     expect(Manifest.safeParse({ ...manifest, archives: { "linux-x64": { ...archive, sha256: "abc" } } }).success).toBe(false);
     expect(Manifest.safeParse({ ...manifest, version: "latest" }).success).toBe(false);
+  });
+
+  it("needs each archive's size in bytes", () => {
+    expect(Manifest.safeParse({ ...manifest, archives: { "linux-x64": { ...archive, size: -1 } } }).success).toBe(false);
+    expect(Manifest.safeParse({ ...manifest, archives: { "linux-x64": { file: archive.file, sha256: archive.sha256 } } }).success).toBe(false);
   });
 
   it("downloads from the version's GitHub Release, or from MVPN_RELEASE_URL when set", () => {
@@ -45,11 +50,16 @@ describe("where versions are unpacked", () => {
   });
 });
 
-describe("Electron's sandbox", () => {
-  it("is only turned off on Linux when AppArmor blocks unprivileged user namespaces", () => {
-    expect(needsNoSandbox("linux", "1\n")).toBe(true);
-    expect(needsNoSandbox("linux", "0\n")).toBe(false);
-    expect(needsNoSandbox("linux", undefined)).toBe(false);
-    expect(needsNoSandbox("darwin", "1")).toBe(false);
+describe("versions", () => {
+  it("compare by number, not as text", () => {
+    expect(compareVersions("0.10.0", "0.9.9")).toBeGreaterThan(0);
+    expect(compareVersions("1.2.3", "1.2.3")).toBe(0);
+    expect(compareVersions("1.2.3", "2.0.0")).toBeLessThan(0);
+  });
+
+  it("are only plain x.y.z names, so temporary folders aren't mistaken for one", () => {
+    expect(isVersion("0.2.0")).toBe(true);
+    expect(isVersion(".download-abc")).toBe(false);
+    expect(isVersion("0.2.0-beta")).toBe(false);
   });
 });

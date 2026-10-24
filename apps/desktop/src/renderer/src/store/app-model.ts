@@ -1,7 +1,7 @@
 import type { Config, DockerState, SecretChanges, SecretStatus, TrafficSnapshot } from "@repo/core";
 import { createContext, useContext, useSyncExternalStore } from "react";
 import type { MainApi } from "../../../preload/index.ts";
-import type { AppInfo, ConnectionStatuses, HelperInfo } from "../../../shared/ipc-contract.ts";
+import type { AppInfo, ConnectionStatuses, HelperInfo, UpdateState } from "../../../shared/ipc-contract.ts";
 import type { Prompt, Screen } from "./screen.ts";
 
 export interface AppModel {
@@ -22,6 +22,8 @@ export interface AppModel {
   docker: DockerState | undefined;
   /** Starting Docker, from whichever screen: every screen shows it, and its error until Docker runs or is started again. */
   dockerStart: { starting: boolean; error: string | undefined };
+  /** Updating the app, as main reports it. Its actions go straight to `api`. */
+  update: UpdateState;
   /** VPNs turned on before Docker or the network helper were ready: they connect by themselves once both are. */
   waiting: ReadonlySet<string>;
   prompt: Prompt | undefined;

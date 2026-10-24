@@ -34,12 +34,12 @@ Imports only point down the list:
 4. **`domain/`**: pure functions and wording about VPNs and setup.
 5. **`@repo/ui`** (`packages/ui`): the design kit. It knows nothing about VPNs. `Frame` gets the little it needs from the app through `FrameContext`, which `App` provides.
 
-The renderer never imports Node, `electron`, `@repo/engine` or `@repo/vpns/engine`; it reaches main only through `app.api`. `store/fake-api.ts` implements the same `MainApi` for tests and the harness.
+The renderer never imports Node, `electron`, `@repo/engine`, `@repo/release` or `@repo/vpns/engine`; it reaches main only through `app.api`. `store/fake-api.ts` implements the same `MainApi` for tests and the harness.
 
 ## State
 
 Global state is a last resort. The store holds only what several screens need, or what async work can change after a screen is gone:
-- **What main reports:** settings, connections, Docker, helper.
+- **What main reports:** settings, connections, Docker, helper, updates.
 - **The waiting list:** VPNs turned on before setup was done.
 - **Starting Docker:** it can outlast the screen that started it.
 - **Open prompts.**
@@ -53,7 +53,7 @@ Everything else is local to the component or screen that owns it: drafts, folds,
 2. **Logic in `.ts`, markup in `.tsx`.** A decision worth testing is a plain function with a `.test.ts` next to it. Components render and call those functions.
 3. **One component per file** once it's reused or longer than about 40 lines.
 4. **Size: about 250 lines per file and 80 per function.** This is a guideline (lint warns), not a limit. Split where it makes the code clearer, not to satisfy a number. Closures that hold one piece of state, such as `createAppStore` and `createConnectionManager`, can be longer.
-5. **Named exports only.** No `index.ts` barrels inside an app. Library packages (`core`, `engine`, `vpn-sdk`, `vpns`) have a root `index.ts` as their interface; binaries (`helper`, `card-bridge`, `cli`) start at `main.ts`. A per-OS folder's `index.ts` holds the interface its implementations share.
+5. **Named exports only.** No `index.ts` barrels inside an app. Library packages (`core`, `engine`, `release`, `vpn-sdk`, `vpns`) have a root `index.ts` as their interface; binaries (`helper`, `card-bridge`, `cli`) start at `main.ts`. A per-OS folder's `index.ts` holds the interface its implementations share.
 6. **No import cycles** (lint error).
 7. **Suppressing a lint rule needs a reason**, on the line above: `// reason` then `// oxlint-disable-next-line rule-name`.
 
