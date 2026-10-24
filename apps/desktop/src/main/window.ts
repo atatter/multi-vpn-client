@@ -9,6 +9,7 @@ const TITLE_BAR_HEIGHT = 44;
 let mainWindow: BrowserWindow | undefined;
 /** When the Dock icon last showed or hid: Electron ignores `dock.hide()` within a second of that (see `Dock.hide` in electron.d.ts). */
 let dockChangedAt = 0;
+let dockHide: ReturnType<typeof setTimeout> | undefined;
 
 /** The app's icon, drawn from resources/icon.svg: the window's on Linux and Windows, the Dock's on macOS. */
 export const APP_ICON = join(__dirname, "../../resources/icon.png");
@@ -75,7 +76,8 @@ export function hideWindow() {
   if (!window) return;
   window.hide();
   // A little over the second Electron needs between Dock changes, so this hide isn't the one it drops.
-  setTimeout(() => {
+  clearTimeout(dockHide);
+  dockHide = setTimeout(() => {
     if (window.isVisible() || !app.dock) return;
     app.dock.hide();
     dockChangedAt = Date.now();
@@ -86,6 +88,8 @@ export function hideWindow() {
 export async function showWindow() {
   const window = mainWindow;
   if (!window) return;
+  // A hide still waiting would take the Dock icon away while the window comes back.
+  clearTimeout(dockHide);
   if (app.dock) {
     await app.dock.show();
     dockChangedAt = Date.now();
