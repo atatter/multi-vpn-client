@@ -107,6 +107,7 @@ export function waitForTunnel(
           `url = "http://127.0.0.1:${request.tokenPort}/${token}"\n`,
         );
       });
+
     startTimeout();
 
     if (options.signal.aborted) {
@@ -122,6 +123,7 @@ export function waitForTunnel(
       },
       { once: true },
     );
+
     // The card stops being available if it's removed from the reader. Before connecting, that ends the connect.
     options.cardBridge?.attach(docker.bin, name, (message) => {
       options.onLog(message);
@@ -130,6 +132,7 @@ export function waitForTunnel(
         fail(new Error(message));
       }
     });
+
     const onLine = (line: string) => {
       options.onLog(line);
       lastLines.push(line);
@@ -163,6 +166,7 @@ export function waitForTunnel(
         );
       }
     };
+
     createInterface({ input: follower.stdout }).on('line', onLine);
     createInterface({ input: follower.stderr }).on('line', onLine);
     // Registered before the tunnel is reported up, so an exit right after connecting is never missed.

@@ -26,6 +26,7 @@ export function UpdateButton() {
 
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open]);
+
   const tip = updateTooltip(update);
   if (!tip) {
     return null;

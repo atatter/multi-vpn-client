@@ -67,6 +67,7 @@ export function LoginTypeField({
   // The lookup's busy state is set as it starts, which is the point of this effect.
   // oxlint-disable-next-line react/set-state-in-effect
   useEffect(() => lookUpOnArrival(), []);
+
   const failure = error || (shown?.state === 'failed' ? shown.message : undefined);
 
   return (
