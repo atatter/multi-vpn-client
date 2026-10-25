@@ -62,7 +62,7 @@ The most common defect is a change that works on the path you tested and is miss
 - Smallest proof that the change works: `pnpm vitest run <files>` for the tests you touched, then `pnpm format`, `pnpm typecheck` and `pnpm lint`. The full suite is fast; run `pnpm test` before handing work back.
 - Test decisions, not wiring. Logic lives in plain `.ts` files with a `.test.ts` beside them. Prefer real inputs to mocks. Don't render components just to assert props.
 - Tests never touch the real config, real Docker or the real helper.
-- Lint warnings about size and complexity are a guideline. Lint errors are not; fix them, or disable one line with a reason on the line above.
+- Lint reports only errors: fix them, or disable one line with a reason on the line above.
 - Don't verify in a browser, a real Electron window or a real VPN unless the developer agrees. Say what you verified and what you couldn't, such as a real gateway or another OS.
 
 ## Pull requests

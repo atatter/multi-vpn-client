@@ -27,28 +27,6 @@
     ],
     "typescript/no-explicit-any": "error",
     "import/no-cycle": "error",
-    "eslint/max-lines": [
-      "warn",
-      {
-        "max": 250,
-        "skipBlankLines": true,
-        "skipComments": true
-      }
-    ],
-    "eslint/max-lines-per-function": [
-      "warn",
-      {
-        "max": 80,
-        "skipBlankLines": true,
-        "skipComments": true
-      }
-    ],
-    "eslint/complexity": [
-      "warn",
-      {
-        "max": 15
-      }
-    ],
     "vitest/no-focused-tests": "error",
     "vitest/no-disabled-tests": "error",
     "react/rules-of-hooks": "error",
@@ -581,15 +559,6 @@
       ],
       "rules": {
         "eslint/no-restricted-imports": "off"
-      }
-    },
-    {
-      "files": [
-        "**/*.test.ts",
-        "**/*.test.tsx"
-      ],
-      "rules": {
-        "eslint/max-lines-per-function": "off"
       }
     },
     {
