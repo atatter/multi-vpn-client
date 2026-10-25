@@ -13,6 +13,6 @@ export default defineConfig({
   build: {
     outDir: here('../out/harness'),
     emptyOutDir: true,
-    rollupOptions: { input: [here('index.html'), here('app.html')] },
+    rolldownOptions: { input: [here('index.html'), here('app.html')] },
   },
 });
