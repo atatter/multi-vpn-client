@@ -390,6 +390,7 @@ export function createAppStore(api: MainApi) {
         (error: unknown) => update({ loadError: messageOf(error) }),
       );
       void api.connectionStatuses().then((connections) => update({ connections }));
+
       // An update event can overtake this answer, and the next may be an hour away: the event is newer.
       let heardUpdate = false;
       void api.updateState().then((current) => {
@@ -401,6 +402,7 @@ export function createAppStore(api: MainApi) {
         const notice = updateNotice(current);
         update(notice ? { update: current, notice } : { update: current });
       });
+
       const unsubscribe = [
         api.onConnectionStatus((connections) => update({ connections })),
         api.onTraffic((snapshot) => {

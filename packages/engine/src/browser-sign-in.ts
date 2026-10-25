@@ -33,6 +33,7 @@ export function receiveBrowserToken(port: number, timeoutMs: number): TokenWait 
   const token = new Promise<string>((resolve, reject) => {
     settle = { resolve, reject };
   });
+
   const server = createServer((request, response) => {
     // Like the client's own listener: the raw path is the token, and the first request with one counts, preflight or not.
     const candidate = ((request.url ?? '/').split('?')[0] ?? '').replace(/^\/+/, '');
@@ -44,6 +45,7 @@ export function receiveBrowserToken(port: number, timeoutMs: number): TokenWait 
       finish(() => settle?.resolve(candidate));
     }
   });
+
   const timer = setTimeout(
     () =>
       finish(() =>
@@ -55,6 +57,7 @@ export function receiveBrowserToken(port: number, timeoutMs: number): TokenWait 
       ),
     timeoutMs,
   );
+
   const finish = (done: () => void) => {
     clearTimeout(timer);
     server.close();
@@ -62,6 +65,7 @@ export function receiveBrowserToken(port: number, timeoutMs: number): TokenWait 
     done();
     settle = undefined;
   };
+
   server.once('error', (error: NodeJS.ErrnoException) =>
     finish(() =>
       settle?.reject(

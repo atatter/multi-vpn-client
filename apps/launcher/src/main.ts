@@ -125,6 +125,7 @@ async function triage(args: string[]): Promise<void> {
     fileURLToPath(new URL('./PLAYBOOK.md', import.meta.url)),
     join(folder, 'PLAYBOOK.md'),
   );
+
   const sourceDir = join(dirname(versions), 'source');
   await mkdir(sourceDir, { recursive: true });
   await writeFile(
@@ -189,6 +190,7 @@ Start any coding agent in that folder and ask it to follow PLAYBOOK.md.`);
   console.log(
     `Starting ${AGENTS[agent].name} with the triage playbook. It will ask what went wrong.`,
   );
+
   // On Windows, agents from npm and Cursor are .cmd files, which only start through cmd.exe; SEED_PROMPT is safe to pass there.
   const viaShell = platform === 'win32' && /\.(cmd|bat)$/i.test(command);
   const session = spawn(command, [viaShell ? `"${SEED_PROMPT}"` : SEED_PROMPT], {
