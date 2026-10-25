@@ -29,6 +29,7 @@ const httpsProbe: Probe = ({ host, port, method, path, body, headers }) =>
         response.setEncoding('utf8');
         response.on('data', (chunk: string) => {
           text += chunk;
+
           if (text.length >= MAX_BODY) {
             response.destroy();
           }
@@ -66,11 +67,13 @@ export async function detectVpn(address: string, probe: Probe = httpsProbe): Pro
   if (!target.host) {
     return { kind: 'unknown' };
   }
+
   const results = await Promise.all(
     VPN_KINDS.map(async (kind) => {
       const found = await LAUNCHERS[kind].detect?.(target, probe);
       return found && { kind, ...found };
     }),
   );
+
   return results.find((result) => result !== undefined) ?? { kind: 'unknown' };
 }

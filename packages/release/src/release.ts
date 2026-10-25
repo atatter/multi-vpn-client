@@ -66,6 +66,7 @@ export function versionsDir(
   if (platform === 'darwin') {
     return join(home, 'Library', 'Caches', 'Multi VPN Client', 'versions');
   }
+
   return join(absolute(env.XDG_CACHE_HOME) ?? join(home, '.cache'), 'multi-vpn-client', 'versions');
 }
 
@@ -77,6 +78,7 @@ export function executableIn(versionDir: string, platform: NodeJS.Platform): str
   if (platform === 'win32') {
     return join(versionDir, 'Multi VPN Client.exe');
   }
+
   return join(versionDir, 'multi-vpn-client');
 }
 
@@ -86,11 +88,13 @@ export const isVersion = (name: string) => Version.safeParse(name).success;
 /** Orders "x.y.z" versions by number: negative when `a` is older than `b`, 0 when equal. */
 export function compareVersions(a: string, b: string): number {
   const [left, right] = [a, b].map((version) => version.split('.').map(Number));
+
   for (let index = 0; index < 3; index++) {
     const difference = (left?.[index] ?? 0) - (right?.[index] ?? 0);
     if (difference !== 0) {
       return difference;
     }
   }
+
   return 0;
 }

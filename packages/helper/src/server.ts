@@ -52,6 +52,7 @@ export function createHelperServer({
     queue = next.catch(() => undefined);
     return next;
   };
+
   /** The active session is over: everything it applied is removed. */
   const endActive = (reason: string) => {
     active = undefined;
@@ -70,10 +71,12 @@ export function createHelperServer({
         socket.write(`${JSON.stringify(response)}\n`);
       }
     };
+
     const refuse = () => {
       reply({ ok: false, error: 'Unauthorized' });
       socket.destroy();
     };
+
     // A failed apply can leave part of it in place (e.g. DNS set, sing-box not started), and a refused one leaves
     // the previous routes pointing at VPNs the app may have stopped. Either way the session ends: everything is
     // removed, and the app drops its VPNs instead of showing them on.
@@ -81,6 +84,7 @@ export function createHelperServer({
       if (active === socket) {
         endActive('ending the session');
       }
+
       socket.end();
     };
 
@@ -88,11 +92,14 @@ export function createHelperServer({
       const parsed = parseHelperLine(line);
       if (!parsed.ok) {
         reply(parsed);
+
         if (phase.name === 'authenticated') {
           endAfterFailedApply();
         }
+
         return;
       }
+
       const request = parsed.request;
 
       switch (request.command) {
@@ -103,6 +110,7 @@ export function createHelperServer({
           if (phase.name !== 'new') {
             return refuse();
           }
+
           const challenge = randomBytes(32).toString('base64url');
           phase = { name: 'challenged', challenge };
           return reply({
@@ -120,13 +128,16 @@ export function createHelperServer({
           ) {
             return refuse();
           }
+
           phase = { name: 'authenticated' };
+
           if (active && active !== socket) {
             active.destroy();
             void exclusive(() => backend.apply(NO_ROUTES)).catch((error: unknown) =>
               log(`teardown failed: ${String(error)}`),
             );
           }
+
           active = socket;
           return reply({ ok: true, version: HELPER_VERSION });
         }
@@ -136,6 +147,7 @@ export function createHelperServer({
           if (phase.name !== 'authenticated' || active !== socket) {
             return refuse();
           }
+
           try {
             await exclusive(() => backend.apply(request.routes));
             reply({ ok: true, version: HELPER_VERSION });
@@ -152,11 +164,13 @@ export function createHelperServer({
     socket.on('data', (chunk: string) => {
       buffer += chunk;
       let newline: number;
+
       while ((newline = buffer.indexOf('\n')) >= 0) {
         const line = buffer.slice(0, newline);
         buffer = buffer.slice(newline + 1);
         pending = pending.then(() => handle(line));
       }
+
       if (buffer.length > MAX_HELPER_LINE) {
         socket.destroy();
       }

@@ -67,6 +67,7 @@ export const countLabel = (count: number) => {
   if (count <= 0) {
     return '';
   }
+
   return count > 9 ? '9+' : String(count);
 };
 
@@ -80,12 +81,14 @@ export function numeral(label: string, centerX: number, baseline: number, scale:
     left + (offset + x) * scale,
     top + y * scale,
   ];
+
   return [...label].flatMap((char, index) => {
     const offset = index * (NUMERAL_WIDTH + gap);
     return (NUMERALS[char] ?? []).map((stroke): Stroke => {
       if ('line' in stroke) {
         return { line: [place(stroke.line[0], offset), place(stroke.line[1], offset)] };
       }
+
       const { center, radius, from, to } = stroke.arc;
       return { arc: { center: place(center, offset), radius: radius * scale, from, to } };
     });
@@ -122,6 +125,7 @@ function distance([x, y]: Point, stroke: Stroke): number {
     );
     return Math.hypot(x - ax - along * dx, y - ay - along * dy);
   }
+
   const {
     center: [cx, cy],
     radius,
@@ -132,10 +136,12 @@ function distance([x, y]: Point, stroke: Stroke): number {
   if ((((angle - from) % 360) + 360) % 360 <= to - from) {
     return Math.abs(Math.hypot(x - cx, y - cy) - radius);
   }
+
   const end = (degrees: number): Point => [
     cx + radius * Math.cos((degrees * Math.PI) / 180),
     cy + radius * Math.sin((degrees * Math.PI) / 180),
   ];
+
   return Math.min(
     Math.hypot(x - end(from)[0], y - end(from)[1]),
     Math.hypot(x - end(to)[0], y - end(to)[1]),
@@ -151,9 +157,11 @@ const SAMPLES = 4;
 export function rasterize(layers: Layer[], size: number, margin = 0): Uint8Array {
   const pixels = new Uint8Array(size * size * 4);
   const unit = (VIEW + 2 * margin) / size;
+
   for (let row = 0; row < size; row++) {
     for (let column = 0; column < size; column++) {
       let [r, g, b, covered] = [0, 0, 0, 0];
+
       for (let sample = 0; sample < SAMPLES * SAMPLES; sample++) {
         const at: Point = [
           (column + ((sample % SAMPLES) + 0.5) / SAMPLES) * unit - margin,
@@ -165,11 +173,14 @@ export function rasterize(layers: Layer[], size: number, margin = 0): Uint8Array
         if (!top) {
           continue;
         }
+
         [r, g, b, covered] = [r + top.color[0], g + top.color[1], b + top.color[2], covered + 1];
       }
+
       if (covered === 0) {
         continue;
       }
+
       pixels.set(
         [r / covered, g / covered, b / covered, (255 * covered) / (SAMPLES * SAMPLES)].map(
           Math.round,
@@ -178,6 +189,7 @@ export function rasterize(layers: Layer[], size: number, margin = 0): Uint8Array
       );
     }
   }
+
   return pixels;
 }
 
@@ -189,6 +201,7 @@ export function encodePng(pixels: Uint8Array, size: number): Buffer {
     framed.writeUInt32BE(data.length, 0);
     body.copy(framed, 4);
     framed.writeUInt32BE(crc32(body), body.length + 4);
+
     return framed;
   };
   const header = Buffer.alloc(13);
@@ -197,10 +210,13 @@ export function encodePng(pixels: Uint8Array, size: number): Buffer {
   header.set([8, 6, 0, 0, 0], 8); // 8 bits per channel, RGBA, no interlacing
   // Each row starts with its filter type, 0 (none).
   const rows = Buffer.alloc(size * (size * 4 + 1));
+
   for (let row = 0; row < size; row++) {
     rows.set(pixels.subarray(row * size * 4, (row + 1) * size * 4), row * (size * 4 + 1) + 1);
   }
+
   const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
   return Buffer.concat([
     signature,
     chunk('IHDR', header),

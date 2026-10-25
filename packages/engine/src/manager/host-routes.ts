@@ -53,6 +53,7 @@ export async function planRoutes(config: Config, sessions: ReadonlyMap<string, V
   const domains = compiled.domains.map(({ vpnId, domain }) => ({ vpnId, domain }));
   // A VPN carrying everything can't carry IPv6, so the host refuses IPv6 rather than send it around the VPN.
   const blockIpv6 = connected.some(({ vpn }) => isBroad(vpn));
+
   return { tunnels, domains, blockIpv6, compiled };
 }
 
@@ -71,6 +72,7 @@ export function noRoutesWarning(
   if (!vpn || !compiled) {
     return undefined;
   }
+
   const nothingSent =
     'Connected, but nothing is sent through it yet. Choose what goes through it in its settings.';
   const own = new Set(
@@ -79,18 +81,21 @@ export function noRoutesWarning(
   if (own.size === 0) {
     return nothingSent;
   }
+
   const carries =
     (compiled.byVpn[vpn.id]?.length ?? 0) > 0 ||
     compiled.domains.some((domain) => domain.vpnId === vpn.id);
   if (carries) {
     return undefined;
   }
+
   const takenByAnother = compiled.warnings.some(
     (warning) =>
       own.has(warning.ruleId) &&
       (warning.kind === 'domain-shadowed' ||
         (warning.kind === 'shadowed' && warning.by.some((claimant) => claimant.kind === 'rule'))),
   );
+
   return takenByAnother ? undefined : nothingSent;
 }
 

@@ -27,6 +27,7 @@ const tempStore = async (cipher = fakeCipher) => {
   const store = createSecretStore(path, cipher);
   const apply = async (changes: SecretChanges, vpns: Vpn[]) =>
     (await store.prepare(changes, vpns)).commit();
+
   return { path, store, apply };
 };
 
@@ -50,6 +51,7 @@ describe('secret store', () => {
     expect(JSON.parse(onDisk).vpns.g.password).toBe(Buffer.from('enc:2retnuh').toString('base64'));
     expect(await store.read('g', 'password')).toBe('hunter2');
     expect(await store.read('g', 'missing')).toBeUndefined();
+
     // Windows has no file modes to check.
     if (process.platform !== 'win32') {
       // oxlint-disable-next-line vitest/no-conditional-expect

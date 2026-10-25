@@ -41,6 +41,7 @@ export const detectFortinet: Detect = async ({ host, port, explicitPort }, probe
         : undefined;
     }),
   );
+
   return found.find((result) => result !== undefined);
 };
 
@@ -49,10 +50,12 @@ export const fortinetSslEngine: LauncherEntry<FortinetSslVpn> = {
     if (!vpn.username) {
       throw new Error("Add your username in the VPN's settings.");
     }
+
     const password = await secrets.loginPassword();
     if (password === undefined) {
       return 'needs-password';
     }
+
     return fortinetLaunch(vpn, password);
   },
   detect: detectFortinet,

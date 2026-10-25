@@ -27,6 +27,7 @@ async function appFor(
   if (view.phase !== 'ready') {
     throw new Error(`The app isn't ready: ${view.phase}`);
   }
+
   return { ...view, push: () => {}, back: () => {}, home: () => {} };
 }
 
@@ -44,6 +45,7 @@ describe("a row's status line", () => {
     if (!vpn) {
       throw new Error('no Client A');
     }
+
     expect(statusOf(vpn, app, layerOf(app, 'a'))).toMatchObject({
       text: 'Everything else',
       tone: 'go',
@@ -57,6 +59,7 @@ describe("a row's status line", () => {
     if (!vpn) {
       throw new Error('no Client C');
     }
+
     expect(statusOf(vpn, app, undefined)).toMatchObject({
       scope: 'Chosen sites',
       text: ' · jane',
@@ -70,6 +73,7 @@ describe("a row's status line", () => {
     if (!vpn) {
       throw new Error('no Home OpenVPN');
     }
+
     expect(statusOf(vpn, { ...app, secretStatus: {} }, undefined)).toEqual({
       text: 'Needs the .ovpn profile',
       tone: 'sodium',
@@ -82,6 +86,7 @@ describe("a row's status line", () => {
     if (!vpn) {
       throw new Error('no Client C');
     }
+
     expect(statusOf(vpn, app, undefined)).toMatchObject({
       text: 'The VPN server rejected the username or password.',
       tone: 'danger',

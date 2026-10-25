@@ -11,18 +11,23 @@ function fakeSystem({ failResolvectl = 0 } = {}) {
     if (line === 'ip link show mvpn-dns' && !linkExists) {
       throw new Error('does not exist');
     }
+
     calls.push(line);
+
     if (line === 'ip link add mvpn-dns type dummy') {
       linkExists = true;
     }
+
     if (line === 'ip link del mvpn-dns') {
       linkExists = false;
     }
+
     if (command === 'resolvectl' && resolvectlFailures > 0) {
       resolvectlFailures--;
       throw new Error('Link mvpn-dns not known');
     }
   };
+
   return { run, calls };
 }
 

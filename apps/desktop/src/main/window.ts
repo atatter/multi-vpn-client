@@ -48,6 +48,7 @@ export function fitWindow(height: unknown) {
   if (!mainWindow || typeof height !== 'number' || !Number.isFinite(height)) {
     return;
   }
+
   const { workArea } = screen.getDisplayMatching(mainWindow.getBounds());
   mainWindow.setContentSize(
     WINDOW_WIDTH,
@@ -93,6 +94,7 @@ export function createWindow() {
   } else {
     void window.loadFile(join(__dirname, '../renderer/index.html'));
   }
+
   return window;
 }
 
@@ -102,6 +104,7 @@ export function hideWindow() {
   if (!window) {
     return;
   }
+
   window.hide();
   // A little over the second Electron needs between Dock changes, so this hide isn't the one it drops.
   clearTimeout(dockHide);
@@ -110,6 +113,7 @@ export function hideWindow() {
       if (window.isVisible() || !app.dock) {
         return;
       }
+
       app.dock.hide();
       dockChangedAt = Date.now();
     },
@@ -123,15 +127,19 @@ export async function showWindow() {
   if (!window) {
     return;
   }
+
   // A hide still waiting would take the Dock icon away while the window comes back.
   clearTimeout(dockHide);
+
   if (app.dock) {
     await app.dock.show();
     dockChangedAt = Date.now();
   }
+
   if (window.isMinimized()) {
     window.restore();
   }
+
   window.show();
   app.focus({ steal: true });
 }

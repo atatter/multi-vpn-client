@@ -24,6 +24,7 @@ export function ProfileField({
     setProblem(reason && `${file.name} isn't a valid OpenVPN file: ${reason}`);
   };
   const shown = problem ?? error;
+
   return (
     <div className="mb-3 grid gap-1">
       <span className={label}>Profile</span>
@@ -57,6 +58,7 @@ export function ProfileField({
           if (file) {
             void read(file);
           }
+
           event.target.value = '';
         }}
       />

@@ -10,6 +10,7 @@ export async function keychainProblem(): Promise<string | undefined> {
   if (process.platform === 'linux' && safeStorage.getSelectedStorageBackend() === 'basic_text') {
     return 'No secret service (GNOME Keyring or KWallet) is running.';
   }
+
   return undefined;
 }
 
@@ -20,6 +21,7 @@ export const keychain: Cipher = {
     if (problem) {
       throw new Error(`${problem} Secrets can't be stored safely.`);
     }
+
     return safeStorage.encryptStringAsync(plain);
   },
   // shouldReEncrypt (key rotation) is ignored for now; the old ciphertext stays readable.

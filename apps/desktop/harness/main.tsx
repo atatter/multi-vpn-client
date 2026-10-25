@@ -37,11 +37,13 @@ function tick() {
   const live = Object.entries(fake.statuses()).flatMap(([vpnId, status]) =>
     status.state === 'connected' ? [vpnId] : [],
   );
+
   for (const vpnId of Object.keys(rates)) {
     if (!live.includes(vpnId)) {
       delete rates[vpnId];
     }
   }
+
   for (const vpnId of live) {
     const bytes = Math.random() < 0.7 ? Math.round(500 * Math.exp(Math.random() * 4.5)) : 0;
     rates[vpnId] = [...(rates[vpnId] ?? []), bytes].slice(-60);
@@ -50,9 +52,11 @@ function tick() {
     if (!bytes || !host) {
       continue;
     }
+
     const entry = destinations.get(`${vpnId} ${host}`) ?? { host, vpnId, bytes: 0, last: now };
     destinations.set(`${vpnId} ${host}`, { ...entry, bytes: entry.bytes + bytes, last: now });
   }
+
   const shown = [...destinations.values()]
     .filter((entry) => live.includes(entry.vpnId))
     .sort((a, b) => b.last - a.last);

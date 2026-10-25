@@ -23,6 +23,7 @@ export const globalprotectForm: KindForm<GlobalProtectVpn> = {
     if (vpn.signIn !== 'card') {
       return undefined;
     }
+
     return vpn.cardCertificate ? 'Smart card' : 'ID card';
   },
   noBrowserSignIn:
@@ -56,6 +57,7 @@ export const globalprotectForm: KindForm<GlobalProtectVpn> = {
           onChange={(signIn) => {
             // The card replaces the password, so a remembered one goes.
             onChange({ ...vpn, signIn, ...(signIn === 'card' ? { rememberPassword: false } : {}) });
+
             if (signIn === 'card') {
               setSecret(
                 PASSWORD_SLOT.key,

@@ -33,6 +33,7 @@ function knownLocations(platform = process.platform, env = process.env): string[
         : []),
     ];
   }
+
   return [
     '/usr/local/bin/docker',
     '/opt/homebrew/bin/docker',
@@ -49,6 +50,7 @@ export async function findDocker(path = process.env.PATH ?? ''): Promise<string>
       .map((dir) => join(dir, name)),
     ...knownLocations(),
   ];
+
   for (const candidate of candidates) {
     try {
       await access(candidate, constants.X_OK);
@@ -57,6 +59,7 @@ export async function findDocker(path = process.env.PATH ?? ''): Promise<string>
       // try the next one
     }
   }
+
   throw new Error(
     "Docker isn't installed (no docker command found). Install Docker Desktop and try again.",
   );
@@ -94,6 +97,7 @@ export async function dockerState(): Promise<DockerState> {
   if (!bin) {
     return 'missing';
   }
+
   return createDocker(bin)
     .assertRunning()
     .then(
@@ -109,12 +113,14 @@ export async function dockerState(): Promise<DockerState> {
 export async function startDocker(): Promise<void> {
   await launchDocker();
   const deadline = Date.now() + START_TIMEOUT_MS;
+
   while ((await dockerState()) !== 'running') {
     if (Date.now() > deadline) {
       throw new Error(
         `Docker didn't start within ${START_TIMEOUT_MS / 60_000} minutes. Open Docker Desktop to see why.`,
       );
     }
+
     await sleep(1000);
   }
 }
@@ -130,6 +136,7 @@ async function launchDocker(): Promise<void> {
         resolve();
       });
     });
+
   if (process.platform === 'darwin') {
     // `open` returns once the app is launched, and fails when there's no Docker Desktop (Colima, OrbStack).
     const opened = await run('open', ['-a', 'Docker']);
@@ -138,8 +145,10 @@ async function launchDocker(): Promise<void> {
         "Docker Desktop isn't installed, so the app can't start Docker. Start the Docker you use, such as Colima or OrbStack.",
       );
     }
+
     return;
   }
+
   if (process.platform === 'win32') {
     return launch(
       join(
@@ -151,6 +160,7 @@ async function launchDocker(): Promise<void> {
       [],
     );
   }
+
   // Docker Desktop for Linux is a user service; Docker Engine needs root, which the app doesn't have.
   const started = await new Promise<boolean>((resolve) => {
     const child = spawn('systemctl', ['--user', 'start', 'docker-desktop'], { stdio: 'ignore' });

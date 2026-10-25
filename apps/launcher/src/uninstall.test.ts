@@ -144,6 +144,7 @@ describe('singletonLockHeld', () => {
 describe.skipIf(process.platform === 'win32')('heldLock', () => {
   it('names the lock a live process on this machine holds, so a stale one can be deleted', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'mvpn-uninstall-'));
+
     try {
       expect(heldLock(dir, process.platform)).toBeUndefined();
       await symlink(`${hostname()}-${process.pid}`, join(dir, 'SingletonLock'));

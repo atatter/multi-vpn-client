@@ -65,12 +65,15 @@ export function VpnScreen({ vpnId }: { vpnId: string }) {
     setShowErrors(false);
     setLeaving(undefined);
   };
+
   /** Goes elsewhere, asking first when there are unsaved changes. */
   const leave = (go: () => void) => (dirty ? setLeaving({ go }) : go());
+
   const save = async () => {
     if (Object.keys(errors).length > 0) {
       return setShowErrors(true);
     }
+
     setSaving(true);
     const saved = await app.save(configAfterSave(app.config, vpn, draft, routes), {
       [vpn.id]: pending,
@@ -79,12 +82,15 @@ export function VpnScreen({ vpnId }: { vpnId: string }) {
     if (!saved) {
       return;
     }
+
     // Saved: stay on the page, which now shows the saved VPN.
     discard();
+
     if (reconnects) {
       void app.reconnect(vpn.id);
     }
   };
+
   const remove = async () => {
     await app.turnOff(vpn.id).catch(() => undefined);
     const saved = await app.save(configAfterRemove(app.config, vpn.id));

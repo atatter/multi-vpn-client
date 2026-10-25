@@ -4,6 +4,7 @@ export const fmtBytes = (bytes: number) => {
   if (bytes < KB) {
     return `${bytes} B`;
   }
+
   return bytes < KB * KB ? `${Math.round(bytes / KB)} KB` : `${(bytes / KB / KB).toFixed(1)} MB`;
 };
 

@@ -97,6 +97,7 @@ export function effectiveRules(
   if (vpn.traffic === 'official' && vpn.serverRoutes) {
     return [...vpn.serverRoutes.cidrs.map((cidr) => serverRule(vpn.id, cidr)), ...own];
   }
+
   return own;
 }
 
@@ -119,6 +120,7 @@ export function effectiveRules(
  */
 export function compileRoutes({ vpns, routes, reserved = [] }: CompileInput): CompiledRoutes {
   const claims: { by: Claimant; ranges: Range[]; local: boolean }[] = [];
+
   for (const { cidr, label, local = false } of reserved) {
     const parsed = parseCidr(cidr);
     if (parsed.ok) {
@@ -164,6 +166,7 @@ export function compileRoutes({ vpns, routes, reserved = [] }: CompileInput): Co
           domains.push({ ruleId: route.id, vpnId: route.vpnId, domain });
         }
       }
+
       continue;
     }
 
@@ -172,11 +175,13 @@ export function compileRoutes({ vpns, routes, reserved = [] }: CompileInput): Co
       warnings.push({ kind: 'invalid-cidr', ruleId: route.id, message: parsed.error });
       continue;
     }
+
     const vpnRanges = owned.get(route.vpnId);
     if (!vpnRanges) {
       warnings.push({ kind: 'unknown-vpn', ruleId: route.id, vpnId: route.vpnId });
       continue;
     }
+
     if (!route.enabled) {
       continue;
     }
@@ -203,6 +208,7 @@ export function compileRoutes({ vpns, routes, reserved = [] }: CompileInput): Co
 
     vpnRanges.push(...kept);
     claims.push({ by: { kind: 'rule', ruleId: route.id }, ranges: kept, local: false });
+
     if (route.cidr === ALL_TRAFFIC && !route.pinned) {
       everything ??= route;
     }
@@ -211,6 +217,7 @@ export function compileRoutes({ vpns, routes, reserved = [] }: CompileInput): Co
   const byVpn = Object.fromEntries(
     [...owned].map(([vpnId, ranges]) => [vpnId, rangesToCidrs(ranges)]),
   );
+
   return { byVpn, all: rangesToCidrs([...owned.values()].flat()), domains, warnings };
 }
 
@@ -291,10 +298,12 @@ export function routingPlan(
     const parsed = route.kind === 'domain' ? RouteDomain.safeParse(route.domain) : undefined;
     return parsed?.success ? [{ route, domain: parsed.data }] : [];
   });
+
   for (const lower of domains) {
     if (fates.get(lower.route.id)?.taken) {
       continue;
     }
+
     // Only subdomains that really route: one a pin (or a higher VPN) already took doesn't take anything itself.
     const higher = domains.find(
       (other) =>
@@ -309,6 +318,7 @@ export function routingPlan(
   }
 
   const broadIds = new Set(connected.filter(isBroad).map((vpn) => vpn.id));
+
   return ranked.map((vpn) => {
     const mine = rules
       .filter((route) => route.vpnId === vpn.id)
@@ -328,6 +338,7 @@ export function routingPlan(
       !live.has(vpn.id) || !nothingLeft
         ? undefined
         : (takenByBroad ?? (mine.length === 0 ? broadAbove : undefined));
+
     return {
       vpnId: vpn.id,
       live: live.has(vpn.id),
@@ -363,6 +374,7 @@ export function routeFor(
       return named.vpnId;
     }
   }
+
   for (const address of target.addresses) {
     const owner = Object.entries(compiled.byVpn).find(([, cidrs]) =>
       cidrs.some((cidr) => contains(cidr, address)),
@@ -371,5 +383,6 @@ export function routeFor(
       return owner[0];
     }
   }
+
   return undefined;
 }

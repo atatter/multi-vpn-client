@@ -24,6 +24,7 @@ const selectedTargets = () => {
   if (process.argv.includes('--os')) {
     return all.filter((target) => target.startsWith(`${process.platform}-`));
   }
+
   return [host].filter(isTarget);
 };
 const selected = selectedTargets();

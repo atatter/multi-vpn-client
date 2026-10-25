@@ -38,7 +38,9 @@ export function createUpdater(deps: {
     state = next;
     deps.onChange(next);
   };
+
   const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
   const ask = () => {
     askedAt = now();
     return deps.latest();
@@ -50,6 +52,7 @@ export function createUpdater(deps: {
       if (state.state === 'available' && compareVersions(latest.version, state.version) <= 0) {
         return;
       }
+
       release = latest;
       set({
         state: 'available',
@@ -66,9 +69,11 @@ export function createUpdater(deps: {
     if (!(state.state === 'idle' || state.state === 'current' || state.state === 'check-failed')) {
       return;
     }
+
     set({ state: 'checking' });
     const answer = ask();
     await Promise.allSettled([answer, wait(CHECKING_AT_LEAST_MS)]);
+
     try {
       found(await answer);
     } catch (error) {
@@ -85,8 +90,10 @@ export function createUpdater(deps: {
     if (!settled()) {
       return;
     }
+
     try {
       const latest = await ask();
+
       // The user may have started a check or a download meanwhile; theirs wins.
       if (settled()) {
         found(latest);
@@ -103,8 +110,10 @@ export function createUpdater(deps: {
     if (!release || !(state.state === 'available' || state.state === 'download-failed')) {
       return;
     }
+
     const { version } = release;
     set({ state: 'downloading', version, percent: 0 });
+
     try {
       await deps.download(release, (share) => {
         // 100% only once it's unpacked too, which is "ready".
@@ -124,8 +133,10 @@ export function createUpdater(deps: {
     if (state.state !== 'ready') {
       return undefined;
     }
+
     const { version } = state;
     set({ state: 'restarting', version });
+
     return version;
   }
 
@@ -139,6 +150,7 @@ export function createUpdater(deps: {
       if (!deps.packaged) {
         return;
       }
+
       void checkQuietly();
       setInterval(() => void checkQuietly(), CHECK_EVERY_MS);
     },

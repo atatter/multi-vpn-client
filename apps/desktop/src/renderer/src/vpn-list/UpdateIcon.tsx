@@ -59,6 +59,7 @@ export function UpdateIcon({ update }: { update: UpdateState }) {
       </span>
     );
   }
+
   return (
     <span className="relative grid place-items-center">
       <DownloadIcon />

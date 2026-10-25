@@ -70,6 +70,7 @@ export function useApp(): AppModel {
   if (!model) {
     throw new Error('useApp needs the AppContext provider');
   }
+
   return model;
 }
 

@@ -15,6 +15,7 @@ export function createStatusBoard(onChange: (statuses: Record<string, Connection
     emitTimer = undefined;
     onChange(Object.fromEntries(statuses));
   };
+
   const emitSoon = () => {
     emitTimer ??= setTimeout(emit, 250);
   };
@@ -41,10 +42,13 @@ export function createStatusBoard(onChange: (statuses: Record<string, Connection
       if (!status) {
         return;
       }
+
       status.log.push(line);
+
       if (status.log.length > MAX_LOG_LINES) {
         status.log.splice(0, status.log.length - MAX_LOG_LINES);
       }
+
       emitSoon();
     },
   };

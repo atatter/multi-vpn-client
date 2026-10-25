@@ -44,6 +44,7 @@ export function AccountFields({
     api
       .runAction(vpn.kind, name, input)
       .catch((error: unknown) => Promise.reject(new Error(messageOf(error))));
+
   const setSecret = (key: string, value: string | null | undefined) => {
     const { [key]: _previous, ...rest } = pending;
     onPendingChange(value === undefined ? rest : { ...rest, [key]: value });
@@ -56,6 +57,7 @@ export function AccountFields({
 
   const setRemember = (rememberPassword: boolean) => {
     onChange({ ...vpn, rememberPassword });
+
     // A password typed while remembering mustn't be saved once it's off; a stored one goes too.
     if (!rememberPassword) {
       setSecret(passwordKey, storedSlots.includes(passwordKey) ? null : undefined);

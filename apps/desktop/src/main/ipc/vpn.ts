@@ -8,6 +8,7 @@ const vpnIdOf = (value: unknown) => {
   if (typeof value !== 'string' || value.length === 0) {
     throw new Error('Invalid VPN id');
   }
+
   return value;
 };
 
@@ -30,6 +31,7 @@ export function registerVpnHandlers({
     if (!parsed) {
       return { site: null };
     }
+
     return { site: parsed.site, vpnId: (await connections.routeFor(parsed)) ?? null };
   });
 
@@ -42,6 +44,7 @@ export function registerVpnHandlers({
     if (reply !== null && (typeof reply !== 'string' || reply.length > 256)) {
       throw new Error('Invalid answer');
     }
+
     connections.answer(vpnIdOf(vpnId), reply);
   });
   handle('vpn:reopen-sign-in', async (vpnId) => connections.reopenSignIn(vpnIdOf(vpnId)));
@@ -50,6 +53,7 @@ export function registerVpnHandlers({
     if (!isVpnKind(kind) || typeof name !== 'string') {
       throw new Error('Invalid action');
     }
+
     return connections.runAction(kind, name, input);
   });
 
@@ -60,6 +64,7 @@ export function registerVpnHandlers({
     if (!pin) {
       throw new Error("There's no certificate to trust for this VPN. Connect first.");
     }
+
     return writingConfig(async () => {
       const config = await loadConfig(configPath);
       const vpns = config.vpns.map((vpn) =>

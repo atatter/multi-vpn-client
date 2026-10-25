@@ -68,12 +68,15 @@ export async function stopLeftover({
   const ours = [singBoxPath, ...runArgs(workDir)].join(' ');
   const running = await processes();
   log(`looking for a leftover sing-box among ${running.length} processes`);
+
   for (const { pid } of running.filter((entry) => entry.command === ours)) {
     log(`stopping the sing-box a previous run left behind (pid ${pid})`);
     process.kill(pid, 'SIGTERM');
+
     for (let waited = 0; waited < 5000 && isRunning(pid); waited += 100) {
       await sleep(100);
     }
+
     if (isRunning(pid)) {
       process.kill(pid, 'SIGKILL');
     }
@@ -132,20 +135,24 @@ export function createSingBoxBackend({
     // Output goes through the helper's log; on Windows nothing else would capture it.
     const engine = spawn(singBoxPath, runArgs(workDir), { stdio: ['ignore', 'pipe', 'pipe'] });
     let lastLine = '';
+
     for (const stream of [engine.stdout, engine.stderr]) {
       createInterface({ input: stream }).on('line', (line) => {
         lastLine = line;
         log(`sing-box: ${line}`);
       });
     }
+
     child = engine;
     let started = false;
     engine.on('exit', (code, signal) => {
       if (child !== engine) {
         return;
       } // stopped on purpose
+
       child = undefined;
       log(`sing-box exited unexpectedly (${signal ?? code})`);
+
       // While starting, apply answers with the reason; afterwards the session ends so the app notices.
       if (started) {
         onCrash();
@@ -158,6 +165,7 @@ export function createSingBoxBackend({
         `sing-box failed to start: ${plain(lastLine).replace(/^FATAL\[\d+\]\s*/, '') || 'see the helper log'}`,
       );
     }
+
     started = true;
   }
 
@@ -167,6 +175,7 @@ export function createSingBoxBackend({
     if (!engine) {
       return;
     }
+
     const exited = new Promise<void>((resolve) => engine.once('exit', () => resolve()));
     engine.kill('SIGTERM');
     await Promise.race([exited, sleep(5000).then(() => engine.kill('SIGKILL'))]);
@@ -179,6 +188,7 @@ export function createSingBoxBackend({
         await dns.clear();
         return;
       }
+
       await verifyBinary();
       await mkdir(workDir, { recursive: true, mode: 0o700 });
       const candidate = `${configPath}.next`;
@@ -188,16 +198,19 @@ export function createSingBoxBackend({
         localIpv6: localIpv6Networks(),
       });
       await writeFile(candidate, JSON.stringify(config, null, 2), { mode: 0o600 });
+
       try {
         await check(candidate);
       } catch (error) {
         await rm(candidate, { force: true });
         throw error;
       }
+
       await rename(candidate, configPath);
 
       // DNS first: on Linux the DNS listener's address only exists once the DNS settings do.
       await dns.set(resolverDomains(routes));
+
       if (child && reload === 'signal') {
         child.kill('SIGHUP');
       } else {

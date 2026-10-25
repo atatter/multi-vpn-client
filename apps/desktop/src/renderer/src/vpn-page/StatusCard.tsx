@@ -26,6 +26,7 @@ function titleOf(state: { connected: boolean; failed: boolean; waiting: boolean;
   if (state.waiting) {
     return 'Waiting to connect';
   }
+
   return state.on ? 'Connecting' : 'Not connected';
 }
 

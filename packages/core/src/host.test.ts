@@ -31,6 +31,7 @@ describe('gatewayAddresses', () => {
       if (host === 'vpn.a.example') {
         return ['203.0.113.10', '203.0.113.11'];
       }
+
       throw new Error('ENOTFOUND');
     };
     expect(await gatewayAddresses(vpns, resolve)).toEqual({

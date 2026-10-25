@@ -173,9 +173,11 @@ export function createFakeApi({
   let docker: DockerState = scenario === 'first' ? 'stopped' : 'running';
   let helper: HelperState = scenario === 'first' ? 'not-installed' : 'ready';
   let statuses: ConnectionStatuses = {};
+
   for (const id of CONNECTED_AT_START[scenario]) {
     statuses[id] = { state: 'connected', since: Date.now() - 600_000, warning: undefined, log: [] };
   }
+
   if (scenario === 'broke') {
     statuses.c = {
       state: 'error',
@@ -198,13 +200,16 @@ export function createFakeApi({
     set.add(listener);
     return () => void set.delete(listener);
   };
+
   const setStatus = (vpnId: string, state: ConnectionState | undefined) => {
     statuses = { ...statuses };
+
     if (state) {
       statuses[vpnId] = { log: [], ...state };
     } else {
       delete statuses[vpnId];
     }
+
     listeners.status.forEach((listener) => listener(structuredClone(statuses)));
   };
 
@@ -237,27 +242,33 @@ export function createFakeApi({
     if (scripted && !scripted.ok) {
       return scripted;
     }
+
     const vpn = config.vpns.find((candidate) => candidate.id === vpnId);
     if (!scripted && ASKS_FOR_PASSWORD.has(vpnId) && !vpn?.rememberPassword && !password) {
       return { ok: false, needsPassword: true };
     }
+
     setStatus(vpnId, { state: 'connecting', step: 'Starting the VPN container…' });
     await pause(900);
     if (cancelled()) {
       return { ok: false, error: 'Cancelled.' };
     }
+
     if (failNextConnect) {
       const message = failNextConnect;
       failNextConnect = undefined;
       setStatus(vpnId, { state: 'error', message });
       return { ok: false, error: message };
     }
+
     setStatus(vpnId, { state: 'connecting', step: 'Routing traffic…' });
     await pause(500);
     if (cancelled()) {
       return { ok: false, error: 'Cancelled.' };
     }
+
     setStatus(vpnId, { state: 'connected', since: Date.now(), warning: undefined });
+
     return { ok: true };
   }
 
@@ -266,6 +277,7 @@ export function createFakeApi({
       if (loadError) {
         throw new Error(loadError);
       }
+
       // Read now, answer when released: like main, whose answer can arrive after newer saves have landed.
       const answer = {
         path: '/home/jane/.config/multi-vpn-client/config.json',
@@ -273,21 +285,26 @@ export function createFakeApi({
         secretStatus: secretStatusOf(secrets),
         keychainProblem: undefined,
       };
+
       if (heldLoads) {
         await new Promise<void>((resolve) => heldLoads?.push(resolve));
       }
+
       return answer;
     },
     saveConfig: async (next, changes) => {
       calls.saves.push({ config: next, secrets: changes });
+
       if (heldSaves) {
         await new Promise<void>((resolve) => heldSaves?.push(resolve));
       }
+
       if (rejectNextSave) {
         const message = rejectNextSave;
         rejectNextSave = undefined;
         return { ok: false, issues: [{ path: '', message }] };
       }
+
       // The rules main saves by, minus the disk and the keychain.
       const parsed = Config.safeParse(structuredClone(next));
       if (!parsed.success) {
@@ -299,13 +316,16 @@ export function createFakeApi({
           })),
         };
       }
+
       const merged = changesForSave(config.vpns, parsed.data.vpns, changes);
       const problems = validateSecretChanges(merged, parsed.data.vpns);
       if (problems.length > 0) {
         return { ok: false, issues: problems.map((message) => ({ path: 'secrets', message })) };
       }
+
       config = { ...parsed.data, vpns: keepServerRoutes(config.vpns, parsed.data.vpns) };
       secrets = applySecretChanges(secrets, merged, config.vpns);
+
       return { ok: true, config: structuredClone(config), secretStatus: secretStatusOf(secrets) };
     },
     detect: async (address) => {
@@ -322,6 +342,7 @@ export function createFakeApi({
       if (/unknown|example\.org/.test(address)) {
         return { kind: 'unknown' };
       }
+
       return { kind: 'globalprotect', address, browserSignIn: /sso/.test(address) };
     },
     // Routes as main does (connected VPNs, priority, traffic modes); only the name lookup is made up.
@@ -330,6 +351,7 @@ export function createFakeApi({
       if (!parsed) {
         return { site: null };
       }
+
       const live = rankVpns(config).filter((vpn) => statuses[vpn.id]?.state === 'connected');
       // What main keeps off every tunnel too: the domain-routing range and the VPNs' servers (here only those given as addresses).
       const servers = live.flatMap((vpn) =>
@@ -346,6 +368,7 @@ export function createFakeApi({
       const target = parsed.isAddress
         ? { addresses: [parsed.site] }
         : { domain: parsed.site, addresses: [PUBLIC_ADDRESS] };
+
       return { site: parsed.site, vpnId: routeFor(compiled, target) ?? null };
     },
     dockerState: async () => docker,
@@ -360,9 +383,11 @@ export function createFakeApi({
       if (running) {
         return running;
       }
+
       const attempt = startConnect(vpnId, password);
       inFlight.set(vpnId, attempt);
       void attempt.finally(() => inFlight.get(vpnId) === attempt && inFlight.delete(vpnId));
+
       return attempt;
     },
     disconnect: async (vpnId) => {
@@ -382,6 +407,7 @@ export function createFakeApi({
           { id: 'vpn_EntraID', label: 'Microsoft sign-in', factors: ['identity_provider'] },
         ];
       }
+
       throw new Error('This VPN type has no such action.');
     },
     trustCertificate: async () => structuredClone(config),
@@ -408,6 +434,7 @@ export function createFakeApi({
       if ((await updater.api.updateState()).state !== 'restarting') {
         return;
       }
+
       for (const vpnId of Object.keys(statuses)) {
         await pause(1200);
         setStatus(vpnId, undefined);

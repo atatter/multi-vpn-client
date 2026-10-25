@@ -33,14 +33,17 @@ export function SitesEditor({
     if (!text.trim()) {
       return;
     }
+
     const result = addEntries(text, routes, vpn.id);
     if (result.routes.length > routes.length) {
       onChange(result.routes);
     }
+
     setRemoved(undefined);
     setText(result.text);
     setProblem(result.problem);
   };
+
   const update = (id: string, patch: { enabled?: boolean; pinned?: boolean }) =>
     onChange(routes.map((route) => (route.id === id ? { ...route, ...patch } : route)));
 

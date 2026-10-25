@@ -349,6 +349,7 @@ describe('compileRoutes: pins and all-traffic VPNs', () => {
 
 describe('routingPlan', () => {
   const on = (...ids: string[]) => new Set(ids);
+
   const config = (routes: RouteRule[], list: Vpn[] = vpns) => ({
     vpns: list,
     routes,

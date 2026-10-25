@@ -17,9 +17,11 @@ export async function latestRelease(url = LATEST_URL): Promise<Manifest> {
   if (!response.ok) {
     throw new Error(`npm answered HTTP ${response.status}. Try again later.`);
   }
+
   const parsed = Latest.safeParse(await response.json().catch(() => undefined));
   if (!parsed.success) {
     throw new Error("npm's newest version doesn't say what to download.");
   }
+
   return parsed.data.release;
 }

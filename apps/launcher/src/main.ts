@@ -83,6 +83,7 @@ async function start(args: string[]): Promise<void> {
   if (download) {
     output.log(`Downloading Multi VPN Client ${version}…`);
   }
+
   const executable = download
     ? await ensureInstalled({
         manifest,
@@ -100,6 +101,7 @@ async function start(args: string[]): Promise<void> {
   if (noSandbox) {
     output.log("AppArmor blocks Electron's sandbox here, so the window runs without it.");
   }
+
   const app = spawn(executable, noSandbox ? ['--no-sandbox', ...args] : args, {
     detached: true,
     stdio: 'ignore',
@@ -145,6 +147,7 @@ async function triage(args: string[]): Promise<void> {
   if ('error' in pick) {
     throw new Error(pick.error);
   }
+
   if ('none' in pick) {
     const known = orList(Object.values(AGENTS).map(({ name, command }) => `${name} (${command})`));
     console.log(`Couldn't find ${known} on PATH. The triage playbook and this machine's facts are in
@@ -152,6 +155,7 @@ async function triage(args: string[]): Promise<void> {
 Start any coding agent in that folder and ask it to follow PLAYBOOK.md.`);
     return;
   }
+
   let agent: Agent;
   if ('agent' in pick) {
     agent = pick.agent;
@@ -161,6 +165,7 @@ Start any coding agent in that folder and ask it to follow PLAYBOOK.md.`);
         `Several agents are installed. Choose one with ${orList(pick.ask.map((id) => `--agent ${id}`))}.`,
       );
     }
+
     const question = createInterface({ input: process.stdin, output: process.stdout });
     const answer = (
       await question.question(
@@ -172,6 +177,7 @@ Start any coding agent in that folder and ask it to follow PLAYBOOK.md.`);
     if (!chosen) {
       throw new Error('No agent chosen.');
     }
+
     agent = chosen;
   }
 
@@ -179,6 +185,7 @@ Start any coding agent in that folder and ask it to follow PLAYBOOK.md.`);
   if (!command) {
     throw new Error(`${AGENTS[agent].name} isn't on PATH.`);
   }
+
   console.log(
     `Starting ${AGENTS[agent].name} with the triage playbook. It will ask what went wrong.`,
   );
@@ -200,6 +207,7 @@ async function confirm(question: string): Promise<boolean> {
   const prompt = createInterface({ input: process.stdin, output: process.stdout });
   const answer = await prompt.question(`${question} [y/N] `);
   prompt.close();
+
   return /^y(es)?$/i.test(answer.trim());
 }
 
@@ -211,12 +219,14 @@ async function uninstall(): Promise<void> {
       "MVPN_CONFIG is set, so this isn't the app's real data. Unset it to uninstall.",
     );
   }
+
   const lock = heldLock(appDir(env, platform), platform);
   if (lock) {
     throw new Error(
       `Multi VPN Client is running. Quit it, which turns its VPNs off, then run uninstall again.\nIf it isn't running, delete ${lock} first.`,
     );
   }
+
   const found = await survey(env, platform, homedir());
   const launcher = npxEntry(fileURLToPath(import.meta.url));
   const launcherNote =
@@ -227,23 +237,29 @@ async function uninstall(): Promise<void> {
   const planned = uninstallSteps(found, false);
   if (planned.length === 0 && !question) {
     console.log("Multi VPN Client isn't on this computer.");
+
     if (launcherNote) {
       console.log(launcherNote);
     }
+
     return;
   }
+
   if (!process.stdin.isTTY) {
     throw new Error('uninstall asks before it removes anything, so run it in a terminal.');
   }
+
   const list = (steps: Step[]) =>
     steps.map((step) => `  • ${step.what}${'reason' in step ? `: ${step.reason}` : ''}`).join('\n');
   const removable = planned.filter((step) => 'run' in step);
   if (removable.length > 0) {
     console.log(`This removes Multi VPN Client from this computer:\n${list(removable)}`);
   }
+
   if (removable.length < planned.length) {
     console.log(`It can't remove these now:\n${list(planned.filter((step) => 'reason' in step))}`);
   }
+
   const deleteVpns = question !== undefined && (await confirm(question));
   const steps = uninstallSteps(found, deleteVpns);
   if (steps.some((step) => 'run' in step) && !(await confirm('Continue?'))) {
@@ -252,11 +268,13 @@ async function uninstall(): Promise<void> {
   }
 
   const leftovers: Extract<Step, { reason: string }>[] = [];
+
   for (const step of steps) {
     if ('reason' in step) {
       leftovers.push(step);
       continue;
     }
+
     console.log(`Removing ${step.what}…`);
     await step.run().catch((error: unknown) =>
       leftovers.push({
@@ -266,6 +284,7 @@ async function uninstall(): Promise<void> {
       }),
     );
   }
+
   if (leftovers.length > 0) {
     console.log(
       `\nThese are still on this computer:\n${leftovers.map(({ what, reason, manual }) => `  • ${what}: ${reason}\n    ${manual}`).join('\n')}`,
@@ -274,11 +293,13 @@ async function uninstall(): Promise<void> {
   } else {
     console.log('\nMulti VPN Client is removed.');
   }
+
   if (question && !deleteVpns) {
     console.log(
       `Your VPNs and saved passwords are still in ${found.appFolder}, for when you install it again.`,
     );
   }
+
   if (launcherNote) {
     console.log(launcherNote);
   }

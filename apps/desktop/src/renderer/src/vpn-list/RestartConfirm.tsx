@@ -55,6 +55,7 @@ export function RestartConfirm({ version, onCancel }: { version: string; onCance
     setWereOn(on);
     void app.api.restartToUpdate();
   };
+
   return (
     <div role="dialog" aria-label={title}>
       <p className="font-semibold">{title}</p>

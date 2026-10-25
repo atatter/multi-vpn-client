@@ -25,8 +25,10 @@ export function orderAfterStep(
   if (to < 0 || to >= order.length) {
     return undefined;
   }
+
   const next = order.filter((other) => other !== id);
   next.splice(to, 0, id);
+
   return next;
 }
 
@@ -38,5 +40,6 @@ export function priorityAfterMove(config: Config, ids: readonly string[], moved:
   if (next) {
     return placeVpn(config, moved, next, 'above');
   }
+
   return previous ? placeVpn(config, moved, previous, 'below') : config.priority;
 }

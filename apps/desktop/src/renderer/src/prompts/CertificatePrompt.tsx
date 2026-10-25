@@ -24,6 +24,7 @@ export function CertificatePrompt({
         if (event.key !== 'Escape') {
           return;
         }
+
         event.preventDefault();
         app.cancelPrompt();
       }}

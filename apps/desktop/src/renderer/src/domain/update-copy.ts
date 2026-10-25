@@ -12,6 +12,7 @@ export function versionRow(
   now: number,
 ): { line: string; failed?: true; action?: { label: string; run: UpdateRun; disabled?: true } } {
   const check = { label: 'Check', run: 'check' } as const;
+
   switch (update.state) {
     case 'off':
       return { line: 'Dev build, updates are off' };
@@ -113,6 +114,8 @@ function ago(ms: number) {
   if (minutes < 60) {
     return minutes === 1 ? 'a minute ago' : `${minutes} minutes ago`;
   }
+
   const hours = Math.floor(minutes / 60);
+
   return hours === 1 ? 'an hour ago' : `${hours} hours ago`;
 }

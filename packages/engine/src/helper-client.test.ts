@@ -40,6 +40,7 @@ async function helper(token = TOKEN, { failing = false } = {}) {
   });
   const port = await server.listen(0);
   cleanup = server.close;
+
   return { port, applied };
 }
 
@@ -68,6 +69,7 @@ async function impostor() {
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
   const address = server.address();
   cleanup = () => new Promise((resolve) => server.close(() => resolve()));
+
   return { port: typeof address === 'object' && address ? address.port : 0, received };
 }
 

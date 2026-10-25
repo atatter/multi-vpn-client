@@ -16,9 +16,11 @@ export const openvpnForm: KindForm<OpenVpn> = {
         if (!read.ok) {
           return read.error;
         }
+
         onChange(read.vpn);
         // The profile is the file's only secret: kept whole.
         setSecret('profile', text);
+
         return undefined;
       }}
     />

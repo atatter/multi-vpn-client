@@ -45,6 +45,7 @@ function logToFile(path: string) {
   if ((statSync(path, { throwIfNoEntry: false })?.size ?? 0) > 1_000_000) {
     truncateSync(path);
   }
+
   log = (line) => appendFileSync(path, `${new Date().toISOString()} ${line}\r\n`);
 }
 
@@ -61,6 +62,7 @@ interface Platform {
 /** Where this OS keeps the helper's settings and scratch files, and how it does per-domain DNS. */
 function platform(): Platform {
   const installDir = dirname(process.execPath);
+
   switch (process.platform) {
     case 'darwin':
       return {
@@ -82,6 +84,7 @@ function platform(): Platform {
       if (!credentials || !runtime) {
         throw new Error('Run the helper through its systemd service.');
       }
+
       return {
         os: 'linux',
         configPath: join(credentials, 'helper.json'),

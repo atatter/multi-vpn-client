@@ -35,6 +35,7 @@ export function waitForTunnel(
   const connectMarkers = markers(nonce);
   const lastLines: string[] = [];
   let connected = false;
+
   return new Promise<void>((resolve, reject) => {
     let timeout: NodeJS.Timeout | undefined;
     let failed = false;
@@ -43,6 +44,7 @@ export function waitForTunnel(
       clearTimeout(timeout);
       reject(error);
     };
+
     // Paused while a prompt waits for the user, so a slow SMS doesn't count against the client.
     const startTimeout = () => {
       timeout = setTimeout(
@@ -55,11 +57,14 @@ export function waitForTunnel(
         CONNECT_TIMEOUT_MS,
       );
     };
+
     /** Waits for the user (the connect timeout paused), then hands what they gave to the client. */
     const waitForUser = async (deliver: () => Promise<unknown>) => {
       clearTimeout(timeout);
+
       try {
         await deliver();
+
         if (!connected && !failed) {
           startTimeout();
         }
@@ -67,6 +72,7 @@ export function waitForTunnel(
         fail(error);
       }
     };
+
     // An answer goes to the client as one line on its answers FIFO; control characters (e.g. Ctrl-C) would reach its terminal.
     const answer = (prompt: string) =>
       waitForUser(async () => {
@@ -78,6 +84,7 @@ export function waitForTunnel(
           `${reply.replace(/[\x00-\x1f\x7f]/g, '')}\n`,
         );
       });
+
     // A browser sign-in's token goes to the client's listener inside the container.
     const signIn = (request: BrowserSignIn) =>
       waitForUser(async () => {
@@ -101,9 +108,11 @@ export function waitForTunnel(
         );
       });
     startTimeout();
+
     if (options.signal.aborted) {
       fail(options.signal.reason);
     }
+
     options.signal.addEventListener(
       'abort',
       () => {
@@ -116,6 +125,7 @@ export function waitForTunnel(
     // The card stops being available if it's removed from the reader. Before connecting, that ends the connect.
     options.cardBridge?.attach(docker.bin, name, (message) => {
       options.onLog(message);
+
       if (!connected) {
         fail(new Error(message));
       }
@@ -123,13 +133,16 @@ export function waitForTunnel(
     const onLine = (line: string) => {
       options.onLog(line);
       lastLines.push(line);
+
       if (lastLines.length > 30) {
         lastLines.shift();
       }
+
       const meaning = classifyLine(line, launch.readLine, connectMarkers);
       if (meaning === undefined || connected || failed) {
         return;
       }
+
       if (meaning === 'connected') {
         connected = true;
         clearTimeout(timeout);
@@ -155,6 +168,7 @@ export function waitForTunnel(
     // Registered before the tunnel is reported up, so an exit right after connecting is never missed.
     follower.on('close', () => {
       clearTimeout(timeout);
+
       if (!connected) {
         reject(
           new Error(

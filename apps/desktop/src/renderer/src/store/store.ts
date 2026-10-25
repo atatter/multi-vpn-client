@@ -72,11 +72,13 @@ export function createAppStore(api: MainApi) {
     view = viewOf(state);
     listeners.forEach((listener) => listener());
   };
+
   /** Changes the loaded settings; before they've loaded there's nothing to change. */
   const updateLoaded = (change: (loaded: NonNullable<State['loaded']>) => Partial<Loaded>) =>
     update((current) =>
       current.loaded ? { loaded: { ...current.loaded, ...change(current.loaded) } } : {},
     );
+
   const showNotice = (notice: string) => update({ notice });
 
   // Traffic changes every second, so it has its own subscribers instead of re-rendering everything.
@@ -99,8 +101,10 @@ export function createAppStore(api: MainApi) {
     if (!ready() || state.waiting.size === 0) {
       return;
     }
+
     const ids = [...state.waiting];
     update({ waiting: new Set() });
+
     for (const vpnId of ids) {
       void connect(vpnId);
     }
@@ -110,6 +114,7 @@ export function createAppStore(api: MainApi) {
     update(change);
     connectWaiting();
   };
+
   const refreshHelper = () => api.helperState().then((helper) => setSetup({ helper }));
 
   // Docker is checked in the background, often while it isn't running (someone may be starting it) and rarely
@@ -128,13 +133,16 @@ export function createAppStore(api: MainApi) {
     if (check !== dockerChecks) {
       return;
     }
+
     dockerChecking = false;
     dockerCheckedAt = Date.now();
     setSetup({ docker });
+
     // A failed start's error is stale once Docker runs, however it was started.
     if (docker === 'running' && state.dockerStart.error) {
       update({ dockerStart: { starting: false, error: undefined } });
     }
+
     if (watchingDocker) {
       dockerTimer = setTimeout(
         () => void refreshDocker(),
@@ -142,6 +150,7 @@ export function createAppStore(api: MainApi) {
       );
     }
   }
+
   /** The user is looking: check Docker, unless a check is running or has just answered. */
   const checkDockerIfStale = () => {
     if (!dockerChecking && Date.now() - dockerCheckedAt >= DOCKER_FRESH_MS) {
@@ -152,6 +161,7 @@ export function createAppStore(api: MainApi) {
   /** Shows what's on disk, unless `stillWanted` says otherwise by the time it's read. */
   const reload = async (stillWanted: () => boolean) => {
     const { config, secretStatus } = await api.loadConfig();
+
     if (stillWanted()) {
       updateLoaded(() => ({ config, secretStatus }));
     }
@@ -164,6 +174,7 @@ export function createAppStore(api: MainApi) {
     updateLoaded(() => ({ config }));
     const run = saves.then(() => api.saveConfig(config, secrets));
     saves = run.catch(() => undefined);
+
     try {
       const result = await run;
       if (result.ok) {
@@ -174,14 +185,17 @@ export function createAppStore(api: MainApi) {
         }));
         return true;
       }
+
       showNotice(result.issues.map((issue) => issue.message).join('\n'));
     } catch (error) {
       showNotice(messageOf(error));
     }
+
     // Put back what's on disk, unless a newer change is on its way (or starts meanwhile): its answer settles what's shown.
     if (isLatest()) {
       await reload(isLatest);
     }
+
     return false;
   }
 
@@ -194,11 +208,13 @@ export function createAppStore(api: MainApi) {
     if (!ready()) {
       return update((current) => ({ waiting: new Set([...current.waiting, vpnId]) }));
     }
+
     try {
       const result = await api.connect(vpnId, password ?? null);
       if (result.ok) {
         return;
       }
+
       if ('needsPassword' in result) {
         update({ prompt: { kind: 'password', vpnId } });
       } else if ('untrustedCertificate' in result) {
@@ -255,6 +271,7 @@ export function createAppStore(api: MainApi) {
       if (state.waiting.has(vpnId)) {
         return withoutWaiting(vpnId);
       }
+
       // On means "keep trying": a failed VPN switches off (clearing its error) rather than retrying.
       if (isOn(state.connections[vpnId])) {
         void api.disconnect(vpnId).catch((error: unknown) => showNotice(messageOf(error)));
@@ -266,9 +283,11 @@ export function createAppStore(api: MainApi) {
       if (state.prompt?.vpnId === vpnId) {
         update({ prompt: undefined });
       }
+
       if (state.waiting.has(vpnId)) {
         withoutWaiting(vpnId);
       }
+
       if (isOn(state.connections[vpnId])) {
         await api.disconnect(vpnId);
       }
@@ -283,6 +302,7 @@ export function createAppStore(api: MainApi) {
       if (prompt?.kind !== 'password' || !loaded) {
         return;
       }
+
       const { vpnId } = prompt;
       update({ prompt: undefined });
       void (async () => {
@@ -292,6 +312,7 @@ export function createAppStore(api: MainApi) {
           );
           await save({ ...loaded.config, vpns }, { [vpnId]: { [PASSWORD_SLOT.key]: password } });
         }
+
         await connect(vpnId, password);
       })();
     },
@@ -305,6 +326,7 @@ export function createAppStore(api: MainApi) {
       if (prompt?.kind !== 'certificate') {
         return;
       }
+
       const { vpnId, password } = prompt;
       update({ prompt: undefined });
       void api.trustCertificate(vpnId).then(
@@ -325,11 +347,14 @@ export function createAppStore(api: MainApi) {
     if (current.loadError !== undefined) {
       return { phase: 'failed', error: current.loadError };
     }
+
     const { loaded, loadError: _loadError, ...rest } = current;
     if (!loaded) {
       return { phase: 'loading' };
     }
+
     const { path, info, config, secretStatus, keychainProblem } = loaded;
+
     return {
       phase: 'ready',
       ...rest,
@@ -359,6 +384,7 @@ export function createAppStore(api: MainApi) {
       if (stop) {
         return stop;
       }
+
       Promise.all([api.loadConfig(), api.appInfo()]).then(
         ([loaded, info]) => update({ loaded: { ...loaded, info } }),
         (error: unknown) => update({ loadError: messageOf(error) }),
@@ -370,6 +396,7 @@ export function createAppStore(api: MainApi) {
         if (heardUpdate) {
           return;
         }
+
         // A window opened again (macOS keeps the app running) still says a download failed.
         const notice = updateNotice(current);
         update(notice ? { update: current, notice } : { update: current });
@@ -425,6 +452,7 @@ export function createAppStore(api: MainApi) {
         clearTimeout(dockerTimer);
         listening.abort();
       };
+
       return stop;
     },
   };

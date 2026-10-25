@@ -106,6 +106,7 @@ export function siteWarnings(
   );
   const nameOf = (vpnId: string) =>
     vpnLabel(config.vpns.find((other) => other.id === vpnId) ?? { name: '' });
+
   return new Map(
     (own?.fates ?? []).flatMap((fate) =>
       fate.taken && !fate.taken.byPin && !broadIds.has(fate.taken.by) && !isDerivedRule(fate.rule)

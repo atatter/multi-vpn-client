@@ -16,22 +16,27 @@ export type OpenVpnImport =
 export function parseOpenVpnProfile(text: string): OpenVpnImport {
   const remotes: string[] = [];
   let needsPassword = false;
+
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (line.startsWith('#') || line.startsWith(';')) {
       continue;
     }
+
     const remote = /^remote\s+(\S+)(?:\s+(\d+))?/.exec(line);
     if (remote?.[1]) {
       remotes.push(`${remote[1]}:${remote[2] ?? '1194'}`);
     }
+
     if (/^auth-user-pass\b/.test(line)) {
       needsPassword = true;
     }
   }
+
   if (remotes.length === 0) {
     return { ok: false, error: 'The profile has no remote server' };
   }
+
   return { ok: true, remotes, needsPassword };
 }
 

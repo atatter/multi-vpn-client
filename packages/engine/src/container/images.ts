@@ -21,16 +21,20 @@ export function ensureVpnImage(
   if (running) {
     return running;
   }
+
   const build = (async () => {
     if ((await docker.run(['image', 'inspect', image.tag])).code === 0) {
       return;
     }
+
     onLog(`Building ${image.tag} (first time only)…`);
     const result = await docker.run(['build', '--tag', image.tag, '-'], image.dockerfile);
     const lines = result.stderr.split('\n').filter((line) => line.trim());
+
     for (const line of lines.slice(-20)) {
       onLog(line);
     }
+
     if (result.code !== 0) {
       throw new Error(
         `Building the VPN container image failed: ${lines.at(-1)?.trim() ?? `exit ${result.code}`}`,
@@ -38,6 +42,7 @@ export function ensureVpnImage(
     }
   })().finally(() => building.delete(image.tag));
   building.set(image.tag, build);
+
   return build;
 }
 
@@ -75,8 +80,10 @@ export async function listVpnImages(docker: Docker) {
   if (refs.length === 0) {
     return [];
   }
+
   const sizes = (
     await docker.runChecked(['image', 'inspect', '--format', '{{.Size}}', ...refs])
   ).split('\n');
+
   return refs.map((ref, index) => ({ ref, bytes: Number(sizes[index]) || 0 }));
 }

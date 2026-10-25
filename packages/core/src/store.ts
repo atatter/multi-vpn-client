@@ -17,10 +17,12 @@ function appDataBase(env: NodeJS.ProcessEnv, platform: NodeJS.Platform): string 
   if (platform === 'win32') {
     return absolute(env.APPDATA) ?? join(homedir(), 'AppData', 'Roaming');
   }
+
   const home = absolute(env.HOME) ?? homedir();
   if (platform === 'darwin') {
     return join(home, 'Library', 'Application Support');
   }
+
   return absolute(env.XDG_CONFIG_HOME) ?? join(home, '.config');
 }
 
@@ -79,6 +81,7 @@ export function moveAppDir(env = process.env, platform = process.platform): stri
   if (env.MVPN_CONFIG || current === old || appDir(env, platform) !== old) {
     return appDir(env, platform);
   }
+
   try {
     if (existsSync(current)) {
       // The new folder holds no config yet but may hold something else (Electron's data, a .DS_Store): move the
@@ -88,6 +91,7 @@ export function moveAppDir(env = process.env, platform = process.platform): stri
           renameSync(join(old, entry), join(current, entry));
         }
       }
+
       if (readdirSync(old).length === 0) {
         rmdirSync(old);
       }
@@ -97,6 +101,7 @@ export function moveAppDir(env = process.env, platform = process.platform): stri
   } catch {
     // Still on the old folder; appDir keeps pointing there while it has the config.
   }
+
   return appDir(env, platform);
 }
 

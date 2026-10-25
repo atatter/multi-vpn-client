@@ -68,9 +68,11 @@ export function createResolvedDns({
               `Domain routes need systemd-resolved: ${error instanceof Error ? error.message : String(error)}`,
             );
           }
+
           await sleep(100);
         }
       }
+
       // "~" makes them routing-only domains: just these names go here, nothing is searched.
       await resolvectl('domain', link, ...valid.map((domain) => `~${domain}`));
       await resolvectl('default-route', link, 'false');

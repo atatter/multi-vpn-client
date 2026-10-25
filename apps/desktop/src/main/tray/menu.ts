@@ -16,6 +16,7 @@ export const countHeadline = (count: number) => {
   if (count === 0) {
     return 'No VPNs on';
   }
+
   return count === 1 ? '1 VPN on' : `${count} VPNs on`;
 };
 

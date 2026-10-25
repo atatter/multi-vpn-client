@@ -20,8 +20,10 @@ export function UpdateButton() {
     if (!open) {
       return;
     }
+
     const onKeyDown = (event: KeyboardEvent) => event.key === 'Escape' && setConfirming(false);
     window.addEventListener('keydown', onKeyDown);
+
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open]);
   const tip = updateTooltip(update);
@@ -36,6 +38,7 @@ export function UpdateButton() {
       void app.api.downloadUpdate();
     }
   };
+
   return (
     <span className="relative">
       <button

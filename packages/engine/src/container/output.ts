@@ -36,5 +36,6 @@ export function classifyLine(
   if (trimmed.startsWith(prompt)) {
     return { prompt: trimmed.slice(prompt.length).trim() };
   }
+
   return readLine(line);
 }

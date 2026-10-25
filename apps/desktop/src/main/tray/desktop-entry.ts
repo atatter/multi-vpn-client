@@ -43,14 +43,17 @@ async function writeIfChanged(path: string, content: Buffer) {
   if (current?.equals(content)) {
     return false;
   }
+
   await mkdir(dirname(path), { recursive: true });
   const temp = `${path}.${process.pid}.tmp`;
+
   try {
     await writeFile(temp, content);
     await rename(temp, path);
   } finally {
     await rm(temp, { force: true });
   }
+
   return true;
 }
 

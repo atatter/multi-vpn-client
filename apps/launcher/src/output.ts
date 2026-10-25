@@ -29,6 +29,7 @@ export function terminalOutput(stream: Pick<NodeJS.WriteStream, 'write' | 'isTTY
       if (!stream.isTTY || text === counter) {
         return;
       }
+
       stream.write(`\r${text}\x1b[K`);
       counter = text;
     },

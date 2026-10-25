@@ -46,6 +46,7 @@ export function registerConfigHandlers({
       if (!config.success) {
         return failed(issuesOf(config.error));
       }
+
       const changes = SecretChanges.safeParse(secretsInput);
       if (!changes.success) {
         return failed(issuesOf(changes.error, 'secrets'));
@@ -58,6 +59,7 @@ export function registerConfigHandlers({
 
       // Validate and encrypt secrets first: if the keychain or a value is rejected, nothing has been written.
       let pending: Awaited<ReturnType<typeof secrets.prepare>>;
+
       try {
         pending = await secrets.prepare(merged, config.data.vpns);
       } catch (error) {
@@ -65,10 +67,12 @@ export function registerConfigHandlers({
           { path: 'secrets', message: error instanceof Error ? error.message : String(error) },
         ]);
       }
+
       const saved = await saveConfig(config.data, configPath);
       const secretStatus = await pending.commit();
       void connections.refresh(); // connected VPNs pick up changed routes
       onSaved(saved);
+
       return { ok: true, config: saved, secretStatus };
     }),
   );

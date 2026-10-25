@@ -52,6 +52,7 @@ export function openCardBridge(
       bridge.kill();
       relay?.kill();
     };
+
     const abort = () => {
       stop();
       reject(options.signal.reason);
@@ -59,6 +60,7 @@ export function openCardBridge(
     if (options.signal.aborted) {
       return abort();
     }
+
     options.signal.addEventListener('abort', abort, { once: true });
 
     bridge.on('error', (error) => {
@@ -71,6 +73,7 @@ export function openCardBridge(
       relay?.kill();
       options.signal.removeEventListener('abort', abort);
       const message = lastError ?? 'The card bridge stopped.';
+
       if (!found) {
         reject(new Error(message));
       } else if (failed) {
@@ -78,6 +81,7 @@ export function openCardBridge(
       } else {
         closedWith = message;
       }
+
       failed = undefined;
     });
     createInterface({ input: bridge.stderr }).on('line', (line) => {
@@ -94,6 +98,7 @@ export function openCardBridge(
             if (closedWith !== undefined) {
               return onFailure(closedWith);
             }
+
             failed = onFailure;
             const exec = spawn(
               dockerBin,

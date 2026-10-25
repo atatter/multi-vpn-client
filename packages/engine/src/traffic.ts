@@ -45,6 +45,7 @@ export function createTrafficTally() {
     ): TrafficSnapshot {
       const second = new Map<string, number>();
       const open = new Set<string>();
+
       for (const connection of connections) {
         open.add(connection.id);
         // The VPN it went to, from its outbound; undefined for direct traffic.
@@ -55,18 +56,22 @@ export function createTrafficTally() {
         if (!vpnId) {
           continue;
         }
+
         second.set(vpnId, (second.get(vpnId) ?? 0) + delta);
         const host = connection.metadata.host || connection.metadata.destinationIP || '';
         if (!host) {
           continue;
         }
+
         const key = `${vpnId} ${host}`;
         const entry = destinations.get(key) ?? { host, vpnId, samples: [] };
         if (delta > 0 || entry.samples.length === 0) {
           entry.samples.push({ at: now, bytes: delta });
         }
+
         destinations.set(key, entry);
       }
+
       for (const id of seen.keys()) {
         if (!open.has(id)) {
           seen.delete(id);
@@ -79,14 +84,17 @@ export function createTrafficTally() {
           rates.delete(id);
         }
       }
+
       for (const vpnId of vpnIds) {
         rates.set(
           vpnId,
           [...(rates.get(vpnId) ?? []), second.get(vpnId) ?? 0].slice(-HISTORY_SECONDS),
         );
       }
+
       for (const [key, entry] of destinations) {
         entry.samples = entry.samples.filter((sample) => now - sample.at <= DESTINATION_WINDOW_MS);
+
         if (entry.samples.length === 0 || !vpnIds.includes(entry.vpnId)) {
           destinations.delete(key);
         }
@@ -98,6 +106,7 @@ export function createTrafficTally() {
         bytes: samples.reduce((sum, sample) => sum + sample.bytes, 0),
         last: samples.at(-1)?.at ?? now,
       }));
+
       return {
         rates: Object.fromEntries(rates),
         destinations: rows.sort((a, b) => b.last - a.last).slice(0, MAX_DESTINATIONS),
@@ -127,6 +136,7 @@ export function createTrafficMonitor({
   const poll = async () => {
     const mine = generation;
     const vpnIds = connectedVpns();
+
     try {
       const response = await fetch(`http://127.0.0.1:${endpoint.port}/connections`, {
         headers: { Authorization: `Bearer ${endpoint.secret}` },
@@ -135,6 +145,7 @@ export function createTrafficMonitor({
       if (!response.ok) {
         return;
       }
+
       const body = ClashConnections.safeParse(await response.json());
       if (body.success && mine === generation) {
         onUpdate(tally.add(body.data.connections ?? [], vpnIds, Date.now()));

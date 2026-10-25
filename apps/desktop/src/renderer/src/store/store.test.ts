@@ -17,6 +17,7 @@ const ready = (view: AppView) => {
   if (view.phase !== 'ready') {
     throw new Error(`The app isn't ready: ${view.phase}`);
   }
+
   return view;
 };
 
@@ -33,6 +34,7 @@ async function start(
   const store = createAppStore(fake.api);
   stops.push(store.start());
   await settle();
+
   return { fake, store, app: () => ready(store.getState()) };
 }
 

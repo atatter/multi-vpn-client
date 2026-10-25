@@ -41,6 +41,7 @@ export function createFakeUpdater(initial: UpdateState, pause: (ms: number) => P
       ) {
         return;
       }
+
       setUpdate(UPDATES.checking);
       await pause(800);
       setUpdate(UPDATES.available);
@@ -50,11 +51,14 @@ export function createFakeUpdater(initial: UpdateState, pause: (ms: number) => P
       if (update.state !== 'available' && update.state !== 'download-failed') {
         return;
       }
+
       const { version } = update;
+
       for (const percent of [0, 9, 23, 42, 61, 78, 93, 99]) {
         setUpdate({ state: 'downloading', version, percent });
         await pause(400);
       }
+
       const error = failNextDownload;
       failNextDownload = undefined;
       setUpdate(error ? { state: 'download-failed', version, error } : { state: 'ready', version });

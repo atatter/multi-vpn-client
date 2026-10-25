@@ -28,6 +28,7 @@ function recordPackages(name: string): Plugin {
             : [],
         ),
       ];
+
       for (const source of sources) {
         // The last node_modules segment is the package itself, also under pnpm's .pnpm/<name>@<version>/node_modules.
         const dir = /^\0?(.*[\\/]node_modules[\\/](?:@[^\\/]+[\\/])?[^\\/]+)[\\/]/.exec(
@@ -37,6 +38,7 @@ function recordPackages(name: string): Plugin {
           dirs.add(dir);
         }
       }
+
       mkdirSync(join(import.meta.dirname, 'build'), { recursive: true });
       writeFileSync(
         join(import.meta.dirname, 'build', `packages-${name}.json`),

@@ -46,6 +46,7 @@ function setup({
     now,
     wait,
   });
+
   return { updater, states, downloads };
 }
 
@@ -180,6 +181,7 @@ describe('checking by itself', () => {
 
   it('asks every hour', async () => {
     vi.useFakeTimers();
+
     try {
       let asked = 0;
       const { updater } = setup({ npm: () => (asked++, Promise.resolve(release('0.1.0'))) });
@@ -246,9 +248,11 @@ describe('downloading it', () => {
     await updater.check();
     const done = updater.download();
     const [download] = downloads;
+
     for (const share of [0.004, 0.42, 0.421, 0.9, 1]) {
       download?.progress(share);
     }
+
     download?.finish();
     await done;
     expect(states.slice(2)).toEqual([

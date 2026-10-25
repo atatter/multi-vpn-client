@@ -6,6 +6,7 @@ const range = (cidr: string) => {
   if (!parsed.ok) {
     throw new Error(parsed.error);
   }
+
   return parsed.range;
 };
 

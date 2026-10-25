@@ -28,9 +28,11 @@ export function useReorder({
   // Positions are relative to the list, so scrolling isn't motion.
   useLayoutEffect(() => {
     const reduced = reducedMotion();
+
     for (const [id, row] of rows.current) {
       const top = row.offsetTop;
       const before = tops.current.get(id);
+
       if (drag.current?.id === id) {
         row.style.transform = `translateY(${drag.current.top - top}px)`;
       } else if (before !== undefined && Math.abs(before - top) > 2 && !reduced) {
@@ -39,6 +41,7 @@ export function useReorder({
           easing: 'cubic-bezier(.2,.7,.2,1)',
         });
       }
+
       tops.current.set(id, top);
     }
   });
@@ -49,9 +52,12 @@ export function useReorder({
     if (!id) {
       return;
     }
+
     rows.current.set(id, element);
+
     return () => void rows.current.delete(id);
   };
+
   const middleOf = (id: string) => {
     const element = rows.current.get(id);
     return element ? element.offsetTop + element.offsetHeight / 2 : undefined;
@@ -62,6 +68,7 @@ export function useReorder({
     if (!row) {
       return;
     }
+
     event.currentTarget.setPointerCapture(event.pointerId);
     drag.current = {
       id,
@@ -71,11 +78,13 @@ export function useReorder({
     setLifted(id);
     setDragOrder([...order]);
   };
+
   const onPointerMove = (id: string, event: PointerEvent<HTMLElement>) => {
     const row = rows.current.get(id);
     if (drag.current?.id !== id || !row || !list.current || !dragOrder) {
       return;
     }
+
     const top = event.clientY - drag.current.grab - list.current.getBoundingClientRect().top;
     drag.current.top = top;
     const next = orderWhileDragging(dragOrder, id, top + row.offsetHeight / 2, middleOf);
@@ -85,26 +94,33 @@ export function useReorder({
       setDragOrder(next);
     }
   };
+
   const onPointerUp = (id: string) => {
     const row = rows.current.get(id);
     if (drag.current?.id !== id || !row) {
       return;
     }
+
     const offset = row.style.transform;
     row.style.transform = '';
+
     if (offset && !reducedMotion()) {
       row.animate([{ transform: offset }, { transform: 'none' }], {
         duration: 160,
         easing: 'ease-out',
       });
     }
+
     drag.current = undefined;
+
     if (dragOrder) {
       commit(dragOrder, id);
     }
+
     setLifted(undefined);
     setDragOrder(undefined);
   };
+
   /** The keyboard twin of dragging: Alt+↑/↓ anywhere on a row, or ↑/↓ on its grip. */
   const onKeyDown = (id: string, event: KeyboardEvent<HTMLElement>, onGrip: boolean) => {
     if (!onGrip && !event.altKey) {
@@ -113,10 +129,12 @@ export function useReorder({
     if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
       return;
     }
+
     const next = orderAfterStep(order, id, event.key === 'ArrowUp' ? -1 : 1);
     if (!next) {
       return;
     }
+
     event.preventDefault();
     event.stopPropagation();
     commit(next, id);

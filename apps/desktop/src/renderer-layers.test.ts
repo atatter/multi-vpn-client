@@ -28,6 +28,7 @@ const restricted = (files: string[]) => {
       | [string, { paths?: { name: string }[]; patterns: { group: string[] }[] }]
       | undefined
   )?.[1];
+
   return [
     ...(options?.paths ?? []).map((path) => path.name),
     ...(options?.patterns ?? []).flatMap((pattern) => pattern.group),
@@ -43,6 +44,7 @@ describe('the lint layer rules', () => {
 
   it.each(['domain', 'store'])('keep %s/ from importing any feature', (layer) => {
     const groups = restricted([`${RENDERER}/${layer}/**`]);
+
     for (const feature of features) {
       expect(groups).toContain(`**/${feature}/**`);
     }
@@ -50,6 +52,7 @@ describe('the lint layer rules', () => {
 
   it("keep every feature from importing another feature's logic", () => {
     const groups = restricted(featureFiles);
+
     for (const feature of features) {
       expect(groups).toContain(`../${feature}/**/*.ts`);
     }
@@ -63,6 +66,7 @@ describe('the lint layer rules', () => {
     expect(everywhere).toEqual(
       expect.arrayContaining(['electron', '@repo/engine', '@repo/vpns/engine']),
     );
+
     for (const files of [
       ...['domain', 'store'].map((layer) => [`${RENDERER}/${layer}/**`]),
       featureFiles,

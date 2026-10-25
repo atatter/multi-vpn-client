@@ -54,7 +54,9 @@ export const Cidr = z.string().transform((value, ctx) => {
   if (parsed.ok) {
     return parsed.cidr;
   }
+
   ctx.addIssue(parsed.error);
+
   return z.NEVER;
 });
 

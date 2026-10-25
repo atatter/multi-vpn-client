@@ -41,16 +41,20 @@ function wordsOf(line: string): string[] {
   let word = '';
   let state: 'start' | 'plain' | '"' | "'" = 'start';
   let escaped = false;
+
   for (const char of line) {
     if (!escaped && char === '\\' && state !== "'") {
       escaped = true;
       continue;
     }
+
     const space = /[\s\0]/.test(char);
+
     if (state === 'start') {
       if (char === '#' || char === ';') {
         break;
       }
+
       if (!space && !escaped && (char === '"' || char === "'")) {
         state = char;
       } else if (!space) {
@@ -68,11 +72,14 @@ function wordsOf(line: string): string[] {
         word += char;
       }
     }
+
     escaped = false;
   }
+
   if (state !== 'start') {
     words.push(word);
   }
+
   return words;
 }
 
@@ -126,6 +133,7 @@ export const openvpnEngine: LauncherEntry<OpenVpn> = {
     if (!profile) {
       throw new Error('Import the .ovpn profile first.');
     }
+
     const parsed = parseOpenVpnProfile(profile);
     if (!parsed.ok) {
       throw new Error(`The stored .ovpn profile is invalid (${parsed.error}). Import it again.`);
@@ -141,10 +149,12 @@ export const openvpnEngine: LauncherEntry<OpenVpn> = {
     if (!vpn.username) {
       throw new Error("This profile needs a username. Add it in the VPN's settings.");
     }
+
     const password = await secrets.loginPassword();
     if (password === undefined) {
       return 'needs-password';
     }
+
     return openVpnLaunch({
       profile,
       extraDirectives: vpn.advanced,

@@ -11,5 +11,6 @@ export function imageOf(layers: Layer[], size: number, margin = 0) {
     scaleFactor: 2,
     dataURL: `data:image/png;base64,${double.toString('base64')}`,
   });
+
   return image;
 }

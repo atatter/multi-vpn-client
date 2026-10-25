@@ -29,17 +29,21 @@ export function App({ store }: { store: AppStore }) {
     if (!restarting) {
       return;
     }
+
     const swallow = (event: Event) => {
       event.stopImmediatePropagation();
+
       // A file dropped and not handled opens in the window. Keys keep their defaults, such as the OS's quit.
       if (event.type !== 'keydown') {
         event.preventDefault();
       }
     };
     const types = ['keydown', 'dragenter', 'dragover', 'drop'];
+
     for (const type of types) {
       window.addEventListener(type, swallow, true);
     }
+
     return () => {
       for (const type of types) {
         window.removeEventListener(type, swallow, true);
@@ -77,6 +81,7 @@ export function App({ store }: { store: AppStore }) {
     fitWindow: view.api.fitWindow,
   };
   const top = stack.at(-1) ?? { name: 'list' };
+
   return (
     <AppContext value={{ ...view, ...navigation }}>
       <FrameContext value={frame}>

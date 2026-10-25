@@ -25,6 +25,7 @@ function detectionText({ checking, typed, detection }: DetectionProps) {
       <span className="text-sodium">Couldn't tell what kind of VPN this is. Pick it below.</span>
     );
   }
+
   return (
     <span className="text-go">
       ✓ {FORMS[detection.kind].label}

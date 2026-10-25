@@ -25,6 +25,7 @@ const server = createServer((request, response) => {
   if (request.url === '/old') {
     return void response.end(JSON.stringify({ name: 'multi-vpn-client', version: '0.1.0' }));
   }
+
   response.writeHead(503).end();
 });
 await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));

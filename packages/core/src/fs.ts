@@ -10,6 +10,7 @@ export async function readJsonIfExists(path: string): Promise<unknown> {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return undefined;
     }
+
     throw error;
   }
 }
@@ -21,9 +22,11 @@ const TRANSIENT = new Set(['EPERM', 'EACCES', 'EBUSY']);
 export async function writeJsonAtomic(path: string, value: unknown, mode = 0o644): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   const temp = `${path}.${process.pid}.tmp`;
+
   try {
     await writeFile(temp, `${JSON.stringify(value, null, 2)}\n`, { encoding: 'utf8', mode });
     await chmod(temp, mode);
+
     for (let attempt = 1; ; attempt++) {
       try {
         return await rename(temp, path);
@@ -32,6 +35,7 @@ export async function writeJsonAtomic(path: string, value: unknown, mode = 0o644
         if (attempt >= 5 || !TRANSIENT.has(code)) {
           throw error;
         }
+
         await sleep(50 * attempt);
       }
     }

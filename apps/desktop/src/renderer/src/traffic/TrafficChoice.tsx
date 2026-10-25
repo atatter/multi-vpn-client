@@ -71,6 +71,7 @@ export function TrafficChoice({
       ),
     },
   ];
+
   if (more) {
     options.push({
       value: 'all',
@@ -121,6 +122,7 @@ function officialDescription(vpn: Vpn, unknowable: boolean) {
   if (server.all) {
     return <>Its server sends all your traffic through it. {IPV6_BLOCKED}</>;
   }
+
   return (
     <>
       Its server sends only its own network:

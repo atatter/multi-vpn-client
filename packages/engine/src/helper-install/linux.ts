@@ -129,6 +129,7 @@ async function runAsAdmin(script: string): Promise<void> {
       if (error.code === 'ENOENT') {
         throw new Error('pkexec (polkit) is needed to install the network helper.');
       }
+
       throw error;
     },
   );

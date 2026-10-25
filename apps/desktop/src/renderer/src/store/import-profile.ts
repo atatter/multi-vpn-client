@@ -11,6 +11,7 @@ export function openDropped(app: AppModel, files: readonly File[]) {
   if (more.length > 0) {
     return app.showNotice('Drop one file at a time.');
   }
+
   if (file) {
     openProfile(app, file);
   }
@@ -47,18 +48,22 @@ export async function importProfile(
       error: `${file.name} isn't a VPN file this app reads. It takes ${FILE_TYPES} files.`,
     };
   }
+
   const text = await file.text();
   const draft = { id: crypto.randomUUID(), name: uniqueName(nameFromFile(file.name), vpns) };
   let firstError: string | undefined;
+
   for (const kind of kinds) {
     const read = readAs(kind, text, draft);
     if (!read) {
       continue;
     }
+
     if (!read.ok) {
       firstError ??= `${file.name} isn't a valid ${FORMS[kind].label} file: ${read.error}`;
       continue;
     }
+
     return {
       ok: true,
       screen: {
@@ -69,5 +74,6 @@ export async function importProfile(
       },
     };
   }
+
   return { ok: false, error: firstError ?? `${file.name} isn't a VPN file this app reads.` };
 }

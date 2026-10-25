@@ -77,6 +77,7 @@ function globalProtect(
   const rejected: Failure = card
     ? { failed: "The VPN server didn't accept the card's certificate." }
     : REJECTED;
+
   return {
     options,
     readLine: readOpenConnect(server, (line) => {
@@ -84,6 +85,7 @@ function globalProtect(
       if (listed?.[1] && listed[2]) {
         offered.set(listed[1], listed[2]);
       }
+
       const choices = /GATEWAY: \[([^\]]*)\]:/.exec(line)?.[1];
       if (choices) {
         const gateways = choices
@@ -93,6 +95,7 @@ function globalProtect(
           failed: `The portal offers several gateways: ${gateways.join(', ')}. Put the address of the one to use in the Gateway field.`,
         };
       }
+
       if (
         line.includes('Unexpected 512 result') ||
         /invalid (username|user name) or password/i.test(line)
@@ -108,6 +111,7 @@ function globalProtect(
               : "The VPN server didn't get a client certificate it accepts.",
         };
       }
+
       return undefined;
     }),
   };
@@ -130,6 +134,7 @@ export const detectGlobalProtect: Detect = async ({ host, port }, probe) => {
       };
     }
   }
+
   return undefined;
 };
 
@@ -141,10 +146,12 @@ export const globalprotectEngine: LauncherEntry<GlobalProtectVpn> = {
     if (!vpn.username) {
       throw new Error("Add your username in the VPN's settings.");
     }
+
     const password = await secrets.loginPassword();
     if (password === undefined) {
       return 'needs-password';
     }
+
     return globalProtectLaunch(vpn, password);
   },
   detect: detectGlobalProtect,

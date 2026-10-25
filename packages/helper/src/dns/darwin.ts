@@ -25,6 +25,7 @@ export function createResolverDns({
 }): DnsAdapter {
   async function removeOurs() {
     const names = await readdir(dir).catch(() => []);
+
     for (const name of names) {
       const path = join(dir, name);
       const firstLine = (await readFile(path, 'utf8').catch(() => '')).split('\n', 1)[0];
@@ -38,10 +39,12 @@ export function createResolverDns({
     async set(domains) {
       await removeOurs();
       await mkdir(dir, { recursive: true });
+
       for (const domain of new Set(domains)) {
         if (!Domain.safeParse(domain).success) {
           continue;
         }
+
         // Leaves a resolver entry someone else created alone.
         await writeFile(join(dir, domain), `${RESOLVER_MARK}\nnameserver ${server}\n`, {
           flag: 'wx',
@@ -52,6 +55,7 @@ export function createResolverDns({
           }
         });
       }
+
       await flush();
     },
     async clear() {

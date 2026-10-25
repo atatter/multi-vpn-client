@@ -28,6 +28,7 @@ export function VpnList({ afterNotice }: { afterNotice: boolean }) {
     if (priority.join() === config.priority.join()) {
       return;
     }
+
     void app.save({ ...config, priority });
     const vpn = config.vpns.find((candidate) => candidate.id === moved);
     if (vpn) {
@@ -65,7 +66,9 @@ export function VpnList({ afterNotice }: { afterNotice: boolean }) {
               if (!vpn) {
                 return null;
               }
+
               const lifted = isLifted(id);
+
               return (
                 <VpnRow
                   key={id}

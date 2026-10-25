@@ -9,6 +9,7 @@ const setup = async () => {
   const dir = join(await mkdtemp(join(tmpdir(), 'mvpn-resolver-')), 'resolver');
   let flushes = 0;
   const dns = createResolverDns({ server: '198.18.0.2', dir, flush: async () => void flushes++ });
+
   return { dir, dns, flushes: () => flushes };
 };
 

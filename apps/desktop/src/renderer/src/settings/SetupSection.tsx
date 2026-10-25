@@ -10,6 +10,7 @@ function dockerLine(docker: AppModel['docker'], starting: boolean) {
   if (starting) {
     return SETUP_BUSY.docker;
   }
+
   return docker ? DOCKER_SETUP[docker].settings : 'Checking…';
 }
 
@@ -31,6 +32,7 @@ export function SetupSection() {
       setBusy(false);
     });
   };
+
   const problem = (text: string | undefined) =>
     text && (
       <span className="block text-[12.5px] whitespace-pre-wrap text-danger select-text">

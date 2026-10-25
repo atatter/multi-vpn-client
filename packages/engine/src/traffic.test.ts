@@ -67,9 +67,11 @@ describe('createTrafficTally', () => {
     const tally = createTrafficTally();
     tally.add([connection('1', 'vpn-a', 10, { host: 'old.corp' })], ['a'], 0);
     let snapshot = tally.add([], ['a'], 1000);
+
     for (let second = 2; second <= 70; second++) {
       snapshot = tally.add([], ['a'], second * 1000);
     }
+
     expect(snapshot.rates.a).toHaveLength(60);
     snapshot = tally.add([], ['a'], 5 * 60_000 + 1);
     expect(snapshot.destinations).toEqual([]);

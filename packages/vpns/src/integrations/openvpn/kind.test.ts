@@ -46,8 +46,10 @@ describe('an imported profile', () => {
     if (!read.ok) {
       throw new Error(read.error);
     }
+
     return read.vpn;
   };
+
   const usernameError = (vpn: ReturnType<typeof imported>) =>
     openvpn.schema.safeParse(vpn).error?.issues.find((issue) => issue.path.join('.') === 'username')
       ?.message;

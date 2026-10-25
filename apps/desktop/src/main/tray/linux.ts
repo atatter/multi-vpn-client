@@ -19,6 +19,7 @@ export const linuxTray: TrayPlatform = {
     if (!app.isPackaged) {
       return;
     }
+
     const command: [string, ...string[]] = [
       process.execPath,
       ...(app.commandLine.hasSwitch('no-sandbox') ? ['--no-sandbox'] : []),

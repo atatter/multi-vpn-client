@@ -57,6 +57,7 @@ export function parseSite(text: string): { site: string; isAddress: boolean } | 
   if (isIpv4(site)) {
     return { site, isAddress: true };
   }
+
   return site.includes('.') && Domain.safeParse(site).success
     ? { site, isAddress: false }
     : undefined;
@@ -135,6 +136,7 @@ export const Config = z
           path: ['vpns', index, 'id'],
         });
       }
+
       vpnIds.add(vpn.id);
     });
 
@@ -147,7 +149,9 @@ export const Config = z
           path: ['routes', index, 'id'],
         });
       }
+
       routeIds.add(route.id);
+
       if (!vpnIds.has(route.vpnId)) {
         ctx.addIssue({
           code: 'custom',
@@ -176,6 +180,7 @@ export function rankVpns(config: Pick<Config, 'vpns' | 'priority'>): Vpn[] {
   const byId = new Map(config.vpns.map((vpn) => [vpn.id, vpn]));
   const placed = config.priority.flatMap((id) => byId.get(id) ?? []);
   const loose = config.vpns.filter((vpn) => !config.priority.includes(vpn.id));
+
   return [...loose.filter((vpn) => !isBroad(vpn)), ...placed, ...loose.filter(isBroad)];
 }
 
@@ -193,7 +198,9 @@ export function placeVpn(
   if (at < 0) {
     return config.priority;
   }
+
   ids.splice(where === 'above' ? at : at + 1, 0, id);
+
   return ids;
 }
 
@@ -203,8 +210,10 @@ export function settleVpn(config: Pick<Config, 'vpns' | 'priority'>, id: string)
   if (!vpn) {
     return config.priority;
   }
+
   const ids = rankVpns(config)
     .map((other) => other.id)
     .filter((other) => other !== id);
+
   return isBroad(vpn) ? [...ids, id] : [id, ...ids];
 }

@@ -32,6 +32,7 @@ function oneLine(label: string, value: string): string {
   if (/[\r\n]/.test(value)) {
     throw new Error(`The ${label} can't contain line breaks.`);
   }
+
   return value.trim();
 }
 
@@ -90,15 +91,18 @@ export function checkpointLaunch(vpn: CheckpointVpn, password: string | undefine
         browserNext = true;
         return undefined;
       }
+
       if (browserNext && trimmed) {
         browserNext = false;
         if (/^https:\/\/\S+$/.test(trimmed)) {
           return { signInUrl: trimmed, tokenPort: SNX_TOKEN_PORT };
         }
+
         return {
           failed: `${vpn.server} sent a browser sign-in address that isn't https: ${trimmed}`,
         };
       }
+
       const error = /^Error: (.+)$/.exec(trimmed)?.[1];
       if (!error) {
         return undefined;
@@ -113,6 +117,7 @@ export function checkpointLaunch(vpn: CheckpointVpn, password: string | undefine
           failed: `${vpn.server} doesn't offer the login type ${vpn.loginType}. Look up the ones it offers in the VPN's settings.`,
         };
       }
+
       return { failed: error };
     },
   };
@@ -127,6 +132,7 @@ export function parseLoginTypes(output: string): CheckpointLoginType[] {
     if (!label || !id) {
       return [];
     }
+
     return [
       {
         id,
@@ -152,6 +158,7 @@ export const checkpointActions = implement(CHECKPOINT_ACTIONS, {
     if (result.code === 0 && types.length > 0) {
       return types;
     }
+
     const error = `${result.stderr}\n${result.stdout}`
       .split(/\r?\n/)
       .find((line) => line.startsWith('Error: '));

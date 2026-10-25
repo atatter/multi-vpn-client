@@ -40,6 +40,7 @@ export function SignInScreen({ screen }: { screen: Extract<Screen, { name: 'sign
     if (Object.keys(errors).length > 0) {
       return setShowErrors(true);
     }
+
     setSaving(true);
     const saved = await app.save(
       {
@@ -53,7 +54,9 @@ export function SignInScreen({ screen }: { screen: Extract<Screen, { name: 'sign
     if (!saved) {
       return;
     }
+
     app.home();
+
     if (connect) {
       void app.connect(draft.id);
     }

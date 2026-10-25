@@ -41,6 +41,7 @@ async function client(port: number) {
   socket.on('data', (chunk: string) => {
     buffer += chunk;
     let newline: number;
+
     while ((newline = buffer.indexOf('\n')) >= 0) {
       replies.push(JSON.parse(buffer.slice(0, newline)) as Reply);
       buffer = buffer.slice(newline + 1);
@@ -52,8 +53,10 @@ async function client(port: number) {
     const received = new Promise<void>((resolve) => waiters.push(resolve));
     socket.write(`${typeof request === 'string' ? request : JSON.stringify(request)}\n`);
     await Promise.race([received, closed]);
+
     return replies.at(-1);
   };
+
   /** Runs the handshake with `key`; returns the helper's hello reply and the auth reply. */
   const authenticate = async (key = KEY) => {
     const nonce = 'client-nonce';
@@ -62,8 +65,10 @@ async function client(port: number) {
       command: 'auth',
       proof: sign(key, appProofMessage(hello?.challenge ?? '')),
     });
+
     return { hello, auth, nonce };
   };
+
   return { socket, closed, send, authenticate };
 }
 
@@ -84,6 +89,7 @@ async function start({ failing = false } = {}) {
   const server = createHelperServer({ key: KEY, backend: { apply }, log: () => undefined });
   const port = await server.listen(0);
   stop = server.close;
+
   return { port, applied, server };
 }
 

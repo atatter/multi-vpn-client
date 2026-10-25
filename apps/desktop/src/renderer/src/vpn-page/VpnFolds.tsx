@@ -34,6 +34,7 @@ export function VpnFolds({
     Object.keys(errors).some((key) => key !== 'sites' && !key.startsWith('dns')) ||
     !!setupProblem(draft, slotsAfter(storedSlots, pending));
   const advanced = advancedSummary(draft);
+
   return (
     <div className="mt-[18px]">
       <Fold

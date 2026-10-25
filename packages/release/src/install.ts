@@ -46,6 +46,7 @@ export async function ensureInstalled({
       `Multi VPN Client ${manifest.version} isn't available for ${target}. It's built for ${Object.keys(manifest.archives).join(', ')}.`,
     );
   }
+
   const versionDir = join(dir, manifest.version);
   if (existsSync(executableIn(versionDir, platform))) {
     return executableIn(versionDir, platform);
@@ -53,6 +54,7 @@ export async function ensureInstalled({
 
   await mkdir(dir, { recursive: true });
   const work = await mkdtemp(join(dir, '.download-'));
+
   try {
     const file = join(work, archive.file);
     const sha256 = await download(archiveUrl(manifest, archive, env), file, (received, length) =>
@@ -71,6 +73,7 @@ export async function ensureInstalled({
     if (!existsSync(executableIn(root, platform))) {
       throw new Error(`${archive.file} doesn't contain the app where it should be.`);
     }
+
     await rename(root, versionDir).catch((error: unknown) => {
       // Another launcher finished the same version first; theirs is just as good.
       if (!existsSync(executableIn(versionDir, platform))) {
@@ -80,6 +83,7 @@ export async function ensureInstalled({
   } finally {
     await remove(work);
   }
+
   return executableIn(versionDir, platform);
 }
 
@@ -120,6 +124,7 @@ function request(url: string, redirects = 5): Promise<IncomingMessage> {
       const { statusCode = 0, headers } = response;
       if (statusCode >= 300 && statusCode < 400 && headers.location) {
         response.resume();
+
         if (redirects === 0) {
           reject(new Error(`Downloading ${url} failed: too many redirects.`));
         } else {
@@ -163,6 +168,7 @@ async function download(
     },
     createWriteStream(file),
   );
+
   return hash.digest('hex');
 }
 
@@ -203,5 +209,6 @@ async function singleFolder(dir: string): Promise<string> {
   ) {
     return join(dir, only);
   }
+
   return dir;
 }

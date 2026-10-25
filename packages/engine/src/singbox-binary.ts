@@ -26,6 +26,7 @@ export function hostPlatform(platform = process.platform, arch = process.arch): 
   if (isSingBoxPlatform(key)) {
     return key;
   }
+
   throw new Error(`This OS/architecture (${platform}/${arch}) isn't supported yet.`);
 }
 
@@ -45,6 +46,7 @@ export async function ensureSingBox(binDir: string): Promise<SingBoxBinary> {
   if (!response.ok) {
     throw new Error(`Downloading sing-box failed: HTTP ${response.status}`);
   }
+
   const archive = Buffer.from(await response.arrayBuffer());
   if (sha256(archive) !== pinned.archive) {
     throw new Error("The downloaded sing-box doesn't match its pinned checksum.");
@@ -52,6 +54,7 @@ export async function ensureSingBox(binDir: string): Promise<SingBoxBinary> {
 
   await mkdir(binDir, { recursive: true });
   const staging = await mkdtemp(join(binDir, '.download-'));
+
   try {
     // Windows' own tar (bsdtar) unpacks .zip; Git for Windows' GNU tar earlier on PATH can't.
     const tar =
@@ -66,12 +69,15 @@ export async function ensureSingBox(binDir: string): Promise<SingBoxBinary> {
   } finally {
     await rm(staging, { recursive: true, force: true });
   }
+
   if (sha256(await readFile(path)) !== pinned.binary) {
     throw new Error("The unpacked sing-box doesn't match its pinned checksum.");
   }
+
   // Verified; make sure Gatekeeper doesn't block it as a quarantined download.
   if (process.platform === 'darwin') {
     await run('/usr/bin/xattr', ['-d', 'com.apple.quarantine', path]);
   }
+
   return { path, sha256: pinned.binary };
 }

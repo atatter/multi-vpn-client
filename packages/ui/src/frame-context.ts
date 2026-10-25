@@ -19,5 +19,6 @@ export function useFrameEnvironment(): FrameEnvironment {
   if (!environment) {
     throw new Error('Frame needs the FrameContext provider');
   }
+
   return environment;
 }

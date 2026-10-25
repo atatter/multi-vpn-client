@@ -59,6 +59,7 @@ function shippedPackages(): string[] {
   if (recorded.length === 0) {
     throw new Error('No recorded packages: run electron-vite build first.');
   }
+
   const compiled = ['helper', 'card-bridge'].flatMap((name) => {
     const dir = join(root, 'packages', name);
     return Object.keys(packageJson(dir).dependencies ?? {})
@@ -67,6 +68,7 @@ function shippedPackages(): string[] {
   });
   // Tailwind writes its preflight base styles into the window's stylesheet.
   const inlined = [realpathSync(join(desktop, 'node_modules', 'tailwindcss'))];
+
   return [...new Set([...recorded, ...compiled, ...inlined].map((dir) => realpathSync(dir)))];
 }
 
@@ -78,6 +80,7 @@ function packageNotice(dir: string): { id: string; text: string } {
       `${name}@${version} ships no license file, so its notice can't be included. Check its license (${license ?? 'none given'}) by hand.`,
     );
   }
+
   return {
     id: `${name}@${version}`,
     text: `${name} ${version} (${license ?? 'see below'})\n\n${read(dir, file).trim()}`,

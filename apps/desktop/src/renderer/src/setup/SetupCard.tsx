@@ -19,6 +19,7 @@ const stepText = (done: boolean, busy: boolean, text: StepText) => {
   if (done) {
     return text.done;
   }
+
   return busy ? text.busy : text.todo;
 };
 
@@ -69,6 +70,7 @@ export function SetupCard() {
   );
 
   const problems = setupProblems(app.docker, helperState);
+
   return (
     <section
       aria-label="Finish setting up"

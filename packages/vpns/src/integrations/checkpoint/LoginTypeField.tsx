@@ -37,11 +37,13 @@ export function LoginTypeField({
     if (!validServer.success) {
       return;
     }
+
     const target = validServer.data;
     setLookup({ server: target, state: 'busy' });
     // A lookup for another server since then wins; this one's answer is dropped.
     const settle = (next: NonNullable<typeof lookup>) =>
       setLookup((current) => (current?.server === target ? next : current));
+
     try {
       settle({
         server: target,
@@ -66,6 +68,7 @@ export function LoginTypeField({
   // oxlint-disable-next-line react/set-state-in-effect
   useEffect(() => lookUpOnArrival(), []);
   const failure = error || (shown?.state === 'failed' ? shown.message : undefined);
+
   return (
     <div className="mb-3 grid gap-1">
       <div className="flex items-baseline justify-between gap-3">

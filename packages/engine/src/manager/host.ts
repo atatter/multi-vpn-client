@@ -49,10 +49,12 @@ export function createHost(deps: {
     if (helper) {
       return helper;
     }
+
     const token = await readHelperToken(deps.dataDir);
     if (!token) {
       throw new Error('Install the network helper first (top of the window).');
     }
+
     const session = await openHelperSession({ port: HELPER_PORT, token });
     helper = session;
     void session.closed.then(() =>
@@ -60,11 +62,13 @@ export function createHost(deps: {
         if (helper !== session) {
           return;
         } // closed on purpose
+
         helper = undefined;
         traffic?.stop();
         await deps.onHelperLost();
       }),
     );
+
     return session;
   }
 
@@ -78,8 +82,10 @@ export function createHost(deps: {
       traffic?.stop();
       return;
     }
+
     const { tunnels, domains, blockIpv6 } = plan;
     const endpoint = await statsEndpoint();
+
     try {
       await (await getHelper()).apply({ tunnels, domains, blockIpv6, stats: endpoint });
     } catch (error) {
@@ -89,6 +95,7 @@ export function createHost(deps: {
       traffic = undefined;
       throw error;
     }
+
     traffic ??= createTrafficMonitor({
       endpoint,
       connectedVpns: deps.connectedVpns,
@@ -102,6 +109,7 @@ export function createHost(deps: {
     traffic?.stop();
     const session = helper;
     helper = undefined;
+
     if (session) {
       await session.apply(NO_ROUTES).catch(() => undefined);
       session.close();

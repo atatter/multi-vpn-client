@@ -34,9 +34,11 @@ export function setupProblem(vpn: Vpn, storedSlots: readonly string[]): string |
   if (!Vpn.safeParse(vpn).success) {
     return 'Finish setting up';
   }
+
   const [slot] = missingSecrets(vpn, storedSlots);
   if (!slot) {
     return undefined;
   }
+
   return slot.importOnly ? `Needs the ${slot.label}` : `Needs a ${slot.label.toLowerCase()}`;
 }

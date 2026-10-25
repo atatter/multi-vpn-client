@@ -13,6 +13,7 @@ export function TrafficScreen() {
   const nameOf = (vpnId: string) =>
     vpnLabel(app.config.vpns.find((vpn) => vpn.id === vpnId) ?? { name: 'Removed VPN' });
   const rows = useTraffic().destinations;
+
   return (
     <Frame title="Where traffic goes" onBack={app.back}>
       {rows.length === 0 ? (

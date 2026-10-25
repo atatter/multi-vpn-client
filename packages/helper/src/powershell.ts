@@ -17,6 +17,7 @@ const failureReason = (error: ExecFileException) => {
   if (error.killed) {
     return 'timed out';
   }
+
   return typeof error.code === 'number' ? `exit ${error.code}` : error.message;
 };
 
@@ -43,6 +44,7 @@ export const runPowerShell: RunPowerShell = (script) =>
         if (!error) {
           return resolve();
         }
+
         const reason = failureReason(error);
         reject(
           new Error(

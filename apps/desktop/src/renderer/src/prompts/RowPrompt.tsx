@@ -26,5 +26,6 @@ export function RowPrompt({ vpn }: { vpn: Vpn }) {
   if (connection?.state === 'awaiting-browser') {
     return <BrowserSignInPrompt vpn={vpn} />;
   }
+
   return null;
 }

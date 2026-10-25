@@ -20,6 +20,7 @@ export function VersionRow() {
     download: () => void app.api.downloadUpdate(),
     restart: () => setConfirming(!confirming),
   };
+
   return (
     <>
       <div className={cx(cell, 'relative h-[54px]')}>

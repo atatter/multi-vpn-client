@@ -34,6 +34,7 @@ export function readOpenConnect(
     if (negotiating) {
       server = negotiating;
     }
+
     const changed = PIN_MISMATCH.exec(line)?.[1];
     if (changed) {
       return {
@@ -42,6 +43,7 @@ export function readOpenConnect(
         server,
       };
     }
+
     const untrusted = UNTRUSTED.exec(line)?.[1];
     if (untrusted) {
       return {
@@ -50,6 +52,7 @@ export function readOpenConnect(
         server,
       };
     }
+
     return readProtocol(line);
   };
 }

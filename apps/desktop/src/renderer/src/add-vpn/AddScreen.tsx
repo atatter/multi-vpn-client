@@ -11,6 +11,7 @@ export function AddScreen() {
   const app = useApp();
   const state = useAddress();
   useFileDrop((files) => openDropped(app, files));
+
   return (
     <Frame
       title="Add VPN"

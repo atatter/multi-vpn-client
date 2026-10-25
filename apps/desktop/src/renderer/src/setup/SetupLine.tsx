@@ -23,6 +23,7 @@ export function SetupLine() {
   if (!dockerProblem && !helperProblem) {
     return null;
   }
+
   const line = ({ text, action, busy, busyText, error, run }: Line) => (
     <span className="grid gap-0.5">
       <span className="flex items-baseline justify-between gap-2.5">
@@ -38,6 +39,7 @@ export function SetupLine() {
       )}
     </span>
   );
+
   return (
     <div
       role="status"

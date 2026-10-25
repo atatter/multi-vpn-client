@@ -153,11 +153,13 @@ export function parseHelperLine(
   line: string,
 ): { ok: true; request: HelperRequest } | { ok: false; error: string } {
   let json: unknown;
+
   try {
     json = JSON.parse(line);
   } catch {
     return { ok: false, error: 'Malformed request' };
   }
+
   const parsed = HelperRequest.safeParse(json);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
@@ -166,5 +168,6 @@ export function parseHelperLine(
       error: `${issue?.path.join('.') || 'request'}: ${issue?.message ?? 'invalid'}`,
     };
   }
+
   return { ok: true, request: parsed.data };
 }

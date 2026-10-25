@@ -52,6 +52,7 @@ export async function runChecked(
       (result.stderr || result.stdout).trim() || `${command} exited with ${result.code}`,
     );
   }
+
   return result.stdout;
 }
 

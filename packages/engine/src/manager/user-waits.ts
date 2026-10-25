@@ -79,11 +79,13 @@ export function createUserWaits({
           ),
         );
       }
+
       browserPorts.add(tokenPort);
       const wait = receiveBrowserToken(tokenPort, BROWSER_SIGN_IN_TIMEOUT_MS);
       waits.set(vpnId, { cancel: (error) => wait.cancel(error), url: signInUrl });
       statuses.set(vpnId, { state: 'awaiting-browser' });
       openUrl(signInUrl);
+
       return wait.token.finally(() => {
         browserPorts.delete(tokenPort);
         waits.delete(vpnId);
@@ -107,6 +109,7 @@ export function createUserWaits({
       waits.set(vpnId, { cancel: (error) => search.abort(error) });
       const onWaiting = () =>
         statuses.set(vpnId, { state: 'awaiting-card', card: CARD_NAME[smartCard] });
+
       return openCardBridge(cardBridgeBinary, {
         idCardOnly: smartCard === 'id-card',
         onWaiting,
@@ -127,6 +130,7 @@ export function createUserWaits({
       if (!wait) {
         throw new Error("This VPN isn't waiting for you anymore.");
       }
+
       if (reply === null) {
         wait.cancel(new CancelledError());
       } else if (wait.answer) {
@@ -142,6 +146,7 @@ export function createUserWaits({
       if (!url) {
         throw new Error("This VPN isn't waiting for a browser sign-in anymore.");
       }
+
       openUrl(url);
     },
   };

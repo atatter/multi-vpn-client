@@ -35,6 +35,7 @@ export function EditFooter({
       </>
     );
   }
+
   return (
     <>
       <span>{reconnects ? 'Saving reconnects this VPN' : 'Unsaved changes'}</span>

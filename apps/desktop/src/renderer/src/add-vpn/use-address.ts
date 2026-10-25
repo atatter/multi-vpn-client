@@ -26,6 +26,7 @@ export function useAddress() {
     if (!looksLikeAddress(typed)) {
       return;
     }
+
     let current = true;
     // Probing starts once typing pauses, not on every key.
     const timer = setTimeout(() => {
@@ -34,7 +35,9 @@ export function useAddress() {
           if (!current) {
             return;
           }
+
           setFound({ address: typed, detection });
+
           if (detection.kind === 'unknown') {
             setManual(true);
           }
@@ -42,6 +45,7 @@ export function useAddress() {
         () => current && setFound({ address: typed, detection: { kind: 'unknown' } }),
       );
     }, 750);
+
     return () => {
       current = false;
       clearTimeout(timer);
@@ -59,5 +63,6 @@ export function useAddress() {
             source: { from: 'address', browserSignIn: !!detection.browserSignIn },
           })
       : undefined;
+
   return { address, setAddress, typed, checking, detection, manual, setManual, next };
 }

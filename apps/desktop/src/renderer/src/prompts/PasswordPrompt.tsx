@@ -12,11 +12,13 @@ export function PasswordPrompt({ vpn }: { vpn: Vpn }) {
   // Starts as the VPN's own setting: someone who chose to remember it shouldn't have to say so again.
   const [remember, setRemember] = useState(vpn.rememberPassword);
   const user = 'username' in vpn && vpn.username ? vpn.username : undefined;
+
   return (
     <form
       aria-label={`Sign in to ${vpnLabel(vpn)}`}
       onSubmit={(event) => {
         event.preventDefault();
+
         if (password) {
           app.submitPassword(password, remember);
         }
@@ -25,6 +27,7 @@ export function PasswordPrompt({ vpn }: { vpn: Vpn }) {
         if (event.key !== 'Escape') {
           return;
         }
+
         event.preventDefault();
         app.cancelPrompt();
       }}

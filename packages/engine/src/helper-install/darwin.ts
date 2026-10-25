@@ -91,6 +91,7 @@ async function runAsAdmin(script: string, reason: string): Promise<void> {
     if (result.stderr.includes('-128')) {
       throw new Error('Administrator access was cancelled.');
     }
+
     throw new Error(result.stderr.trim() || 'The administrator script failed.');
   }
 }
@@ -101,6 +102,7 @@ export const darwinInstaller: PlatformInstaller = {
   async install({ configJson, ...plan }) {
     // tmpdir() is per-user (0700) on macOS; the file itself is 0600 too.
     const staging = await mkdtemp(join(tmpdir(), 'mvpn-helper-'));
+
     try {
       const configFile = join(staging, 'helper.json');
       await writeFile(configFile, configJson, { mode: 0o600 });

@@ -16,6 +16,7 @@ export function parsePushedRoutes(text: string): ServerRoutes {
   if (entries.includes('all')) {
     return { all: true, cidrs: [] };
   }
+
   const cidrs = [...new Set(entries.flatMap((entry) => networkOf(entry) ?? []))].slice(
     0,
     MAX_PUSHED_ROUTES,
@@ -28,5 +29,6 @@ export function parsePushedRoutes(text: string): ServerRoutes {
     }),
   );
   const everything = rangesToCidrs(ranges).join() === ALL_TRAFFIC;
+
   return everything ? { all: true, cidrs: [] } : { all: false, cidrs };
 }

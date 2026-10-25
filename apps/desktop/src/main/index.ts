@@ -101,6 +101,7 @@ function restartToUpdate() {
   if (!version) {
     return;
   }
+
   // Given an execPath, Electron passes only `args`: hand this run's own on (the launcher's --no-sandbox, for one).
   app.relaunch({
     execPath: executableIn(join(versions, version), platform),
@@ -135,16 +136,19 @@ void app.whenReady().then(() => {
   if (!primaryInstance) {
     return;
   }
+
   // macOS ignores a window's icon; outside a packaged app the Dock would show Electron's. A packaged app has its own.
   if (!app.isPackaged) {
     app.dock?.setIcon(APP_ICON);
   }
+
   const window = createWindow();
   // ✕ hides the window: the app stays in the tray and the VPNs stay on.
   window.on('close', (event) => {
     if (windowMayClose) {
       return;
     }
+
     event.preventDefault();
     hideWindow();
   });
@@ -166,10 +170,12 @@ void app.whenReady().then(() => {
   void connections.removeLeftovers();
   updater.start();
   app.on('browser-window-focus', updater.windowFocused);
+
   // Holding the single-instance lock, no older version can be running, so what an update replaced can go.
   if (app.isPackaged) {
     void removeOlderVersions(versions, app.getVersion(), remove);
   }
+
   app.on('activate', () => void showWindow());
 });
 
@@ -178,6 +184,7 @@ app.on('before-quit', (event) => {
   if (shuttingDown) {
     return;
   }
+
   shuttingDown = true;
   event.preventDefault();
   void connections.shutdown().finally(() => {

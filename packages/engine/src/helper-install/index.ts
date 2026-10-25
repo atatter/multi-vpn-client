@@ -69,6 +69,7 @@ export async function helperState(dataDir: string): Promise<HelperState> {
   if (!installer) {
     return 'unsupported';
   }
+
   const version = await helperVersion(HELPER_PORT);
   if (version === undefined) {
     return installer.isInstalled() ? 'not-responding' : 'not-installed';
@@ -76,6 +77,7 @@ export async function helperState(dataDir: string): Promise<HelperState> {
   if (version !== HELPER_VERSION || !(await readHelperToken(dataDir))) {
     return 'needs-update';
   }
+
   return 'ready';
 }
 
@@ -86,6 +88,7 @@ function requireInstaller(): PlatformInstaller {
   if (!installer) {
     throw new Error(`The network helper isn't available on ${process.platform} yet.`);
   }
+
   return installer;
 }
 
@@ -117,8 +120,10 @@ export async function installHelper({
     if ((await helperVersion(HELPER_PORT)) === HELPER_VERSION) {
       return;
     }
+
     await sleep(250);
   }
+
   throw new Error(
     `The network helper was installed but isn't responding. Its log: ${installer.logHint}`,
   );

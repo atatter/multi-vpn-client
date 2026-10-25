@@ -11,5 +11,6 @@ export async function removeStaleContainers(docker: Docker): Promise<void> {
   if (ids.length > 0) {
     await docker.run(['rm', '--force', ...ids]);
   }
+
   await docker.run(['network', 'prune', '--force', '--filter', `label=${CONTAINER_LABEL}`]);
 }

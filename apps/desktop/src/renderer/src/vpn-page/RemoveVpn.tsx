@@ -21,6 +21,7 @@ export function RemoveVpn({
       </button>
     );
   }
+
   return (
     <div className={cx(note, 'bg-chip')}>
       <p className="mb-2.5">

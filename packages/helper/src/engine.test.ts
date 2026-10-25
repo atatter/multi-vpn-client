@@ -42,7 +42,9 @@ while :; do sleep 0.1; [ -e ${join(dir, 'die')} ] && exit 3; done
     .digest('hex');
   const readEvents = async () =>
     (await readFile(events, 'utf8').catch(() => '')).trim().split('\n').filter(Boolean);
+
   const crash = () => writeFile(join(dir, 'die'), '');
+
   return { dir, path, sha, readEvents, crash };
 }
 
@@ -262,6 +264,7 @@ describe('stopLeftover', () => {
         stdio: 'ignore',
       });
       const gone = new Promise((resolve) => leftover.once('exit', resolve));
+
       try {
         await stopLeftover({
           singBoxPath: sb.path,

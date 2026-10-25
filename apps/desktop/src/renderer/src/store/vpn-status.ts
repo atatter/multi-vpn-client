@@ -24,6 +24,7 @@ function scopeLabel(vpn: Vpn): string {
   if (isBroad(vpn)) {
     return 'All traffic';
   }
+
   return vpn.traffic === 'sites' ? 'Chosen sites' : 'Its network';
 }
 
@@ -56,6 +57,7 @@ function layerText(
   if (layer.starvedBy) {
     return { text: standbyWhy(vpn, nameOf(layer.starvedBy)).why, tone: 'standby' };
   }
+
   if (layer.broad) {
     // A higher VPN carrying everything leaves this one only its pins.
     const everything = layer.fates.find(
@@ -67,11 +69,13 @@ function layerText(
         tone: 'go',
       };
     }
+
     return {
       text: layer.fates.some((fate) => fate.taken?.partly) ? 'Everything else' : 'All traffic',
       tone: 'go',
     };
   }
+
   const what = vpn.traffic === 'sites' ? 'Chosen sites' : 'Its network';
   const lost = layer.fates.flatMap((fate) =>
     fate.taken ? [{ rule: fate.rule, taken: fate.taken }] : [],
@@ -79,6 +83,7 @@ function layerText(
   if (lost.length === 0) {
     return { text: what, tone: 'go' };
   }
+
   const winners = listOf([...new Set(lost.map((fate) => nameOf(fate.taken.by)))]);
   // Lost to a pin is a choice someone made, not a problem: say it, but don't flag it.
   const pinned = lost.every((fate) => fate.taken.byPin);
@@ -87,6 +92,7 @@ function layerText(
   if (lost.length === layer.fates.length && lost.every((fate) => !fate.taken.partly)) {
     return { text: `${what} · all of it goes to ${winners}${suffix}`, tone };
   }
+
   const [only] = lost;
   if (only && lost.length === 1) {
     return {
@@ -94,6 +100,7 @@ function layerText(
       tone,
     };
   }
+
   return { text: `${what} · part goes to ${winners}${suffix}`, tone };
 }
 
@@ -102,8 +109,10 @@ export function lostOne(layer: PlanLayer) {
   if (layer.broad || layer.starvedBy) {
     return undefined;
   }
+
   const lost = layer.fates.filter((fate) => fate.taken && !fate.taken.partly);
   const [only] = lost;
+
   return only && lost.length === 1 && !only.taken?.byPin ? only : undefined;
 }
 
@@ -125,9 +134,11 @@ export function statusOf(
       ? { text: 'Its certificate changed', tone: 'danger' }
       : { text: 'Check its certificate to connect', tone: 'sodium' };
   }
+
   const status = app.connections[vpn.id];
   const nameOf = (vpnId: string) =>
     vpnLabel(app.config.vpns.find((other) => other.id === vpnId) ?? { name: '' });
+
   switch (status?.state) {
     case 'connecting':
       return { text: status.step, tone: 'sodium' };
@@ -151,6 +162,7 @@ export function statusOf(
       if (!layer) {
         return { text: 'Connected', tone: 'go' };
       }
+
       const { text, tone } = layerText(layer, vpn, nameOf);
       return { text, tone, rate: tone === 'go', wrap: tone !== 'go' };
     }
@@ -160,6 +172,7 @@ export function statusOf(
       if (problem) {
         return { text: problem, tone: 'sodium' };
       }
+
       return { scope: scopeLabel(vpn), text: ` · ${accountLabel(vpn)}`, tone: 'muted' };
     }
   }
@@ -170,6 +183,7 @@ export function switchBlocker(vpn: Vpn, app: AppModel): string | undefined {
   if (isOn(app.connections[vpn.id])) {
     return undefined;
   }
+
   return setupProblem(vpn, app.secretStatus[vpn.id] ?? []);
 }
 
@@ -183,5 +197,6 @@ export function switchLook(vpnId: string, app: AppModel, layer: PlanLayer | unde
   if (on && connection?.state !== 'connected') {
     return { on, tone: 'busy' } as const;
   }
+
   return { on, tone: layer?.starvedBy ? 'standby' : 'go' } as const;
 }

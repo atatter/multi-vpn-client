@@ -99,6 +99,7 @@ export function openPcsc(): Pcsc {
   if (!abi) {
     throw new Error(`Smart cards aren't supported on ${process.platform}.`);
   }
+
   const { dword, handle, result, suffix, names: encoding } = abi;
   const lib = dlopen(abi.library, {
     SCardEstablishContext: { args: [dword, 'ptr', 'ptr', 'ptr'], returns: result },
@@ -123,25 +124,30 @@ export function openPcsc(): Pcsc {
     if (!symbol) {
       throw new Error(`${abi.library} has no ${name}`);
     }
+
     return symbol;
   };
 
   const dwordBytes = dword === 'u64' ? 8 : 4;
   /** An integer argument passed by value, as the FFI type expects it. */
   const word = (value: number) => (dword === 'u64' ? BigInt(value) : value);
+
   /** An out (or in-out) parameter of the given width. */
   const out = (bytes: number, value = 0) => {
     const cell = new Uint8Array(8);
     new DataView(cell.buffer).setBigUint64(0, BigInt(value), true);
     return { cell, read: () => readUnsigned(cell, bytes) };
   };
+
   const readHandle = (cell: Uint8Array): number | bigint => {
     const view = new DataView(cell.buffer);
     if (handle === 'i32') {
       return view.getInt32(0, true);
     }
+
     return handle === 'i64' ? view.getBigInt64(0, true) : view.getBigUint64(0, true);
   };
+
   const check = (call: string, rv: number | bigint) => {
     const code = Number(BigInt.asUintN(32, BigInt(rv)));
     if (code !== SCARD_S_SUCCESS) {
@@ -160,6 +166,7 @@ export function openPcsc(): Pcsc {
     readers() {
       const length = out(dwordBytes, 16 * 1024);
       const names = new Uint8Array(16 * 1024);
+
       try {
         check(
           'SCardListReaders',
@@ -172,8 +179,10 @@ export function openPcsc(): Pcsc {
         ) {
           return [];
         }
+
         throw error;
       }
+
       return splitMultiString(names.subarray(0, length.read()), encoding);
     },
 
@@ -196,6 +205,7 @@ export function openPcsc(): Pcsc {
       const readerLength = out(dwordBytes, readerName.length);
       const state = out(dwordBytes);
       const statusProtocol = out(dwordBytes);
+
       try {
         check(
           'SCardStatus',
@@ -215,6 +225,7 @@ export function openPcsc(): Pcsc {
       }
 
       const response = new Uint8Array(MAX_RESPONSE);
+
       return {
         reader,
         atr: atr.slice(0, atrLength.read()),
@@ -228,6 +239,7 @@ export function openPcsc(): Pcsc {
             'SCardTransmit',
             fn('SCardTransmit')(card, pci, apdu, word(apdu.length), null, response, length.cell),
           );
+
           return response.slice(0, length.read());
         },
         beginTransaction: () => check('SCardBeginTransaction', fn('SCardBeginTransaction')(card)),
@@ -259,6 +271,7 @@ function readUnsigned(bytes: Uint8Array, width: number): number {
 
 function writeUnsigned(bytes: Uint8Array, offset: number, width: number, value: number) {
   const view = new DataView(bytes.buffer, bytes.byteOffset);
+
   if (width === 8) {
     view.setBigUint64(offset, BigInt(value), true);
   } else {
