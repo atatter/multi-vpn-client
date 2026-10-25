@@ -52,27 +52,44 @@ export function createTrafficTally() {
         const total = connection.upload + connection.download;
         const delta = Math.max(0, total - (seen.get(connection.id) ?? 0));
         seen.set(connection.id, total);
-        if (!vpnId) continue;
+        if (!vpnId) {
+          continue;
+        }
         second.set(vpnId, (second.get(vpnId) ?? 0) + delta);
         const host = connection.metadata.host || connection.metadata.destinationIP || '';
-        if (!host) continue;
+        if (!host) {
+          continue;
+        }
         const key = `${vpnId} ${host}`;
         const entry = destinations.get(key) ?? { host, vpnId, samples: [] };
-        if (delta > 0 || entry.samples.length === 0) entry.samples.push({ at: now, bytes: delta });
+        if (delta > 0 || entry.samples.length === 0) {
+          entry.samples.push({ at: now, bytes: delta });
+        }
         destinations.set(key, entry);
       }
-      for (const id of seen.keys()) if (!open.has(id)) seen.delete(id);
+      for (const id of seen.keys()) {
+        if (!open.has(id)) {
+          seen.delete(id);
+        }
+      }
 
       // Every connected VPN gets a value each second, so a quiet one shows as quiet rather than missing.
-      for (const id of rates.keys()) if (!vpnIds.includes(id)) rates.delete(id);
-      for (const vpnId of vpnIds)
+      for (const id of rates.keys()) {
+        if (!vpnIds.includes(id)) {
+          rates.delete(id);
+        }
+      }
+      for (const vpnId of vpnIds) {
         rates.set(
           vpnId,
           [...(rates.get(vpnId) ?? []), second.get(vpnId) ?? 0].slice(-HISTORY_SECONDS),
         );
+      }
       for (const [key, entry] of destinations) {
         entry.samples = entry.samples.filter((sample) => now - sample.at <= DESTINATION_WINDOW_MS);
-        if (entry.samples.length === 0 || !vpnIds.includes(entry.vpnId)) destinations.delete(key);
+        if (entry.samples.length === 0 || !vpnIds.includes(entry.vpnId)) {
+          destinations.delete(key);
+        }
       }
 
       const rows = [...destinations.values()].map(({ host, vpnId, samples }) => ({
@@ -115,10 +132,13 @@ export function createTrafficMonitor({
         headers: { Authorization: `Bearer ${endpoint.secret}` },
         signal: AbortSignal.timeout(POLL_MS),
       });
-      if (!response.ok) return;
+      if (!response.ok) {
+        return;
+      }
       const body = ClashConnections.safeParse(await response.json());
-      if (body.success && mine === generation)
+      if (body.success && mine === generation) {
         onUpdate(tally.add(body.data.connections ?? [], vpnIds, Date.now()));
+      }
     } catch {
       // Skipped; the next poll retries.
     }

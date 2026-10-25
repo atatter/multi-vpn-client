@@ -7,8 +7,11 @@ export type PendingSecrets = SecretChanges[string];
 export function slotsAfter(stored: readonly string[], pending: PendingSecrets): string[] {
   const slots = new Set(stored);
   for (const [key, value] of Object.entries(pending)) {
-    if (value === null) slots.delete(key);
-    else if (value.trim()) slots.add(key);
+    if (value === null) {
+      slots.delete(key);
+    } else if (value.trim()) {
+      slots.add(key);
+    }
   }
   return [...slots];
 }

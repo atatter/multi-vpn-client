@@ -13,7 +13,9 @@ export const openvpnForm: KindForm<OpenVpn> = {
       error={errors['secrets.profile']}
       onImport={(text) => {
         const read = OPENVPN_FILE.read(text, vpn);
-        if (!read.ok) return read.error;
+        if (!read.ok) {
+          return read.error;
+        }
         onChange(read.vpn);
         // The profile is the file's only secret: kept whole.
         setSecret('profile', text);

@@ -52,7 +52,9 @@ export function RowFixes({
       </button>
     );
   }
-  if (!lostRule) return null;
+  if (!lostRule) {
+    return null;
+  }
   return (
     <button
       type="button"

@@ -15,7 +15,7 @@ const HOST_MESSAGE = 'Enter a host name or IP, e.g. vpn.example.com (no https://
 
 const validPort = (value: string) => {
   const port = HOST_PORT_RE.exec(value)?.[2];
-  return port === undefined || (Number(port) >= 1 && Number(port) <= 65535);
+  return port === undefined || (Number(port) >= 1 && Number(port) <= 65_535);
 };
 
 /** "host" or "host:port". */
@@ -51,7 +51,9 @@ export type DnsSettings = z.infer<typeof DnsSettings>;
 /** A route CIDR, stored in canonical form ("10.0.0.5" → "10.0.0.5/32"). */
 export const Cidr = z.string().transform((value, ctx) => {
   const parsed = parseCidr(value);
-  if (parsed.ok) return parsed.cidr;
+  if (parsed.ok) {
+    return parsed.cidr;
+  }
   ctx.addIssue(parsed.error);
   return z.NEVER;
 });

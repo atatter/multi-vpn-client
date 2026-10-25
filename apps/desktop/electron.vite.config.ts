@@ -33,7 +33,9 @@ function recordPackages(name: string): Plugin {
         const dir = /^\0?(.*[\\/]node_modules[\\/](?:@[^\\/]+[\\/])?[^\\/]+)[\\/]/.exec(
           source,
         )?.[1];
-        if (dir) dirs.add(dir);
+        if (dir) {
+          dirs.add(dir);
+        }
       }
       mkdirSync(join(import.meta.dirname, 'build'), { recursive: true });
       writeFileSync(

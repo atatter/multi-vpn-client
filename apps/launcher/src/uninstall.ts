@@ -103,7 +103,9 @@ export function singletonLockHeld(
 ): boolean {
   const split = target.lastIndexOf('-');
   const pid = Number(target.slice(split + 1));
-  if (split <= 0 || !Number.isInteger(pid) || pid <= 0) return false;
+  if (split <= 0 || !Number.isInteger(pid) || pid <= 0) {
+    return false;
+  }
   return target.slice(0, split) !== host || alive(pid);
 }
 
@@ -151,7 +153,9 @@ export async function survey(
 
 async function dockerImages(): Promise<Found['docker']> {
   const bin = await findDocker().catch(() => undefined);
-  if (!bin) return undefined;
+  if (!bin) {
+    return undefined;
+  }
   const docker = createDocker(bin);
   try {
     await docker.assertRunning();
@@ -164,8 +168,9 @@ async function dockerImages(): Promise<Found['docker']> {
 async function folderBytes(dir: string): Promise<number> {
   let total = 0;
   for (const entry of await readdir(dir, { recursive: true, withFileTypes: true })) {
-    if (entry.isFile())
+    if (entry.isFile()) {
       total += (await lstat(join(entry.parentPath, entry.name)).catch(() => ({ size: 0 }))).size;
+    }
   }
   return total;
 }
@@ -190,8 +195,12 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 /** The question about the VPNs, or undefined when there are none to lose and the app's folder simply goes. */
 export function keepQuestion(found: Found): string | undefined {
   const vpns = found.data?.vpns;
-  if (!found.data || vpns === 0) return undefined;
-  if (vpns === 1) return 'Also delete your VPN and its saved passwords?';
+  if (!found.data || vpns === 0) {
+    return undefined;
+  }
+  if (vpns === 1) {
+    return 'Also delete your VPN and its saved passwords?';
+  }
   return `Also delete your ${vpns === undefined ? 'VPNs' : `${vpns} VPNs`} and their saved passwords?`;
 }
 
@@ -227,7 +236,9 @@ export function uninstallSteps(found: Found, deleteVpns: boolean): Step[] {
     steps.push({
       what: "the app's entry in your app list",
       run: async () => {
-        for (const path of found.desktopEntry) await rm(path, { force: true });
+        for (const path of found.desktopEntry) {
+          await rm(path, { force: true });
+        }
       },
       manual: `Delete ${found.desktopEntry.join(' and ')}`,
     });
@@ -258,7 +269,9 @@ export function uninstallSteps(found: Found, deleteVpns: boolean): Step[] {
     steps.push({
       what: "sing-box and the app's caches",
       run: async () => {
-        for (const path of others) await rm(path, { recursive: true, force: true });
+        for (const path of others) {
+          await rm(path, { recursive: true, force: true });
+        }
       },
       manual: `Delete everything in ${appFolder} except ${[...KEPT_WITH_VPNS].join(', ')}`,
     });
@@ -271,7 +284,9 @@ export function uninstallSteps(found: Found, deleteVpns: boolean): Step[] {
     });
   }
   // Also when the app's folder is already gone: the key is no use without the passwords it encrypted.
-  if (found.keychainKey && !keepVpns) steps.push(keychainStep(found.platform));
+  if (found.keychainKey && !keepVpns) {
+    steps.push(keychainStep(found.platform));
+  }
   return steps;
 }
 

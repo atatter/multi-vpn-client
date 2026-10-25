@@ -41,12 +41,15 @@ export async function ensureInstalled({
   remove = removeWithNode,
 }: InstallOptions): Promise<string> {
   const archive = manifest.archives[target];
-  if (!archive)
+  if (!archive) {
     throw new Error(
       `Multi VPN Client ${manifest.version} isn't available for ${target}. It's built for ${Object.keys(manifest.archives).join(', ')}.`,
     );
+  }
   const versionDir = join(dir, manifest.version);
-  if (existsSync(executableIn(versionDir, platform))) return executableIn(versionDir, platform);
+  if (existsSync(executableIn(versionDir, platform))) {
+    return executableIn(versionDir, platform);
+  }
 
   await mkdir(dir, { recursive: true });
   const work = await mkdtemp(join(dir, '.download-'));
@@ -55,20 +58,24 @@ export async function ensureInstalled({
     const sha256 = await download(archiveUrl(manifest, archive, env), file, (received, length) =>
       onProgress?.(received / (length ?? archive.size)),
     );
-    if (sha256 !== archive.sha256)
+    if (sha256 !== archive.sha256) {
       throw new Error(
         `The download of ${archive.file} doesn't match its checksum, so it wasn't opened. Try again; if it keeps happening, report it.`,
       );
+    }
 
     const unpacked = join(work, 'unpacked');
     await mkdir(unpacked);
     await extract(file, unpacked, platform, env);
     const root = await singleFolder(unpacked);
-    if (!existsSync(executableIn(root, platform)))
+    if (!existsSync(executableIn(root, platform))) {
       throw new Error(`${archive.file} doesn't contain the app where it should be.`);
+    }
     await rename(root, versionDir).catch((error: unknown) => {
       // Another launcher finished the same version first; theirs is just as good.
-      if (!existsSync(executableIn(versionDir, platform))) throw error;
+      if (!existsSync(executableIn(versionDir, platform))) {
+        throw error;
+      }
     });
   } finally {
     await remove(work);
@@ -96,8 +103,9 @@ export async function removeOlderVersions(
   remove: Remove,
 ): Promise<void> {
   for (const entry of await readdir(dir).catch(() => [])) {
-    if (isVersion(entry) && compareVersions(entry, version) < 0)
+    if (isVersion(entry) && compareVersions(entry, version) < 0) {
       await remove(join(dir, entry)).catch(() => undefined);
+    }
   }
 }
 
@@ -112,12 +120,17 @@ function request(url: string, redirects = 5): Promise<IncomingMessage> {
       const { statusCode = 0, headers } = response;
       if (statusCode >= 300 && statusCode < 400 && headers.location) {
         response.resume();
-        if (redirects === 0) reject(new Error(`Downloading ${url} failed: too many redirects.`));
-        else resolve(request(new URL(headers.location, url).toString(), redirects - 1));
-      } else if (statusCode !== 200) {
+        if (redirects === 0) {
+          reject(new Error(`Downloading ${url} failed: too many redirects.`));
+        } else {
+          resolve(request(new URL(headers.location, url).toString(), redirects - 1));
+        }
+      } else if (statusCode === 200) {
+        resolve(response);
+      } else {
         response.resume();
         reject(new Error(`Downloading ${url} failed: HTTP ${statusCode}.`));
-      } else resolve(response);
+      }
     }).on('error', (error) =>
       reject(
         new Error(
@@ -187,7 +200,8 @@ async function singleFolder(dir: string): Promise<string> {
     only &&
     !only.endsWith('.app') &&
     (await stat(join(dir, only))).isDirectory()
-  )
+  ) {
     return join(dir, only);
+  }
   return dir;
 }

@@ -25,11 +25,14 @@ export function VpnList({ afterNotice }: { afterNotice: boolean }) {
   /** Saves a new order of the turned-on VPNs as the priority, and says where the moved one went. */
   const commit = (ids: string[], moved: string) => {
     const priority = priorityAfterMove(config, ids, moved);
-    if (priority.join() === config.priority.join()) return;
+    if (priority.join() === config.priority.join()) {
+      return;
+    }
     void app.save({ ...config, priority });
     const vpn = config.vpns.find((candidate) => candidate.id === moved);
-    if (vpn)
+    if (vpn) {
       setAnnouncement(`${vpnLabel(vpn)} moved to ${ids.indexOf(moved) + 1} of ${ids.length}`);
+    }
   };
   const { order, list, rowRef, isLifted, onRowKeyDown, grip } = useReorder({
     order: plan.map((layer) => layer.vpnId),
@@ -59,7 +62,9 @@ export function VpnList({ afterNotice }: { afterNotice: boolean }) {
             {order.map((id, index) => {
               const vpn = config.vpns.find((candidate) => candidate.id === id);
               const layer = plan.find((candidate) => candidate.vpnId === id);
-              if (!vpn) return null;
+              if (!vpn) {
+                return null;
+              }
               const lifted = isLifted(id);
               return (
                 <VpnRow

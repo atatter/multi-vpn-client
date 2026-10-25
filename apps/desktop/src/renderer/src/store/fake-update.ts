@@ -38,15 +38,18 @@ export function createFakeUpdater(initial: UpdateState, pause: (ms: number) => P
     checkForUpdate: async () => {
       if (
         !(update.state === 'idle' || update.state === 'current' || update.state === 'check-failed')
-      )
+      ) {
         return;
+      }
       setUpdate(UPDATES.checking);
       await pause(800);
       setUpdate(UPDATES.available);
     },
     // Like main: only once a check found a version, and again after a failed download.
     downloadUpdate: async () => {
-      if (update.state !== 'available' && update.state !== 'download-failed') return;
+      if (update.state !== 'available' && update.state !== 'download-failed') {
+        return;
+      }
       const { version } = update;
       for (const percent of [0, 9, 23, 42, 61, 78, 93, 99]) {
         setUpdate({ state: 'downloading', version, percent });
@@ -58,7 +61,9 @@ export function createFakeUpdater(initial: UpdateState, pause: (ms: number) => P
     },
     // Like main, which then turns every VPN off and quits into the new version: fake-api turns them off, nothing quits.
     restartToUpdate: async () => {
-      if (update.state === 'ready') setUpdate({ state: 'restarting', version: update.version });
+      if (update.state === 'ready') {
+        setUpdate({ state: 'restarting', version: update.version });
+      }
     },
     onUpdate: (listener: (state: UpdateState) => void) => {
       listeners.add(listener);

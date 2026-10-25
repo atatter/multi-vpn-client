@@ -14,9 +14,13 @@ export function localNetworks(interfaces = networkInterfaces()): ReservedRange[]
   const reserved: ReservedRange[] = [];
   for (const [name, addresses] of Object.entries(interfaces)) {
     for (const address of addresses ?? []) {
-      if (address.family !== 'IPv4' || address.internal || !address.cidr) continue;
+      if (address.family !== 'IPv4' || address.internal || !address.cidr) {
+        continue;
+      }
       const network = networkOf(address.cidr);
-      if (network) reserved.push({ cidr: network, label: `Local network (${name})`, local: true });
+      if (network) {
+        reserved.push({ cidr: network, label: `Local network (${name})`, local: true });
+      }
     }
   }
   return reserved;

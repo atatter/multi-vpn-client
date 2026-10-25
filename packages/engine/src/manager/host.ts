@@ -46,14 +46,20 @@ export function createHost(deps: {
 
   /** The helper session, opened on first use. If it ends unexpectedly, the helper has removed our routes. */
   async function getHelper(): Promise<HelperSession> {
-    if (helper) return helper;
+    if (helper) {
+      return helper;
+    }
     const token = await readHelperToken(deps.dataDir);
-    if (!token) throw new Error('Install the network helper first (top of the window).');
+    if (!token) {
+      throw new Error('Install the network helper first (top of the window).');
+    }
     const session = await openHelperSession({ port: HELPER_PORT, token });
     helper = session;
     void session.closed.then(() =>
       deps.exclusive(async () => {
-        if (helper !== session) return; // closed on purpose
+        if (helper !== session) {
+          return;
+        } // closed on purpose
         helper = undefined;
         traffic?.stop();
         await deps.onHelperLost();

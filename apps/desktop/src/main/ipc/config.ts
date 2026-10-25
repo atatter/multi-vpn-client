@@ -43,9 +43,13 @@ export function registerConfigHandlers({
   handle('config:save', (configInput, secretsInput) =>
     writingConfig(async (): Promise<SaveResult> => {
       const config = Config.safeParse(configInput);
-      if (!config.success) return failed(issuesOf(config.error));
+      if (!config.success) {
+        return failed(issuesOf(config.error));
+      }
       const changes = SecretChanges.safeParse(secretsInput);
-      if (!changes.success) return failed(issuesOf(changes.error, 'secrets'));
+      if (!changes.success) {
+        return failed(issuesOf(changes.error, 'secrets'));
+      }
 
       // A VPN whose kind changed loses its old secrets, whatever the renderer sent; the user's own new values win per slot.
       const previous = await loadConfig(configPath);

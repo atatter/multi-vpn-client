@@ -28,7 +28,9 @@ describe('gatewayAddresses', () => {
 
   it('reserves every resolved gateway address and reports the rest', async () => {
     const resolve = async (host: string) => {
-      if (host === 'vpn.a.example') return ['203.0.113.10', '203.0.113.11'];
+      if (host === 'vpn.a.example') {
+        return ['203.0.113.10', '203.0.113.11'];
+      }
       throw new Error('ENOTFOUND');
     };
     expect(await gatewayAddresses(vpns, resolve)).toEqual({

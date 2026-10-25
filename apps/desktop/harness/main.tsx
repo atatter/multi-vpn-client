@@ -37,13 +37,19 @@ function tick() {
   const live = Object.entries(fake.statuses()).flatMap(([vpnId, status]) =>
     status.state === 'connected' ? [vpnId] : [],
   );
-  for (const vpnId of Object.keys(rates)) if (!live.includes(vpnId)) delete rates[vpnId];
+  for (const vpnId of Object.keys(rates)) {
+    if (!live.includes(vpnId)) {
+      delete rates[vpnId];
+    }
+  }
   for (const vpnId of live) {
     const bytes = Math.random() < 0.7 ? Math.round(500 * Math.exp(Math.random() * 4.5)) : 0;
     rates[vpnId] = [...(rates[vpnId] ?? []), bytes].slice(-60);
     const hosts = HOSTS[vpnId] ?? ['example.com'];
     const host = hosts[Math.floor(Math.random() * hosts.length)];
-    if (!bytes || !host) continue;
+    if (!bytes || !host) {
+      continue;
+    }
     const entry = destinations.get(`${vpnId} ${host}`) ?? { host, vpnId, bytes: 0, last: now };
     destinations.set(`${vpnId} ${host}`, { ...entry, bytes: entry.bytes + bytes, last: now });
   }
@@ -52,7 +58,9 @@ function tick() {
     .sort((a, b) => b.last - a.last);
   fake.sendTraffic({ rates: { ...rates }, destinations: shown });
 }
-for (let second = 0; second < 60; second++) tick();
+for (let second = 0; second < 60; second++) {
+  tick();
+}
 setInterval(tick, 1000);
 
 createRoot(document.getElementById('root')!).render(

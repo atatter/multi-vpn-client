@@ -124,16 +124,24 @@ export function createUserWaits({
     /** Answers the prompt this VPN's client is waiting on (e.g. the SMS code); null cancels the connect. */
     answer(vpnId: string, reply: string | null) {
       const wait = waits.get(vpnId);
-      if (!wait) throw new Error("This VPN isn't waiting for you anymore.");
-      if (reply === null) wait.cancel(new CancelledError());
-      else if (wait.answer) wait.answer(reply);
-      else throw new Error("This VPN isn't asking for a code or PIN.");
+      if (!wait) {
+        throw new Error("This VPN isn't waiting for you anymore.");
+      }
+      if (reply === null) {
+        wait.cancel(new CancelledError());
+      } else if (wait.answer) {
+        wait.answer(reply);
+      } else {
+        throw new Error("This VPN isn't asking for a code or PIN.");
+      }
     },
 
     /** Opens this VPN's browser sign-in page again (e.g. after the tab was closed). */
     reopenSignIn(vpnId: string) {
       const url = waits.get(vpnId)?.url;
-      if (!url) throw new Error("This VPN isn't waiting for a browser sign-in anymore.");
+      if (!url) {
+        throw new Error("This VPN isn't waiting for a browser sign-in anymore.");
+      }
       openUrl(url);
     },
   };

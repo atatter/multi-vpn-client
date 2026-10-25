@@ -14,7 +14,9 @@ afterEach(() => {
 const settle = () => vi.advanceTimersByTimeAsync(0);
 
 const ready = (view: AppView) => {
-  if (view.phase !== 'ready') throw new Error(`The app isn't ready: ${view.phase}`);
+  if (view.phase !== 'ready') {
+    throw new Error(`The app isn't ready: ${view.phase}`);
+  }
   return view;
 };
 
@@ -41,8 +43,8 @@ const renamed = (config: Config, vpnId: string, name: string): Config => ({
 
 describe('loading', () => {
   it("shows why the settings couldn't load", async () => {
-    const { store } = await start('daily', (fake) =>
-      fake.failLoad("The settings file isn't valid JSON."),
+    const { store } = await start('daily', (given) =>
+      given.failLoad("The settings file isn't valid JSON."),
     );
     expect(store.getState()).toEqual({
       phase: 'failed',
@@ -161,9 +163,9 @@ describe('saving', () => {
 
 describe('setup', () => {
   it('connects a VPN turned on before Docker and the helper were ready once both are', async () => {
-    const { fake, app } = await start('daily', (fake) => {
-      fake.setDocker('stopped');
-      fake.setHelper('not-installed');
+    const { fake, app } = await start('daily', (given) => {
+      given.setDocker('stopped');
+      given.setHelper('not-installed');
     });
     app().toggle('h');
     await settle();
@@ -239,7 +241,7 @@ describe('setup', () => {
   });
 
   it('starts Docker once, however many screens ask, and every screen shows it starting', async () => {
-    const { fake, app } = await start('daily', (fake) => fake.setDocker('stopped'), timedPause);
+    const { fake, app } = await start('daily', (given) => given.setDocker('stopped'), timedPause);
     const startDocker = vi.spyOn(fake.api, 'startDocker');
     const first = app().startDocker();
     expect(app().startDocker()).toBe(first);
@@ -279,7 +281,7 @@ describe('setup', () => {
   });
 
   it("checks a helper that isn't responding again every 3 seconds", async () => {
-    const { fake, app } = await start('daily', (fake) => fake.setHelper('not-responding'));
+    const { fake, app } = await start('daily', (given) => given.setHelper('not-responding'));
     expect(app().helper?.state).toBe('not-responding');
     fake.setHelper('ready');
     await vi.advanceTimersByTimeAsync(3000);
@@ -318,7 +320,7 @@ describe('toggle', () => {
   });
 
   it("takes a waiting VPN off the list, so it doesn't connect later", async () => {
-    const { fake, app } = await start('daily', (fake) => fake.setDocker('stopped'));
+    const { fake, app } = await start('daily', (given) => given.setDocker('stopped'));
     app().toggle('h');
     await settle();
     app().toggle('h');
@@ -331,7 +333,7 @@ describe('toggle', () => {
 
 describe('turnOff', () => {
   it("drops a VPN's wait or prompt, and disconnects it only if it's on", async () => {
-    const { fake, app } = await start('daily', (fake) => fake.setDocker('stopped'));
+    const { fake, app } = await start('daily', (given) => given.setDocker('stopped'));
     app().toggle('h');
     await settle();
     await app().turnOff('h');
@@ -414,8 +416,8 @@ describe('updating the app', () => {
   });
 
   it('shows a download that failed before the window opened', async () => {
-    const { app } = await start('daily', (fake) =>
-      fake.setUpdate({ state: 'download-failed', version: '0.2.0', error: 'HTTP 404.' }),
+    const { app } = await start('daily', (given) =>
+      given.setUpdate({ state: 'download-failed', version: '0.2.0', error: 'HTTP 404.' }),
     );
     expect(app().notice).toBe("Couldn't download 0.2.0: HTTP 404.");
   });

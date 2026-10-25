@@ -17,7 +17,7 @@ import type { HostRoutes, VpnTunnel } from './helper-protocol.ts';
 export const CONTAINER_SOCKS_PORT = 1080;
 
 /** Linux: port of the DNS listener on LINUX_DNS_ADDRESS, which systemd-resolved's per-domain settings point at. */
-export const HOST_DNS_PORT = 53530;
+export const HOST_DNS_PORT = 53_530;
 
 /** Address of the host TUN; a benchmark-range /30 that corporate networks don't use. */
 export const TUN_ADDRESS = '198.18.0.1/30';

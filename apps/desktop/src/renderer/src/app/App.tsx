@@ -17,23 +17,33 @@ export function App({ store }: { store: AppStore }) {
 
   // Screens size the window themselves (see Frame); before one shows, a short window is enough.
   useLayoutEffect(() => {
-    if (view.phase !== 'ready' && root.current) void store.api.fitWindow(root.current.offsetHeight);
+    if (view.phase !== 'ready' && root.current) {
+      void store.api.fitWindow(root.current.offsetHeight);
+    }
   }, [view.phase, store]);
 
   // Restarting turns VPNs off and quits: nothing else may start meanwhile. `inert` stops clicks and focus, not
   // listeners on window: without this, Escape would still go back and a dropped file would still open a form.
   const restarting = view.phase === 'ready' && view.update.state === 'restarting';
   useEffect(() => {
-    if (!restarting) return;
+    if (!restarting) {
+      return;
+    }
     const swallow = (event: Event) => {
       event.stopImmediatePropagation();
       // A file dropped and not handled opens in the window. Keys keep their defaults, such as the OS's quit.
-      if (event.type !== 'keydown') event.preventDefault();
+      if (event.type !== 'keydown') {
+        event.preventDefault();
+      }
     };
     const types = ['keydown', 'dragenter', 'dragover', 'drop'];
-    for (const type of types) window.addEventListener(type, swallow, true);
+    for (const type of types) {
+      window.addEventListener(type, swallow, true);
+    }
     return () => {
-      for (const type of types) window.removeEventListener(type, swallow, true);
+      for (const type of types) {
+        window.removeEventListener(type, swallow, true);
+      }
     };
   }, [restarting]);
 
@@ -44,7 +54,9 @@ export function App({ store }: { store: AppStore }) {
       </div>
     );
   }
-  if (view.phase === 'loading') return <div ref={root} className="h-40" />;
+  if (view.phase === 'loading') {
+    return <div ref={root} className="h-40" />;
+  }
 
   // Moving to another screen closes a VPN's open prompt: it belongs to the screen it was asked on.
   const go = (next: FrameEnvironment['direction'], change: (current: Screen[]) => Screen[]) => {

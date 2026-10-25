@@ -337,7 +337,7 @@ describe('traffic and priority', () => {
 
 describe('keepServerRoutes', () => {
   const learned = { all: false, cidrs: ['10.140.0.0/16'] };
-  const fortinet = {
+  const learnedVpn = {
     ...newVpn('fortinet-ssl', { id: 'f', name: 'F' }),
     gateway: 'vpn.example.com',
     serverRoutes: learned,
@@ -345,21 +345,21 @@ describe('keepServerRoutes', () => {
 
   it('keeps what the server sent across saves from the window, whatever the window sent', () => {
     expect(
-      keepServerRoutes([fortinet], [{ ...fortinet, name: 'Renamed', serverRoutes: null }])[0]
+      keepServerRoutes([learnedVpn], [{ ...learnedVpn, name: 'Renamed', serverRoutes: null }])[0]
         ?.serverRoutes,
     ).toEqual(learned);
     expect(
-      keepServerRoutes([fortinet], [{ ...fortinet, serverRoutes: { all: true, cidrs: [] } }])[0]
+      keepServerRoutes([learnedVpn], [{ ...learnedVpn, serverRoutes: { all: true, cidrs: [] } }])[0]
         ?.serverRoutes,
     ).toEqual(learned);
   });
 
   it('forgets it when the VPN connects somewhere else, and starts new VPNs without it', () => {
     expect(
-      keepServerRoutes([fortinet], [{ ...fortinet, gateway: 'other.example.com' }])[0]
+      keepServerRoutes([learnedVpn], [{ ...learnedVpn, gateway: 'other.example.com' }])[0]
         ?.serverRoutes,
     ).toBeNull();
-    expect(keepServerRoutes([], [fortinet])[0]?.serverRoutes).toBeNull();
+    expect(keepServerRoutes([], [learnedVpn])[0]?.serverRoutes).toBeNull();
   });
 });
 

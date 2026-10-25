@@ -81,7 +81,9 @@ function globalProtect(
     options,
     readLine: readOpenConnect(server, (line) => {
       const listed = /^ {2}(.+) \(([^()\s]+)\)$/.exec(line);
-      if (listed?.[1] && listed[2]) offered.set(listed[1], listed[2]);
+      if (listed?.[1] && listed[2]) {
+        offered.set(listed[1], listed[2]);
+      }
       const choices = /GATEWAY: \[([^\]]*)\]:/.exec(line)?.[1];
       if (choices) {
         const gateways = choices
@@ -94,8 +96,9 @@ function globalProtect(
       if (
         line.includes('Unexpected 512 result') ||
         /invalid (username|user name) or password/i.test(line)
-      )
+      ) {
         return rejected;
+      }
       // The server didn't get a certificate it takes. Portals often only take passwords, while their gateways take the card.
       if (line.includes('Valid client certificate is required')) {
         return {
@@ -120,21 +123,28 @@ export const detectGlobalProtect: Detect = async ({ host, port }, probe) => {
       path: `${path}?tmp=tmp&clientVer=4100&clientos=Windows`,
       headers: { 'User-Agent': 'PAN GlobalProtect' },
     });
-    if (answer && /<prelogin-response\b/.test(answer.body))
+    if (answer && /<prelogin-response\b/.test(answer.body)) {
       return {
         address: withPort(host, port),
         browserSignIn: /<saml-auth-method>/.test(answer.body),
       };
+    }
   }
   return undefined;
 };
 
 export const globalprotectEngine: LauncherEntry<GlobalProtectVpn> = {
   launch: async (vpn, secrets) => {
-    if (vpn.signIn === 'card') return globalProtectCardLaunch(vpn);
-    if (!vpn.username) throw new Error("Add your username in the VPN's settings.");
+    if (vpn.signIn === 'card') {
+      return globalProtectCardLaunch(vpn);
+    }
+    if (!vpn.username) {
+      throw new Error("Add your username in the VPN's settings.");
+    }
     const password = await secrets.loginPassword();
-    if (password === undefined) return 'needs-password';
+    if (password === undefined) {
+      return 'needs-password';
+    }
     return globalProtectLaunch(vpn, password);
   },
   detect: detectGlobalProtect,

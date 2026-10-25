@@ -78,7 +78,7 @@ export function configAfterSave(
   };
   return {
     ...next,
-    priority: isBroad(draft) !== isBroad(saved) ? settleVpn(next, draft.id) : config.priority,
+    priority: isBroad(draft) === isBroad(saved) ? config.priority : settleVpn(next, draft.id),
   };
 }
 

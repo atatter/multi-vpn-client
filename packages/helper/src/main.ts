@@ -42,7 +42,9 @@ let log = (line: string) => console.error(`${new Date().toISOString()} ${line}`)
 
 /** Windows: Task Scheduler doesn't capture output, so the helper keeps its own log (truncated when it gets big). */
 function logToFile(path: string) {
-  if ((statSync(path, { throwIfNoEntry: false })?.size ?? 0) > 1_000_000) truncateSync(path);
+  if ((statSync(path, { throwIfNoEntry: false })?.size ?? 0) > 1_000_000) {
+    truncateSync(path);
+  }
   log = (line) => appendFileSync(path, `${new Date().toISOString()} ${line}\r\n`);
 }
 
@@ -77,7 +79,9 @@ function platform(): Platform {
     case 'linux': {
       // systemd hands the settings over as a credential (LoadCredential=) and owns the runtime directory.
       const { CREDENTIALS_DIRECTORY: credentials, RUNTIME_DIRECTORY: runtime } = process.env;
-      if (!credentials || !runtime) throw new Error('Run the helper through its systemd service.');
+      if (!credentials || !runtime) {
+        throw new Error('Run the helper through its systemd service.');
+      }
       return {
         os: 'linux',
         configPath: join(credentials, 'helper.json'),

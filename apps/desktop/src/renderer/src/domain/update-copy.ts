@@ -107,8 +107,12 @@ export function restartProgress(
 /** "just now", "a minute ago", "5 minutes ago", "an hour ago", "3 hours ago". */
 function ago(ms: number) {
   const minutes = Math.floor(ms / 60_000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return minutes === 1 ? 'a minute ago' : `${minutes} minutes ago`;
+  if (minutes < 1) {
+    return 'just now';
+  }
+  if (minutes < 60) {
+    return minutes === 1 ? 'a minute ago' : `${minutes} minutes ago`;
+  }
   const hours = Math.floor(minutes / 60);
   return hours === 1 ? 'an hour ago' : `${hours} hours ago`;
 }

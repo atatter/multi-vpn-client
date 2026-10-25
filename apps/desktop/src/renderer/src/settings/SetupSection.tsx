@@ -1,7 +1,17 @@
 import { useState } from 'react';
 import { DOCKER_SETUP, HELPER_SETUP, SETUP_BUSY } from '../domain/setup-copy.ts';
-import { useApp } from '../store/app-model.ts';
+import { type AppModel, useApp } from '../store/app-model.ts';
 import { cell, cells, cx, groupTitle, hint, link } from '@repo/ui/tokens.ts';
+
+function dockerLine(docker: AppModel['docker'], starting: boolean) {
+  if (docker === 'running') {
+    return 'Running';
+  }
+  if (starting) {
+    return SETUP_BUSY.docker;
+  }
+  return docker ? DOCKER_SETUP[docker].settings : 'Checking…';
+}
 
 /** What connecting needs, with the fixes the app can run: start Docker, install, update or remove the helper. */
 export function SetupSection() {
@@ -36,13 +46,7 @@ export function SetupSection() {
           <span className="min-w-0">
             Docker
             <span className={cx(hint, app.docker !== 'running' && 'text-sodium')}>
-              {app.docker === 'running'
-                ? 'Running'
-                : app.dockerStart.starting
-                  ? SETUP_BUSY.docker
-                  : app.docker
-                    ? DOCKER_SETUP[app.docker].settings
-                    : 'Checking…'}
+              {dockerLine(app.docker, app.dockerStart.starting)}
             </span>
             {problem(app.dockerStart.error)}
           </span>

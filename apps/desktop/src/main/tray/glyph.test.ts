@@ -6,8 +6,11 @@ import { countLabel, encodePng, rasterize, tunnelLayers } from './glyph.ts';
 const inkInside = (count: number) => {
   const pixels = rasterize(tunnelLayers(count, [0, 0, 0], false), 32);
   let ink = 0;
-  for (let row = 12; row < 30; row++)
-    for (let column = 8; column < 24; column++) ink += pixels[(row * 32 + column) * 4 + 3] ?? 0;
+  for (let row = 12; row < 30; row++) {
+    for (let column = 8; column < 24; column++) {
+      ink += pixels[(row * 32 + column) * 4 + 3] ?? 0;
+    }
+  }
   return ink;
 };
 
@@ -18,8 +21,9 @@ describe('the count', () => {
 
   it('leaves the tunnel empty at 0 and fills it otherwise', () => {
     expect(inkInside(0)).toBe(0);
-    for (const count of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    for (const count of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
       expect(inkInside(count)).toBeGreaterThan(0);
+    }
   });
 
   it('looks different for every label', () => {

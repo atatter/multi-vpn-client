@@ -31,8 +31,12 @@ export const usesPassword = (vpn: Vpn) =>
 
 /** Why a VPN can't connect yet, or undefined if it's ready. */
 export function setupProblem(vpn: Vpn, storedSlots: readonly string[]): string | undefined {
-  if (!Vpn.safeParse(vpn).success) return 'Finish setting up';
+  if (!Vpn.safeParse(vpn).success) {
+    return 'Finish setting up';
+  }
   const [slot] = missingSecrets(vpn, storedSlots);
-  if (!slot) return undefined;
+  if (!slot) {
+    return undefined;
+  }
   return slot.importOnly ? `Needs the ${slot.label}` : `Needs a ${slot.label.toLowerCase()}`;
 }

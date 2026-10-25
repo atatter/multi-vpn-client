@@ -15,10 +15,15 @@ export function addEntries(
   const dupes: string[] = [];
   for (const token of text.split(/[\s,]+/).filter(Boolean)) {
     const parsed = RouteRule.safeParse(retarget(newRoute('', vpnId), token));
-    if (!parsed.success) bad.push(token);
-    else if ([...routes, ...added].some((route) => routeTarget(route) === routeTarget(parsed.data)))
+    if (!parsed.success) {
+      bad.push(token);
+    } else if (
+      [...routes, ...added].some((route) => routeTarget(route) === routeTarget(parsed.data))
+    ) {
       dupes.push(routeTarget(parsed.data));
-    else added.push(parsed.data);
+    } else {
+      added.push(parsed.data);
+    }
   }
   const problem = [
     bad.length

@@ -37,7 +37,9 @@ export function SignInScreen({ screen }: { screen: Extract<Screen, { name: 'sign
   );
 
   const add = async (connect: boolean) => {
-    if (Object.keys(errors).length > 0) return setShowErrors(true);
+    if (Object.keys(errors).length > 0) {
+      return setShowErrors(true);
+    }
     setSaving(true);
     const saved = await app.save(
       {
@@ -48,9 +50,13 @@ export function SignInScreen({ screen }: { screen: Extract<Screen, { name: 'sign
       { [draft.id]: pending },
     );
     setSaving(false);
-    if (!saved) return;
+    if (!saved) {
+      return;
+    }
     app.home();
-    if (connect) void app.connect(draft.id);
+    if (connect) {
+      void app.connect(draft.id);
+    }
   };
 
   return (

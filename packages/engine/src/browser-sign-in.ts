@@ -39,7 +39,9 @@ export function receiveBrowserToken(port: number, timeoutMs: number): TokenWait 
     const valid =
       (request.method === 'GET' || request.method === 'OPTIONS') && TOKEN.test(candidate);
     response.writeHead(valid ? 200 : 400, CORS_HEADERS).end();
-    if (valid) finish(() => settle?.resolve(candidate));
+    if (valid) {
+      finish(() => settle?.resolve(candidate));
+    }
   });
   const timer = setTimeout(
     () =>

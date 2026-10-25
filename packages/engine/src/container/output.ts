@@ -27,8 +27,14 @@ export function classifyLine(
   { ready, error, prompt }: ReturnType<typeof markers>,
 ): 'connected' | Failure | BrowserSignIn | { prompt: string } | undefined {
   const trimmed = line.trim();
-  if (trimmed === ready) return 'connected';
-  if (trimmed.startsWith(error)) return { failed: trimmed.slice(error.length).trim() };
-  if (trimmed.startsWith(prompt)) return { prompt: trimmed.slice(prompt.length).trim() };
+  if (trimmed === ready) {
+    return 'connected';
+  }
+  if (trimmed.startsWith(error)) {
+    return { failed: trimmed.slice(error.length).trim() };
+  }
+  if (trimmed.startsWith(prompt)) {
+    return { prompt: trimmed.slice(prompt.length).trim() };
+  }
   return readLine(line);
 }

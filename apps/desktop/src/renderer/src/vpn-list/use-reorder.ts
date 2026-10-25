@@ -31,8 +31,9 @@ export function useReorder({
     for (const [id, row] of rows.current) {
       const top = row.offsetTop;
       const before = tops.current.get(id);
-      if (drag.current?.id === id) row.style.transform = `translateY(${drag.current.top - top}px)`;
-      else if (before !== undefined && Math.abs(before - top) > 2 && !reduced) {
+      if (drag.current?.id === id) {
+        row.style.transform = `translateY(${drag.current.top - top}px)`;
+      } else if (before !== undefined && Math.abs(before - top) > 2 && !reduced) {
         row.animate([{ transform: `translateY(${before - top}px)` }, { transform: 'none' }], {
           duration: 220,
           easing: 'cubic-bezier(.2,.7,.2,1)',
@@ -45,7 +46,9 @@ export function useReorder({
   /** The ref for every row; a row says which one it is with `data-row-id`. */
   const rowRef = (element: HTMLLIElement) => {
     const id = element.dataset.rowId;
-    if (!id) return;
+    if (!id) {
+      return;
+    }
     rows.current.set(id, element);
     return () => void rows.current.delete(id);
   };
@@ -56,7 +59,9 @@ export function useReorder({
 
   const onPointerDown = (id: string, event: PointerEvent<HTMLElement>) => {
     const row = rows.current.get(id);
-    if (!row) return;
+    if (!row) {
+      return;
+    }
     event.currentTarget.setPointerCapture(event.pointerId);
     drag.current = {
       id,
@@ -68,34 +73,50 @@ export function useReorder({
   };
   const onPointerMove = (id: string, event: PointerEvent<HTMLElement>) => {
     const row = rows.current.get(id);
-    if (drag.current?.id !== id || !row || !list.current || !dragOrder) return;
+    if (drag.current?.id !== id || !row || !list.current || !dragOrder) {
+      return;
+    }
     const top = event.clientY - drag.current.grab - list.current.getBoundingClientRect().top;
     drag.current.top = top;
     const next = orderWhileDragging(dragOrder, id, top + row.offsetHeight / 2, middleOf);
-    if (next.join() !== dragOrder.join()) setDragOrder(next);
-    else row.style.transform = `translateY(${top - row.offsetTop}px)`;
+    if (next.join() === dragOrder.join()) {
+      row.style.transform = `translateY(${top - row.offsetTop}px)`;
+    } else {
+      setDragOrder(next);
+    }
   };
   const onPointerUp = (id: string) => {
     const row = rows.current.get(id);
-    if (drag.current?.id !== id || !row) return;
+    if (drag.current?.id !== id || !row) {
+      return;
+    }
     const offset = row.style.transform;
     row.style.transform = '';
-    if (offset && !reducedMotion())
+    if (offset && !reducedMotion()) {
       row.animate([{ transform: offset }, { transform: 'none' }], {
         duration: 160,
         easing: 'ease-out',
       });
+    }
     drag.current = undefined;
-    if (dragOrder) commit(dragOrder, id);
+    if (dragOrder) {
+      commit(dragOrder, id);
+    }
     setLifted(undefined);
     setDragOrder(undefined);
   };
   /** The keyboard twin of dragging: Alt+↑/↓ anywhere on a row, or ↑/↓ on its grip. */
   const onKeyDown = (id: string, event: KeyboardEvent<HTMLElement>, onGrip: boolean) => {
-    if (!onGrip && !event.altKey) return;
-    const step = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : undefined;
-    const next = step && orderAfterStep(order, id, step);
-    if (!next) return;
+    if (!onGrip && !event.altKey) {
+      return;
+    }
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+      return;
+    }
+    const next = orderAfterStep(order, id, event.key === 'ArrowUp' ? -1 : 1);
+    if (!next) {
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     commit(next, id);
@@ -112,29 +133,41 @@ export function useReorder({
     /** For a row: Alt+↑/↓ moves it. */
     onRowKeyDown: (event: KeyboardEvent<HTMLElement>) => {
       const id = idOf(event);
-      if (id) onKeyDown(id, event, false);
+      if (id) {
+        onKeyDown(id, event, false);
+      }
     },
     /** For a row's grip: drag it, or move it with ↑/↓. */
     grip: {
       onPointerDown: (event: PointerEvent<HTMLElement>) => {
         const id = idOf(event);
-        if (id) onPointerDown(id, event);
+        if (id) {
+          onPointerDown(id, event);
+        }
       },
       onPointerMove: (event: PointerEvent<HTMLElement>) => {
         const id = idOf(event);
-        if (id) onPointerMove(id, event);
+        if (id) {
+          onPointerMove(id, event);
+        }
       },
       onPointerUp: (event: PointerEvent<HTMLElement>) => {
         const id = idOf(event);
-        if (id) onPointerUp(id);
+        if (id) {
+          onPointerUp(id);
+        }
       },
       onPointerCancel: (event: PointerEvent<HTMLElement>) => {
         const id = idOf(event);
-        if (id) onPointerUp(id);
+        if (id) {
+          onPointerUp(id);
+        }
       },
       onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
         const id = idOf(event);
-        if (id) onKeyDown(id, event, true);
+        if (id) {
+          onKeyDown(id, event, true);
+        }
       },
     },
   };

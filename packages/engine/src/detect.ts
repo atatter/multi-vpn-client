@@ -29,7 +29,9 @@ const httpsProbe: Probe = ({ host, port, method, path, body, headers }) =>
         response.setEncoding('utf8');
         response.on('data', (chunk: string) => {
           text += chunk;
-          if (text.length >= MAX_BODY) response.destroy();
+          if (text.length >= MAX_BODY) {
+            response.destroy();
+          }
         });
         const done = () =>
           resolve({
@@ -61,7 +63,9 @@ export function splitAddress(address: string): Target {
 /** Probes the address for every kind at once; when several recognise it, the first in VPN_KINDS order wins. */
 export async function detectVpn(address: string, probe: Probe = httpsProbe): Promise<Detection> {
   const target = splitAddress(address);
-  if (!target.host) return { kind: 'unknown' };
+  if (!target.host) {
+    return { kind: 'unknown' };
+  }
   const results = await Promise.all(
     VPN_KINDS.map(async (kind) => {
       const found = await LAUNCHERS[kind].detect?.(target, probe);

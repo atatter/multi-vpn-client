@@ -19,9 +19,9 @@ export function ProfileField({
   const picker = useRef<HTMLInputElement>(null);
   const [problem, setProblem] = useState<string>();
   const read = async (file: File) => {
-    const error = onImport(await file.text());
+    const reason = onImport(await file.text());
     // Worded like a dropped file's (renderer: store/import-profile.ts).
-    setProblem(error && `${file.name} isn't a valid OpenVPN file: ${error}`);
+    setProblem(reason && `${file.name} isn't a valid OpenVPN file: ${reason}`);
   };
   const shown = problem ?? error;
   return (
@@ -40,11 +40,11 @@ export function ProfileField({
       )}
       {shown ? (
         <span className="text-[12.5px] text-danger select-text">{shown}</span>
-      ) : hasProfile ? (
-        <span className={hint}>Servers and certificates come from this file.</span>
       ) : (
-        <span className={cx(hint, 'text-sodium')}>
-          Needed to connect: servers and certificates come from this file.
+        <span className={cx(hint, !hasProfile && 'text-sodium')}>
+          {hasProfile
+            ? 'Servers and certificates come from this file.'
+            : 'Needed to connect: servers and certificates come from this file.'}
         </span>
       )}
       <input
@@ -54,7 +54,9 @@ export function ProfileField({
         hidden
         onChange={(event) => {
           const file = event.target.files?.[0];
-          if (file) void read(file);
+          if (file) {
+            void read(file);
+          }
           event.target.value = '';
         }}
       />

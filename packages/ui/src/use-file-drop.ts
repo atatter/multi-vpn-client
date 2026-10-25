@@ -12,13 +12,17 @@ export function useFileDrop(onFiles: (files: File[]) => void): boolean {
     let depth = 0; // dragenter/leave fire for every element crossed, so count them
     const hasFiles = (event: DragEvent) => event.dataTransfer?.types.includes('Files') ?? false;
     const enter = (event: DragEvent) => {
-      if (!hasFiles(event)) return;
+      if (!hasFiles(event)) {
+        return;
+      }
       depth++;
       setOver(true);
     };
     const leave = () => {
       depth = Math.max(0, depth - 1);
-      if (depth === 0) setOver(false);
+      if (depth === 0) {
+        setOver(false);
+      }
     };
     const dragOver = (event: DragEvent) => event.preventDefault();
     const drop = (event: DragEvent) => {
@@ -26,7 +30,9 @@ export function useFileDrop(onFiles: (files: File[]) => void): boolean {
       depth = 0;
       setOver(false);
       const files = [...(event.dataTransfer?.files ?? [])];
-      if (files.length > 0) onDrop(files);
+      if (files.length > 0) {
+        onDrop(files);
+      }
     };
     window.addEventListener('dragenter', enter);
     window.addEventListener('dragleave', leave);

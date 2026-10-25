@@ -22,7 +22,9 @@ export function orderAfterStep(
   step: -1 | 1,
 ): string[] | undefined {
   const to = order.indexOf(id) + step;
-  if (to < 0 || to >= order.length) return undefined;
+  if (to < 0 || to >= order.length) {
+    return undefined;
+  }
   const next = order.filter((other) => other !== id);
   next.splice(to, 0, id);
   return next;
@@ -33,9 +35,8 @@ export function priorityAfterMove(config: Config, ids: readonly string[], moved:
   const index = ids.indexOf(moved);
   const next = ids[index + 1];
   const previous = ids[index - 1];
-  return next
-    ? placeVpn(config, moved, next, 'above')
-    : previous
-      ? placeVpn(config, moved, previous, 'below')
-      : config.priority;
+  if (next) {
+    return placeVpn(config, moved, next, 'above');
+  }
+  return previous ? placeVpn(config, moved, previous, 'below') : config.priority;
 }

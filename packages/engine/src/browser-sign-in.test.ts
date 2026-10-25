@@ -6,7 +6,7 @@ const PORT = 47_790;
 
 describe('receiveBrowserToken', () => {
   it("takes the token from the first request's path and lets the gateway's page call it", async () => {
-    const wait = receiveBrowserToken(PORT, 5_000);
+    const wait = receiveBrowserToken(PORT, 5000);
     await new Promise((resolve) => setTimeout(resolve, 50));
     const response = await fetch(`http://127.0.0.1:${PORT}/ab12-CD34_x=`, { method: 'GET' });
     expect(response.status).toBe(200);
@@ -16,7 +16,7 @@ describe('receiveBrowserToken', () => {
   });
 
   it('ignores requests without a usable token, and can be cancelled', async () => {
-    const wait = receiveBrowserToken(PORT + 1, 5_000);
+    const wait = receiveBrowserToken(PORT + 1, 5000);
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect((await fetch(`http://127.0.0.1:${PORT + 1}/`)).status).toBe(400);
     expect((await fetch(`http://127.0.0.1:${PORT + 1}/a*b`)).status).toBe(400);
@@ -29,9 +29,9 @@ describe('receiveBrowserToken', () => {
   });
 
   it("explains a port that's taken", async () => {
-    const first = receiveBrowserToken(PORT + 3, 5_000);
+    const first = receiveBrowserToken(PORT + 3, 5000);
     await new Promise((resolve) => setTimeout(resolve, 50));
-    await expect(receiveBrowserToken(PORT + 3, 5_000).token).rejects.toThrow('in use');
+    await expect(receiveBrowserToken(PORT + 3, 5000).token).rejects.toThrow('in use');
     first.cancel(new Error('done'));
     await first.token.catch(() => undefined);
   });

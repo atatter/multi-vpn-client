@@ -31,7 +31,7 @@ export function fortinetLaunch(vpn: FortinetSslVpn, password: string): VpnLaunch
 /** A FortiGate's SSL VPN login page. It often listens on 10443 rather than 443, so without a typed port both are tried. */
 export const detectFortinet: Detect = async ({ host, port, explicitPort }, probe) => {
   const looksLikeIt = (text: string) => /\/remote\/(logincheck|login|fgt_lang)/.test(text);
-  const ports = explicitPort ? [port] : [443, 10443];
+  const ports = explicitPort ? [port] : [443, 10_443];
   const found = await Promise.all(
     ports.map(async (candidate) => {
       const answer = await probe({ host, port: candidate, method: 'GET', path: '/remote/login' });
@@ -46,9 +46,13 @@ export const detectFortinet: Detect = async ({ host, port, explicitPort }, probe
 
 export const fortinetSslEngine: LauncherEntry<FortinetSslVpn> = {
   launch: async (vpn, secrets) => {
-    if (!vpn.username) throw new Error("Add your username in the VPN's settings.");
+    if (!vpn.username) {
+      throw new Error("Add your username in the VPN's settings.");
+    }
     const password = await secrets.loginPassword();
-    if (password === undefined) return 'needs-password';
+    if (password === undefined) {
+      return 'needs-password';
+    }
     return fortinetLaunch(vpn, password);
   },
   detect: detectFortinet,

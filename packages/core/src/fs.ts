@@ -7,7 +7,9 @@ export async function readJsonIfExists(path: string): Promise<unknown> {
   try {
     return JSON.parse(await readFile(path, 'utf8'));
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return undefined;
+    }
     throw error;
   }
 }
@@ -27,7 +29,9 @@ export async function writeJsonAtomic(path: string, value: unknown, mode = 0o644
         return await rename(temp, path);
       } catch (error) {
         const code = (error as NodeJS.ErrnoException).code ?? '';
-        if (attempt >= 5 || !TRANSIENT.has(code)) throw error;
+        if (attempt >= 5 || !TRANSIENT.has(code)) {
+          throw error;
+        }
         await sleep(50 * attempt);
       }
     }

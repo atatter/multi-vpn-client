@@ -43,7 +43,9 @@ describe('an imported profile', () => {
   });
   const imported = (profile: string) => {
     const read = OPENVPN_FILE.read(profile, draft);
-    if (!read.ok) throw new Error(read.error);
+    if (!read.ok) {
+      throw new Error(read.error);
+    }
     return read.vpn;
   };
   const usernameError = (vpn: ReturnType<typeof imported>) =>

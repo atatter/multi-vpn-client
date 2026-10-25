@@ -56,7 +56,9 @@ const NETWORK_SLOTS = 64;
  */
 export async function createVpnNetwork(docker: Pick<Docker, 'run'>, name: string): Promise<void> {
   const block = parseCidr(CONTAINER_NETWORKS);
-  if (!block.ok) throw new Error(block.error);
+  if (!block.ok) {
+    throw new Error(block.error);
+  }
   const [first] = block.range;
   for (let slot = 0; slot < NETWORK_SLOTS; slot++) {
     const [subnet = ''] = rangesToCidrs([[first + slot * 16, first + slot * 16 + 15]]);
@@ -69,9 +71,12 @@ export async function createVpnNetwork(docker: Pick<Docker, 'run'>, name: string
       subnet,
       name,
     ]);
-    if (created.code === 0) return;
-    if (!/overlap/i.test(created.stderr))
+    if (created.code === 0) {
+      return;
+    }
+    if (!/overlap/i.test(created.stderr)) {
       throw new Error(`Docker couldn't create the VPN's network: ${created.stderr.trim()}`);
+    }
   }
   throw new Error(
     'Docker has no free network left for this VPN. Disconnect another VPN and try again.',
@@ -162,7 +167,9 @@ export async function startVpnContainer(
       [NONCE_FILE]: nonce,
       resolvers: `${resolversFor(options.dnsServers).join('\n')}\n`,
     };
-    if (options.dnsServers.length > 0) files['dns-pinned'] = '';
+    if (options.dnsServers.length > 0) {
+      files['dns-pinned'] = '';
+    }
     await copyFiles(docker, name, files);
 
     // Checked once more before the client starts: a cancelled connect mustn't sign in (e.g. send an MFA push).
@@ -173,15 +180,16 @@ export async function startVpnContainer(
         .trim()
         .split('\n')[0] ?? '';
     const port = Number(published.slice(published.lastIndexOf(':') + 1));
-    if (!Number.isInteger(port) || port <= 0)
+    if (!Number.isInteger(port) || port <= 0) {
       throw new Error(`Unexpected port mapping "${published}"`);
+    }
 
     // Follow the logs: they tell us when the tunnel is up, and the stream ends when the container stops.
     const follower = spawn(docker.bin, ['logs', '--follow', name], {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     logs = follower;
-    await waitForTunnel(docker, name, follower, nonce, options, () => stopped);
+    await waitForTunnel({ docker, name, follower, nonce }, options, () => stopped);
 
     // What the client recorded once connected: pushed DNS servers and routes, and the server it reached.
     const record = (file: string) => docker.run(['exec', name, 'cat', `/run/mvpn/${file}`]);
@@ -221,8 +229,9 @@ export async function startVpnContainer(
 async function copyFiles(docker: Docker, name: string, files: Record<string, string>) {
   const staging = await mkdtemp(join(tmpdir(), 'mvpn-'));
   try {
-    for (const [file, content] of Object.entries(files))
+    for (const [file, content] of Object.entries(files)) {
       await writeFile(join(staging, file), content, { mode: 0o600 });
+    }
     await docker.runChecked(['cp', `${staging}/.`, `${name}:/run/mvpn`]);
   } finally {
     await rm(staging, { recursive: true, force: true });

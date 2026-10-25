@@ -50,7 +50,7 @@ describe('noRoutesWarning', () => {
 
 describe('planRoutes', () => {
   const session: VpnSession = {
-    port: 41000,
+    port: 41_000,
     username: 'u',
     password: 'p',
     pushedDns: [],

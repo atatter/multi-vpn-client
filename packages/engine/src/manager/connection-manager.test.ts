@@ -43,7 +43,9 @@ vi.mock('../helper-client.ts', () => ({
     let end: () => void = () => undefined;
     const closed = new Promise<void>((resolve) => (end = resolve));
     const apply = async () => {
-      if (!helper.failing) return;
+      if (!helper.failing) {
+        return;
+      }
       end();
       throw new Error('resolvectl failed');
     };

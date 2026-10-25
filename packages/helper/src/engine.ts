@@ -34,7 +34,7 @@ const processList = () =>
     execFile(
       '/bin/ps',
       ['-A', '-ww', '-o', 'pid=,command='],
-      { timeout: 5_000, maxBuffer: 16 * 1024 * 1024 },
+      { timeout: 5000, maxBuffer: 16 * 1024 * 1024 },
       (error, stdout) =>
         error
           ? reject(new Error(`listing processes failed: ${error.message}`))
@@ -71,8 +71,12 @@ export async function stopLeftover({
   for (const { pid } of running.filter((entry) => entry.command === ours)) {
     log(`stopping the sing-box a previous run left behind (pid ${pid})`);
     process.kill(pid, 'SIGTERM');
-    for (let waited = 0; waited < 5_000 && isRunning(pid); waited += 100) await sleep(100);
-    if (isRunning(pid)) process.kill(pid, 'SIGKILL');
+    for (let waited = 0; waited < 5000 && isRunning(pid); waited += 100) {
+      await sleep(100);
+    }
+    if (isRunning(pid)) {
+      process.kill(pid, 'SIGKILL');
+    }
   }
 }
 
@@ -119,8 +123,9 @@ export function createSingBoxBackend({
     const hash = createHash('sha256')
       .update(await readFile(singBoxPath))
       .digest('hex');
-    if (hash !== singBoxSha256)
+    if (hash !== singBoxSha256) {
       throw new Error("sing-box binary doesn't match its checksum; reinstall the helper.");
+    }
   }
 
   async function start() {
@@ -136,25 +141,32 @@ export function createSingBoxBackend({
     child = engine;
     let started = false;
     engine.on('exit', (code, signal) => {
-      if (child !== engine) return; // stopped on purpose
+      if (child !== engine) {
+        return;
+      } // stopped on purpose
       child = undefined;
       log(`sing-box exited unexpectedly (${signal ?? code})`);
       // While starting, apply answers with the reason; afterwards the session ends so the app notices.
-      if (started) onCrash();
+      if (started) {
+        onCrash();
+      }
     });
     await sleep(1000);
     // sing-box's own last line says why, e.g. "… bind: address already in use".
-    if (child !== engine)
+    if (child !== engine) {
       throw new Error(
         `sing-box failed to start: ${plain(lastLine).replace(/^FATAL\[\d+\]\s*/, '') || 'see the helper log'}`,
       );
+    }
     started = true;
   }
 
   async function stop() {
     const engine = child;
     child = undefined;
-    if (!engine) return;
+    if (!engine) {
+      return;
+    }
     const exited = new Promise<void>((resolve) => engine.once('exit', () => resolve()));
     engine.kill('SIGTERM');
     await Promise.race([exited, sleep(5000).then(() => engine.kill('SIGKILL'))]);
@@ -186,8 +198,9 @@ export function createSingBoxBackend({
 
       // DNS first: on Linux the DNS listener's address only exists once the DNS settings do.
       await dns.set(resolverDomains(routes));
-      if (child && reload === 'signal') child.kill('SIGHUP');
-      else {
+      if (child && reload === 'signal') {
+        child.kill('SIGHUP');
+      } else {
         await stop();
         await start();
       }

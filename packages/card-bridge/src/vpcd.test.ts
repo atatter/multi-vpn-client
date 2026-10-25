@@ -10,7 +10,9 @@ describe('vpcd framing', () => {
       ...frame(Uint8Array.of(0x00, 0xa4, 0x04, 0x00)),
       ...frame(new Uint8Array(0)),
     );
-    for (const byte of stream) feed(Uint8Array.of(byte));
+    for (const byte of stream) {
+      feed(Uint8Array.of(byte));
+    }
     expect(messages).toEqual([[4], [0x00, 0xa4, 0x04, 0x00], []]);
 
     messages.length = 0;
@@ -19,8 +21,8 @@ describe('vpcd framing', () => {
   });
 
   it('frames with a big-endian length', () => {
-    expect([...frame(new Uint8Array(0x0102))].slice(0, 2)).toEqual([0x01, 0x02]);
-    expect(() => frame(new Uint8Array(0x10000))).toThrow(RangeError);
+    expect([...frame(new Uint8Array(0x01_02))].slice(0, 2)).toEqual([0x01, 0x02]);
+    expect(() => frame(new Uint8Array(0x1_00_00))).toThrow(RangeError);
   });
 
   it('refuses changing, turning off or unblocking PINs, in either instruction form, and passes everything else on', () => {

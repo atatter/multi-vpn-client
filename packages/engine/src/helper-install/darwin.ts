@@ -88,7 +88,9 @@ async function runAsAdmin(script: string, reason: string): Promise<void> {
     `with prompt ${JSON.stringify(reason)} with administrator privileges`;
   const result = await run('/usr/bin/osascript', ['-e', appleScript]);
   if (result.code !== 0) {
-    if (result.stderr.includes('-128')) throw new Error('Administrator access was cancelled.');
+    if (result.stderr.includes('-128')) {
+      throw new Error('Administrator access was cancelled.');
+    }
     throw new Error(result.stderr.trim() || 'The administrator script failed.');
   }
 }

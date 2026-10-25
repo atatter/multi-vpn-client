@@ -43,7 +43,9 @@ export function createResolvedDns({
   return {
     async set(domains) {
       const valid = [...new Set(domains)].filter((domain) => Domain.safeParse(domain).success);
-      if (valid.length === 0) return removeLink();
+      if (valid.length === 0) {
+        return removeLink();
+      }
 
       const exists = await run('ip', ['link', 'show', link]).then(
         () => true,
@@ -61,10 +63,11 @@ export function createResolvedDns({
           await resolvectl('dns', link, `${address}:${port}`);
           break;
         } catch (error) {
-          if (attempt === 20)
+          if (attempt === 20) {
             throw new Error(
               `Domain routes need systemd-resolved: ${error instanceof Error ? error.message : String(error)}`,
             );
+          }
           await sleep(100);
         }
       }

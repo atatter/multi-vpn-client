@@ -67,7 +67,9 @@ export const AppContext = createContext<AppModel | null>(null);
 
 export function useApp(): AppModel {
   const model = useContext(AppContext);
-  if (!model) throw new Error('useApp needs the AppContext provider');
+  if (!model) {
+    throw new Error('useApp needs the AppContext provider');
+  }
   return model;
 }
 

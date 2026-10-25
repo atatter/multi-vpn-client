@@ -20,7 +20,9 @@ export async function planRoutes(config: Config, sessions: ReadonlyMap<string, V
     const session = sessions.get(vpn.id);
     return session ? [{ vpn, session }] : [];
   });
-  if (connected.length === 0) return undefined;
+  if (connected.length === 0) {
+    return undefined;
+  }
 
   const host = await hostReserved(config.vpns);
   // The placeholder addresses for domain routes must never be claimed by an IP route, and neither may the
@@ -66,17 +68,23 @@ export function noRoutesWarning(
   routes: Config['routes'],
   compiled: CompiledRoutes | undefined,
 ) {
-  if (!vpn || !compiled) return undefined;
+  if (!vpn || !compiled) {
+    return undefined;
+  }
   const nothingSent =
     'Connected, but nothing is sent through it yet. Choose what goes through it in its settings.';
   const own = new Set(
     effectiveRules(vpn, routes).flatMap((rule) => (rule.enabled ? [rule.id] : [])),
   );
-  if (own.size === 0) return nothingSent;
+  if (own.size === 0) {
+    return nothingSent;
+  }
   const carries =
     (compiled.byVpn[vpn.id]?.length ?? 0) > 0 ||
     compiled.domains.some((domain) => domain.vpnId === vpn.id);
-  if (carries) return undefined;
+  if (carries) {
+    return undefined;
+  }
   const takenByAnother = compiled.warnings.some(
     (warning) =>
       own.has(warning.ruleId) &&

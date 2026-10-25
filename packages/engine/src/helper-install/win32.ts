@@ -126,9 +126,13 @@ async function runAsAdmin(script: string): Promise<void> {
       `$p = Start-Process -FilePath ${psQuote(POWERSHELL)} -Verb RunAs -WindowStyle Hidden -Wait -PassThru ` +
       `-ArgumentList '-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-EncodedCommand','${encoded}'; exit $p.ExitCode`;
     const result = await run(POWERSHELL, ['-NoProfile', '-NonInteractive', '-Command', launcher]);
-    if (result.code === 0) return;
+    if (result.code === 0) {
+      return;
+    }
     // Declining the UAC prompt makes Start-Process fail with "canceled by the user".
-    if (/cancel/i.test(result.stderr)) throw new Error('Administrator access was cancelled.');
+    if (/cancel/i.test(result.stderr)) {
+      throw new Error('Administrator access was cancelled.');
+    }
     const reported = await readFile(errorFile, 'utf8').catch(() => '');
     throw new Error(
       reported.trim() ||

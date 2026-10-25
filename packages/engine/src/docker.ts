@@ -91,7 +91,9 @@ export function createDocker(bin: string) {
 /** Whether Docker is installed and running. */
 export async function dockerState(): Promise<DockerState> {
   const bin = await findDocker().catch(() => undefined);
-  if (!bin) return 'missing';
+  if (!bin) {
+    return 'missing';
+  }
   return createDocker(bin)
     .assertRunning()
     .then(
@@ -108,10 +110,11 @@ export async function startDocker(): Promise<void> {
   await launchDocker();
   const deadline = Date.now() + START_TIMEOUT_MS;
   while ((await dockerState()) !== 'running') {
-    if (Date.now() > deadline)
+    if (Date.now() > deadline) {
       throw new Error(
         `Docker didn't start within ${START_TIMEOUT_MS / 60_000} minutes. Open Docker Desktop to see why.`,
       );
+    }
     await sleep(1000);
   }
 }
@@ -130,13 +133,14 @@ async function launchDocker(): Promise<void> {
   if (process.platform === 'darwin') {
     // `open` returns once the app is launched, and fails when there's no Docker Desktop (Colima, OrbStack).
     const opened = await run('open', ['-a', 'Docker']);
-    if (opened.code !== 0)
+    if (opened.code !== 0) {
       throw new Error(
         "Docker Desktop isn't installed, so the app can't start Docker. Start the Docker you use, such as Colima or OrbStack.",
       );
+    }
     return;
   }
-  if (process.platform === 'win32')
+  if (process.platform === 'win32') {
     return launch(
       join(
         process.env.ProgramFiles ?? 'C:\\Program Files',
@@ -146,11 +150,14 @@ async function launchDocker(): Promise<void> {
       ),
       [],
     );
+  }
   // Docker Desktop for Linux is a user service; Docker Engine needs root, which the app doesn't have.
   const started = await new Promise<boolean>((resolve) => {
     const child = spawn('systemctl', ['--user', 'start', 'docker-desktop'], { stdio: 'ignore' });
     child.once('error', () => resolve(false));
     child.once('exit', (code) => resolve(code === 0));
   });
-  if (!started) throw new Error('Start Docker from a terminal: sudo systemctl start docker');
+  if (!started) {
+    throw new Error('Start Docker from a terminal: sudo systemctl start docker');
+  }
 }

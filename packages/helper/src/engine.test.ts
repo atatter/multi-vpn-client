@@ -9,7 +9,7 @@ import { createSingBoxBackend, stopLeftover } from './engine.ts';
 
 const tunnel: VpnTunnel = {
   vpnId: 'a',
-  port: 41000,
+  port: 41_000,
   username: 'u',
   password: 'p',
   cidrs: ['10.20.0.0/16'],

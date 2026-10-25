@@ -17,10 +17,14 @@ export function PasswordPrompt({ vpn }: { vpn: Vpn }) {
       aria-label={`Sign in to ${vpnLabel(vpn)}`}
       onSubmit={(event) => {
         event.preventDefault();
-        if (password) app.submitPassword(password, remember);
+        if (password) {
+          app.submitPassword(password, remember);
+        }
       }}
       onKeyDown={(event) => {
-        if (event.key !== 'Escape') return;
+        if (event.key !== 'Escape') {
+          return;
+        }
         event.preventDefault();
         app.cancelPrompt();
       }}

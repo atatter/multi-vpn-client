@@ -54,7 +54,9 @@ export function normalizeDomain(input: string): string {
  */
 export function parseSite(text: string): { site: string; isAddress: boolean } | undefined {
   const site = normalizeDomain(text);
-  if (isIpv4(site)) return { site, isAddress: true };
+  if (isIpv4(site)) {
+    return { site, isAddress: true };
+  }
   return site.includes('.') && Domain.safeParse(site).success
     ? { site, isAddress: false }
     : undefined;
@@ -126,23 +128,25 @@ export const Config = z
   .superRefine((config, ctx) => {
     const vpnIds = new Set<string>();
     config.vpns.forEach((vpn, index) => {
-      if (vpnIds.has(vpn.id))
+      if (vpnIds.has(vpn.id)) {
         ctx.addIssue({
           code: 'custom',
           message: `Duplicate VPN id "${vpn.id}"`,
           path: ['vpns', index, 'id'],
         });
+      }
       vpnIds.add(vpn.id);
     });
 
     const routeIds = new Set<string>();
     config.routes.forEach((route, index) => {
-      if (routeIds.has(route.id))
+      if (routeIds.has(route.id)) {
         ctx.addIssue({
           code: 'custom',
           message: `Duplicate route id "${route.id}"`,
           path: ['routes', index, 'id'],
         });
+      }
       routeIds.add(route.id);
       if (!vpnIds.has(route.vpnId)) {
         ctx.addIssue({
@@ -186,7 +190,9 @@ export function placeVpn(
     .map((vpn) => vpn.id)
     .filter((other) => other !== id);
   const at = ids.indexOf(target);
-  if (at < 0) return config.priority;
+  if (at < 0) {
+    return config.priority;
+  }
   ids.splice(where === 'above' ? at : at + 1, 0, id);
   return ids;
 }
@@ -194,7 +200,9 @@ export function placeVpn(
 /** The priority with `id` back where its kind starts: on top if it carries its own network, at the bottom if it carries everything. */
 export function settleVpn(config: Pick<Config, 'vpns' | 'priority'>, id: string): string[] {
   const vpn = config.vpns.find((candidate) => candidate.id === id);
-  if (!vpn) return config.priority;
+  if (!vpn) {
+    return config.priority;
+  }
   const ids = rankVpns(config)
     .map((other) => other.id)
     .filter((other) => other !== id);

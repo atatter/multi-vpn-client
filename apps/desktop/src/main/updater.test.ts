@@ -246,7 +246,9 @@ describe('downloading it', () => {
     await updater.check();
     const done = updater.download();
     const [download] = downloads;
-    for (const share of [0.004, 0.42, 0.421, 0.9, 1]) download?.progress(share);
+    for (const share of [0.004, 0.42, 0.421, 0.9, 1]) {
+      download?.progress(share);
+    }
     download?.finish();
     await done;
     expect(states.slice(2)).toEqual([

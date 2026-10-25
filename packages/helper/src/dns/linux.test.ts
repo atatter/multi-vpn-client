@@ -8,10 +8,16 @@ function fakeSystem({ failResolvectl = 0 } = {}) {
   let resolvectlFailures = failResolvectl;
   const run: Exec = async (command, args) => {
     const line = [command, ...args].join(' ');
-    if (line === 'ip link show mvpn-dns' && !linkExists) throw new Error('does not exist');
+    if (line === 'ip link show mvpn-dns' && !linkExists) {
+      throw new Error('does not exist');
+    }
     calls.push(line);
-    if (line === 'ip link add mvpn-dns type dummy') linkExists = true;
-    if (line === 'ip link del mvpn-dns') linkExists = false;
+    if (line === 'ip link add mvpn-dns type dummy') {
+      linkExists = true;
+    }
+    if (line === 'ip link del mvpn-dns') {
+      linkExists = false;
+    }
     if (command === 'resolvectl' && resolvectlFailures > 0) {
       resolvectlFailures--;
       throw new Error('Link mvpn-dns not known');
@@ -23,7 +29,7 @@ function fakeSystem({ failResolvectl = 0 } = {}) {
 describe('systemd-resolved DNS', () => {
   it('creates the dummy link once and points only valid, routing-only domains at the listener', async () => {
     const system = fakeSystem();
-    const dns = createResolvedDns({ address: '198.18.0.5', port: 53530, run: system.run });
+    const dns = createResolvedDns({ address: '198.18.0.5', port: 53_530, run: system.run });
     await dns.set(['corp.example', 'corp.example', '--evil', 'b.internal']);
     expect(system.calls).toEqual([
       'ip link add mvpn-dns type dummy',
@@ -46,7 +52,7 @@ describe('systemd-resolved DNS', () => {
 
   it("removes the link (and with it every setting) when there's nothing to route", async () => {
     const system = fakeSystem();
-    const dns = createResolvedDns({ address: '198.18.0.5', port: 53530, run: system.run });
+    const dns = createResolvedDns({ address: '198.18.0.5', port: 53_530, run: system.run });
     await dns.set([]);
     await dns.clear();
     expect(system.calls).toEqual(['ip link del mvpn-dns', 'ip link del mvpn-dns']);
@@ -54,7 +60,7 @@ describe('systemd-resolved DNS', () => {
 
   it('waits for resolved to notice a new link', async () => {
     const system = fakeSystem({ failResolvectl: 2 });
-    await createResolvedDns({ address: '198.18.0.5', port: 53530, run: system.run }).set([
+    await createResolvedDns({ address: '198.18.0.5', port: 53_530, run: system.run }).set([
       'corp.example',
     ]);
     expect(system.calls.filter((call) => call.includes(' dns '))).toHaveLength(3);

@@ -137,10 +137,12 @@ describe('store', () => {
   });
 
   it("leaves Linux's folder where it is", async () => {
-    const config = await mkdtemp(join(tmpdir(), 'mvpn-xdg-'));
-    await mkdir(join(config, 'multi-vpn-client'));
-    moveAppDir({ XDG_CONFIG_HOME: config }, 'linux');
-    expect(appDir({ XDG_CONFIG_HOME: config }, 'linux')).toBe(join(config, 'multi-vpn-client'));
+    const xdgConfig = await mkdtemp(join(tmpdir(), 'mvpn-xdg-'));
+    await mkdir(join(xdgConfig, 'multi-vpn-client'));
+    moveAppDir({ XDG_CONFIG_HOME: xdgConfig }, 'linux');
+    expect(appDir({ XDG_CONFIG_HOME: xdgConfig }, 'linux')).toBe(
+      join(xdgConfig, 'multi-vpn-client'),
+    );
   });
 });
 

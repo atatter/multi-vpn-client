@@ -51,8 +51,10 @@ describe('secret store', () => {
     expect(await store.read('g', 'password')).toBe('hunter2');
     expect(await store.read('g', 'missing')).toBeUndefined();
     // Windows has no file modes to check.
-    // oxlint-disable-next-line vitest/no-conditional-expect
-    if (process.platform !== 'win32') expect((await stat(path)).mode & 0o777).toBe(0o600);
+    if (process.platform !== 'win32') {
+      // oxlint-disable-next-line vitest/no-conditional-expect
+      expect((await stat(path)).mode & 0o777).toBe(0o600);
+    }
   });
 
   it('clears slots and prunes against the current VPNs', async () => {

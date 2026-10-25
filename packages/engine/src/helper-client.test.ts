@@ -9,7 +9,7 @@ import { helperVersion, openHelperSession } from './helper-client.ts';
 const TOKEN = 'app-secret-token';
 const tunnel: VpnTunnel = {
   vpnId: 'a',
-  port: 41000,
+  port: 41_000,
   username: 'u',
   password: 'p',
   cidrs: ['10.20.0.0/16'],
@@ -31,7 +31,9 @@ async function helper(token = TOKEN, { failing = false } = {}) {
     backend: {
       apply: async (state) => {
         applied.push(state);
-        if (failing && state !== NO_ROUTES) throw new Error('resolvectl failed');
+        if (failing && state !== NO_ROUTES) {
+          throw new Error('resolvectl failed');
+        }
       },
     },
     log: () => undefined,
@@ -51,16 +53,14 @@ async function impostor() {
         received.push(line);
         const request = JSON.parse(line) as { command: string };
         const reply =
-          request.command === 'status'
-            ? { ok: true, version: HELPER_VERSION }
-            : request.command === 'hello'
-              ? {
-                  ok: true,
-                  version: HELPER_VERSION,
-                  challenge: 'c'.repeat(43),
-                  proof: '0'.repeat(64),
-                }
-              : { ok: true, version: HELPER_VERSION };
+          request.command === 'hello'
+            ? {
+                ok: true,
+                version: HELPER_VERSION,
+                challenge: 'c'.repeat(43),
+                proof: '0'.repeat(64),
+              }
+            : { ok: true, version: HELPER_VERSION };
         socket.write(`${JSON.stringify(reply)}\n`);
       }
     });

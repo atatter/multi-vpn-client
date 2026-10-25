@@ -5,6 +5,14 @@ import { restartProgress, restartQuestion } from '../domain/update-copy.ts';
 import { useApp } from '../store/app-model.ts';
 import { cx, link, primary } from '@repo/ui/tokens.ts';
 
+const STEP_MARK = {
+  done: <span className="text-go">✓</span>,
+  active: (
+    <span className="size-3 animate-spin rounded-full border-2 border-rule-strong border-t-sodium" />
+  ),
+  todo: <span className="size-1.5 rounded-full bg-rule-strong" />,
+};
+
 /**
  * The question before restarting into a downloaded version: it turns every VPN off. Once answered, it shows each VPN
  * turning off until the window closes. Callers place it, and keep it while the update is ready or restarting.
@@ -33,15 +41,7 @@ export function RestartConfirm({ version, onCancel }: { version: string; onCance
                 state === 'active' ? 'font-medium' : 'text-muted',
               )}
             >
-              <span className="grid size-3.5 place-items-center">
-                {state === 'done' ? (
-                  <span className="text-go">✓</span>
-                ) : state === 'active' ? (
-                  <span className="size-3 animate-spin rounded-full border-2 border-rule-strong border-t-sodium" />
-                ) : (
-                  <span className="size-1.5 rounded-full bg-rule-strong" />
-                )}
-              </span>
+              <span className="grid size-3.5 place-items-center">{STEP_MARK[state]}</span>
               {label}
             </li>
           ))}

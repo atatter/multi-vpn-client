@@ -56,7 +56,9 @@ export function openCardBridge(
       stop();
       reject(options.signal.reason);
     };
-    if (options.signal.aborted) return abort();
+    if (options.signal.aborted) {
+      return abort();
+    }
     options.signal.addEventListener('abort', abort, { once: true });
 
     bridge.on('error', (error) => {
@@ -69,21 +71,29 @@ export function openCardBridge(
       relay?.kill();
       options.signal.removeEventListener('abort', abort);
       const message = lastError ?? 'The card bridge stopped.';
-      if (!found) reject(new Error(message));
-      else if (failed) failed(message);
-      else closedWith = message;
+      if (!found) {
+        reject(new Error(message));
+      } else if (failed) {
+        failed(message);
+      } else {
+        closedWith = message;
+      }
       failed = undefined;
     });
     createInterface({ input: bridge.stderr }).on('line', (line) => {
-      if (line === WAITING) options.onWaiting();
-      else if (line.startsWith(ERROR)) lastError = line.slice(ERROR.length).trim();
-      else if (line.startsWith(CARD) && !found) {
+      if (line === WAITING) {
+        options.onWaiting();
+      } else if (line.startsWith(ERROR)) {
+        lastError = line.slice(ERROR.length).trim();
+      } else if (line.startsWith(CARD) && !found) {
         found = true;
         options.signal.removeEventListener('abort', abort);
         resolve({
           reader: line.slice(CARD.length).trim(),
           attach(dockerBin, container, onFailure) {
-            if (closedWith !== undefined) return onFailure(closedWith);
+            if (closedWith !== undefined) {
+              return onFailure(closedWith);
+            }
             failed = onFailure;
             const exec = spawn(
               dockerBin,
@@ -120,7 +130,9 @@ export function openCardBridge(
             stop();
           },
         });
-      } else if (line.trim()) options.onLog(line);
+      } else if (line.trim()) {
+        options.onLog(line);
+      }
     });
   });
 }

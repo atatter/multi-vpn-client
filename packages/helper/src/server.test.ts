@@ -16,7 +16,7 @@ const KEY = helperKey(TOKEN);
 const sign = signProof;
 const tunnel: VpnTunnel = {
   vpnId: 'a',
-  port: 41000,
+  port: 41_000,
   username: 'u',
   password: 'p',
   cidrs: ['10.20.0.0/16'],
@@ -77,7 +77,9 @@ async function start({ failing = false } = {}) {
   const applied: HostRoutes[] = [];
   const apply = async (state: HostRoutes) => {
     applied.push(state);
-    if (failing && state !== NO_ROUTES) throw new Error('resolvectl failed');
+    if (failing && state !== NO_ROUTES) {
+      throw new Error('resolvectl failed');
+    }
   };
   const server = createHelperServer({ key: KEY, backend: { apply }, log: () => undefined });
   const port = await server.listen(0);

@@ -18,10 +18,14 @@ export function CodePrompt({ vpn, prompt, secret }: { vpn: Vpn; prompt: string; 
       onSubmit={(event) => {
         event.preventDefault();
         // Passwords and PINs go as typed; a code pasted with spaces around it still works.
-        if (code.trim()) app.answer(vpn.id, secret ? code : code.trim());
+        if (code.trim()) {
+          app.answer(vpn.id, secret ? code : code.trim());
+        }
       }}
       onKeyDown={(event) => {
-        if (event.key !== 'Escape') return;
+        if (event.key !== 'Escape') {
+          return;
+        }
         event.preventDefault();
         cancel();
       }}

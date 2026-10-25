@@ -17,7 +17,7 @@ import {
 
 const tunnel = (vpnId: string, overrides: Partial<VpnTunnel> = {}): VpnTunnel => ({
   vpnId,
-  port: 41000,
+  port: 41_000,
   username: 'u',
   password: 'p',
   cidrs: ['10.20.0.0/16'],
@@ -41,7 +41,7 @@ describe('hostSingBoxConfig', () => {
     const config = configFor({
       tunnels: [
         tunnel('a'),
-        tunnel('b', { port: 41001, cidrs: ['172.31.0.0/16'], dns: { servers: [], domains: [] } }),
+        tunnel('b', { port: 41_001, cidrs: ['172.31.0.0/16'], dns: { servers: [], domains: [] } }),
       ],
       domains: [],
     });
@@ -60,7 +60,7 @@ describe('hostSingBoxConfig', () => {
       type: 'socks',
       tag: 'vpn-b',
       server: '127.0.0.1',
-      server_port: 41001,
+      server_port: 41_001,
       username: 'u',
       password: 'p',
       udp_over_tcp: true,
@@ -157,7 +157,7 @@ describe('hostSingBoxConfig', () => {
     const { experimental } = configFor({
       tunnels: [tunnel('a')],
       domains: [],
-      stats: { port: 45001, secret: 's3cret_value' },
+      stats: { port: 45_001, secret: 's3cret_value' },
     });
     expect(experimental.clash_api).toEqual({
       external_controller: '127.0.0.1:45001',
@@ -185,7 +185,7 @@ describe('hostSingBoxConfig: domain routes', () => {
   const routes = {
     tunnels: [
       tunnel('a', { cidrs: [] }),
-      tunnel('b', { port: 41001, cidrs: ['10.30.0.0/16'], dns: { servers: [], domains: [] } }),
+      tunnel('b', { port: 41_001, cidrs: ['10.30.0.0/16'], dns: { servers: [], domains: [] } }),
     ],
     domains: [
       { vpnId: 'b', domain: 'argo.lab.example' },

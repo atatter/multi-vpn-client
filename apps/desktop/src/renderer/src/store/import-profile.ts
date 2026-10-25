@@ -8,8 +8,12 @@ import type { Screen } from './screen.ts';
 /** A drop on the window: one provider file opens like a chosen one; several are turned away. */
 export function openDropped(app: AppModel, files: readonly File[]) {
   const [file, ...more] = files;
-  if (more.length > 0) return app.showNotice('Drop one file at a time.');
-  if (file) openProfile(app, file);
+  if (more.length > 0) {
+    return app.showNotice('Drop one file at a time.');
+  }
+  if (file) {
+    openProfile(app, file);
+  }
 }
 
 /** Opens the sign-in step for a dropped or chosen provider file, or shows why it can't be used. */
@@ -37,17 +41,20 @@ export async function importProfile(
   const kinds = VPN_KINDS.filter((kind) =>
     kindSpec(kind).fromFile?.extensions.some((extension) => lower.endsWith(extension)),
   );
-  if (kinds.length === 0)
+  if (kinds.length === 0) {
     return {
       ok: false,
       error: `${file.name} isn't a VPN file this app reads. It takes ${FILE_TYPES} files.`,
     };
+  }
   const text = await file.text();
   const draft = { id: crypto.randomUUID(), name: uniqueName(nameFromFile(file.name), vpns) };
   let firstError: string | undefined;
   for (const kind of kinds) {
     const read = readAs(kind, text, draft);
-    if (!read) continue;
+    if (!read) {
+      continue;
+    }
     if (!read.ok) {
       firstError ??= `${file.name} isn't a valid ${FORMS[kind].label} file: ${read.error}`;
       continue;

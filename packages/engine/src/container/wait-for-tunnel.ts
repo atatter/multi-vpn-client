@@ -17,10 +17,17 @@ const CONNECT_TIMEOUT_MS = 90_000;
  * unless `isStopped`.
  */
 export function waitForTunnel(
-  docker: Docker,
-  name: string,
-  follower: ChildProcessByStdio<null, Readable, Readable>,
-  nonce: string,
+  {
+    docker,
+    name,
+    follower,
+    nonce,
+  }: {
+    docker: Docker;
+    name: string;
+    follower: ChildProcessByStdio<null, Readable, Readable>;
+    nonce: string;
+  },
   options: StartOptions,
   isStopped: () => boolean,
 ): Promise<void> {
@@ -53,7 +60,9 @@ export function waitForTunnel(
       clearTimeout(timeout);
       try {
         await deliver();
-        if (!connected && !failed) startTimeout();
+        if (!connected && !failed) {
+          startTimeout();
+        }
       } catch (error) {
         fail(error);
       }
@@ -92,25 +101,35 @@ export function waitForTunnel(
         );
       });
     startTimeout();
-    if (options.signal.aborted) fail(options.signal.reason);
+    if (options.signal.aborted) {
+      fail(options.signal.reason);
+    }
     options.signal.addEventListener(
       'abort',
       () => {
-        if (!connected) fail(options.signal.reason);
+        if (!connected) {
+          fail(options.signal.reason);
+        }
       },
       { once: true },
     );
     // The card stops being available if it's removed from the reader. Before connecting, that ends the connect.
     options.cardBridge?.attach(docker.bin, name, (message) => {
       options.onLog(message);
-      if (!connected) fail(new Error(message));
+      if (!connected) {
+        fail(new Error(message));
+      }
     });
     const onLine = (line: string) => {
       options.onLog(line);
       lastLines.push(line);
-      if (lastLines.length > 30) lastLines.shift();
+      if (lastLines.length > 30) {
+        lastLines.shift();
+      }
       const meaning = classifyLine(line, launch.readLine, connectMarkers);
-      if (meaning === undefined || connected || failed) return;
+      if (meaning === undefined || connected || failed) {
+        return;
+      }
       if (meaning === 'connected') {
         connected = true;
         clearTimeout(timeout);
@@ -136,13 +155,15 @@ export function waitForTunnel(
     // Registered before the tunnel is reported up, so an exit right after connecting is never missed.
     follower.on('close', () => {
       clearTimeout(timeout);
-      if (!connected)
+      if (!connected) {
         reject(
           new Error(
             `${launch.client} stopped before connecting: ${lastLines.at(-1) ?? 'no output'}`,
           ),
         );
-      else if (!isStopped()) options.onExit([...lastLines]);
+      } else if (!isStopped()) {
+        options.onExit([...lastLines]);
+      }
     });
   });
 }

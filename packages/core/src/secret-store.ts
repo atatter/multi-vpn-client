@@ -77,7 +77,9 @@ export function createSecretStore(path: string, cipher: Cipher) {
       vpns: readonly Vpn[],
     ): Promise<{ commit: () => Promise<SecretStatus> }> {
       const problems = validateSecretChanges(changes, vpns);
-      if (problems.length > 0) throw new Error(problems.join('\n'));
+      if (problems.length > 0) {
+        throw new Error(problems.join('\n'));
+      }
 
       const encrypted: SecretMap<string | null> = {};
       for (const [vpnId, slots] of Object.entries(changes)) {

@@ -25,7 +25,9 @@ export function run(
     child.on('error', reject);
     // A killed command's own children (e.g. what `sh -c` forked) can hold its pipes open; don't wait for them.
     child.on('exit', (_code, signal) => {
-      if (signal) [child.stdout, child.stderr].forEach((stream) => stream.destroy());
+      if (signal) {
+        [child.stdout, child.stderr].forEach((stream) => stream.destroy());
+      }
     });
     child.on('close', (code) =>
       resolve({
@@ -45,10 +47,11 @@ export async function runChecked(
   input?: string | Buffer,
 ): Promise<string> {
   const result = await run(command, args, input);
-  if (result.code !== 0)
+  if (result.code !== 0) {
     throw new Error(
       (result.stderr || result.stdout).trim() || `${command} exited with ${result.code}`,
     );
+  }
   return result.stdout;
 }
 

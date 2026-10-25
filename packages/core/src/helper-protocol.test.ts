@@ -3,7 +3,7 @@ import { HelperRequest, parseHelperLine } from './helper-protocol.ts';
 
 const tunnel = {
   vpnId: '0f8b6c1e-6a3e-4d2f-9a51-3f1f0b7c2a10',
-  port: 41000,
+  port: 41_000,
   username: 'mvpn',
   password: 'abc_DEF-123',
   cidrs: ['10.20.0.0/16'],
@@ -21,7 +21,7 @@ describe('HelperRequest: stats endpoint', () => {
       blockIpv6: false,
       tunnels: [tunnel],
       domains: [],
-      stats: { port: 45001, secret: 'Xk3_-abc' },
+      stats: { port: 45_001, secret: 'Xk3_-abc' },
     };
     expect(HelperRequest.parse({ command: 'apply', routes })).toEqual({ command: 'apply', routes });
     expect(
@@ -30,13 +30,13 @@ describe('HelperRequest: stats endpoint', () => {
     expect(
       error({
         command: 'apply',
-        routes: { ...routes, stats: { port: 45001, secret: 'has space' } },
+        routes: { ...routes, stats: { port: 45_001, secret: 'has space' } },
       }),
     ).toBeDefined();
     expect(
       error({
         command: 'apply',
-        routes: { ...routes, stats: { port: 45001, secret: 'x', host: '0.0.0.0' } },
+        routes: { ...routes, stats: { port: 45_001, secret: 'x', host: '0.0.0.0' } },
       }),
     ).toBeDefined();
   });

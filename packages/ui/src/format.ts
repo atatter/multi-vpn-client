@@ -1,11 +1,11 @@
 const KB = 1000;
 
-export const fmtBytes = (bytes: number) =>
-  bytes < KB
-    ? `${bytes} B`
-    : bytes < KB * KB
-      ? `${Math.round(bytes / KB)} KB`
-      : `${(bytes / KB / KB).toFixed(1)} MB`;
+export const fmtBytes = (bytes: number) => {
+  if (bytes < KB) {
+    return `${bytes} B`;
+  }
+  return bytes < KB * KB ? `${Math.round(bytes / KB)} KB` : `${(bytes / KB / KB).toFixed(1)} MB`;
+};
 
 export const fmtRate = (bytes: number) => `${fmtBytes(bytes)}/s`;
 

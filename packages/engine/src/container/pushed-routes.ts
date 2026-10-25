@@ -13,7 +13,9 @@ const MAX_PUSHED_ROUTES = 1024;
 /** Reads a client's record of what its server sent: "all", or one network per line (host bits cleared). */
 export function parsePushedRoutes(text: string): ServerRoutes {
   const entries = text.split(/\s+/).filter(Boolean);
-  if (entries.includes('all')) return { all: true, cidrs: [] };
+  if (entries.includes('all')) {
+    return { all: true, cidrs: [] };
+  }
   const cidrs = [...new Set(entries.flatMap((entry) => networkOf(entry) ?? []))].slice(
     0,
     MAX_PUSHED_ROUTES,

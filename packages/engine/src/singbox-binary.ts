@@ -23,7 +23,9 @@ const isSingBoxPlatform = (key: string): key is SingBoxPlatform => key in SING_B
 
 export function hostPlatform(platform = process.platform, arch = process.arch): SingBoxPlatform {
   const key = `${platform}-${arch === 'x64' ? 'amd64' : arch}`;
-  if (isSingBoxPlatform(key)) return key;
+  if (isSingBoxPlatform(key)) {
+    return key;
+  }
   throw new Error(`This OS/architecture (${platform}/${arch}) isn't supported yet.`);
 }
 
@@ -34,14 +36,19 @@ export async function ensureSingBox(binDir: string): Promise<SingBoxBinary> {
   const path = join(dir, process.platform === 'win32' ? 'sing-box.exe' : 'sing-box');
 
   const cached = await readFile(path).catch(() => undefined);
-  if (cached && sha256(cached) === pinned.binary) return { path, sha256: pinned.binary };
+  if (cached && sha256(cached) === pinned.binary) {
+    return { path, sha256: pinned.binary };
+  }
 
   // Missing or not the pinned binary: (re)download.
   const response = await fetch(singBoxUrl(platform));
-  if (!response.ok) throw new Error(`Downloading sing-box failed: HTTP ${response.status}`);
+  if (!response.ok) {
+    throw new Error(`Downloading sing-box failed: HTTP ${response.status}`);
+  }
   const archive = Buffer.from(await response.arrayBuffer());
-  if (sha256(archive) !== pinned.archive)
+  if (sha256(archive) !== pinned.archive) {
     throw new Error("The downloaded sing-box doesn't match its pinned checksum.");
+  }
 
   await mkdir(binDir, { recursive: true });
   const staging = await mkdtemp(join(binDir, '.download-'));
@@ -59,10 +66,12 @@ export async function ensureSingBox(binDir: string): Promise<SingBoxBinary> {
   } finally {
     await rm(staging, { recursive: true, force: true });
   }
-  if (sha256(await readFile(path)) !== pinned.binary)
+  if (sha256(await readFile(path)) !== pinned.binary) {
     throw new Error("The unpacked sing-box doesn't match its pinned checksum.");
+  }
   // Verified; make sure Gatekeeper doesn't block it as a quarantined download.
-  if (process.platform === 'darwin')
+  if (process.platform === 'darwin') {
     await run('/usr/bin/xattr', ['-d', 'com.apple.quarantine', path]);
+  }
   return { path, sha256: pinned.binary };
 }

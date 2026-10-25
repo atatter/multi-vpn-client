@@ -43,9 +43,28 @@
         "skipComments": true
       }
     ],
+    "eslint/complexity": [
+      "warn",
+      {
+        "max": 15
+      }
+    ],
     "vitest/no-focused-tests": "error",
     "vitest/no-disabled-tests": "error",
-    "react/rules-of-hooks": "error"
+    "react/rules-of-hooks": "error",
+    "eslint/curly": "error",
+    "eslint/max-params": [
+      "error",
+      {
+        "max": 4
+      }
+    ],
+    "eslint/no-else-return": "error",
+    "eslint/no-negated-condition": "error",
+    "eslint/no-nested-ternary": "error",
+    "eslint/no-param-reassign": "error",
+    "eslint/no-shadow": "error",
+    "unicorn/numeric-separators-style": "error"
   },
   "overrides": [
     {
