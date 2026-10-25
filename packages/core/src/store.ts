@@ -9,7 +9,7 @@ import { readJsonIfExists, writeJsonAtomic } from './fs.ts';
  * launcher. Import via "@repo/core/store" (not from the browser bundle).
  */
 
-// Empty or relative values are ignored (as the XDG spec requires), never resolved against the cwd.
+/** Empty or relative values are ignored (as the XDG spec requires), never resolved against the cwd. */
 const absolute = (value: string | undefined) => (value && isAbsolute(value) ? value : undefined);
 
 /** Per-user app data: %APPDATA% on Windows, Application Support on macOS, XDG on Linux. */

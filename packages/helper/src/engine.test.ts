@@ -46,8 +46,10 @@ while :; do sleep 0.1; [ -e ${join(dir, 'die')} ] && exit 3; done
   return { dir, path, sha, readEvents, crash };
 }
 
-// The stand-in is a shell script that traps SIGHUP and SIGTERM; Windows has neither. CI runs these on Linux and
-// macOS, and Windows' restart-instead-of-reload path is covered there by passing reload: "restart".
+/**
+ * The stand-in is a shell script that traps SIGHUP and SIGTERM; Windows has neither. CI runs these on Linux and
+ * macOS, and Windows' restart-instead-of-reload path is covered there by passing reload: "restart".
+ */
 const noFakeSingBox = process.platform === 'win32';
 
 const recordingDns = () => {

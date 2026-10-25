@@ -3,7 +3,7 @@ import { app, BrowserWindow, nativeTheme, screen } from 'electron';
 import { join } from 'node:path';
 import type { AppInfo } from '../shared/ipc-contract.ts';
 
-// A small, fixed-width window sized to its content, like other VPN clients.
+/** A small, fixed-width window sized to its content, like other VPN clients. */
 const WINDOW_WIDTH = 360;
 const TITLE_BAR_HEIGHT = 44;
 let mainWindow: BrowserWindow | undefined;
@@ -20,9 +20,11 @@ const titleBarColors = () =>
     ? { color: '#171B1E', symbolColor: '#E6EAEB' }
     : { color: '#E4E7E6', symbolColor: '#262B2F' };
 
-// The OS draws the window buttons (traffic lights on macOS, on the right elsewhere) in a 44px bar; the overlay
-// tells the renderer where they are through env(titlebar-area-*), so it never guesses their size.
-// Built when the window is created: nativeTheme is only reliable once the app is ready.
+/**
+ * The OS draws the window buttons (traffic lights on macOS, on the right elsewhere) in a 44px bar; the overlay
+ * tells the renderer where they are through env(titlebar-area-*), so it never guesses their size.
+ * Built when the window is created: nativeTheme is only reliable once the app is ready.
+ */
 const titleBarOptions = () =>
   ({
     titleBarStyle: 'hidden',

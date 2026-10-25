@@ -6,7 +6,7 @@ import { newVpn, type Vpn } from '@repo/vpns';
 import { createSecretStore, type Cipher } from './secret-store.ts';
 import type { SecretChanges } from './secrets.ts';
 
-// Reversible but visibly not plaintext, so tests can assert nothing leaks to disk.
+/** Reversible but visibly not plaintext, so tests can assert nothing leaks to disk. */
 const fakeCipher: Cipher = {
   encrypt: async (plain) => Buffer.from(`enc:${[...plain].reverse().join('')}`),
   decrypt: async (data) => Array.from(data.toString().slice(4)).reverse().join(''),

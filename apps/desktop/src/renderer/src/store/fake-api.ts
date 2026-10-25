@@ -38,7 +38,7 @@ export const SCENARIOS = ['first', 'daily', 'overlap', 'shared', 'broke'] as con
 
 export type Scenario = (typeof SCENARIOS)[number];
 
-// newVpn's defaults (no DNS, no extra options, server routes unknown), but with the password remembered.
+/** newVpn's defaults (no DNS, no extra options, server routes unknown), but with the password remembered. */
 const common = { rememberPassword: true };
 
 const gp = (id: string, name: string) => ({

@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type { IpcChannel, IpcContract, IpcEvents } from '../shared/ipc-contract.ts';
 
-// Electron types results as `any`; main is the trusted side and its handlers are typed by the same contract.
+/** Electron types results as `any`; main is the trusted side and its handlers are typed by the same contract. */
 const invoke = <C extends IpcChannel>(channel: C, ...args: IpcContract[C]['args']) =>
   ipcRenderer.invoke(channel, ...args) as Promise<IpcContract[C]['result']>;
 

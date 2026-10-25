@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { receiveBrowserToken } from './browser-sign-in.ts';
 
-// A port per test, away from the real one (7779), so a running VPN client doesn't interfere.
+/** A port per test, away from the real one (7779), so a running VPN client doesn't interfere. */
 const PORT = 47_790;
 
 describe('receiveBrowserToken', () => {

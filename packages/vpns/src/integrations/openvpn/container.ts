@@ -66,7 +66,7 @@ keep_fallback_dns "\${route_net_gateway:-}"
 exec /usr/local/bin/mvpn-ready
 `;
 
-// Built natively for the Docker host's architecture; downloads are checksum-verified.
+/** Built natively for the Docker host's architecture; downloads are checksum-verified. */
 export const OPENVPN_IMAGE = vpnImage(
   'mvpn-openvpn',
   `FROM alpine:3.24
