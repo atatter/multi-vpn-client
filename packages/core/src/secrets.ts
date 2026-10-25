@@ -1,6 +1,6 @@
-import { z } from "zod";
-import type { SecretSlot } from "@repo/vpn-sdk";
-import { kindSpec, type Vpn } from "@repo/vpns";
+import { z } from 'zod';
+import type { SecretSlot } from '@repo/vpn-sdk';
+import { kindSpec, type Vpn } from '@repo/vpns';
 
 /**
  * The rules for keeping each VPN kind's secrets (its slots are in its kind.ts, @repo/vpns). Pure and
@@ -21,7 +21,7 @@ export const SecretChanges = z.record(z.string(), z.record(z.string(), z.string(
 export type SecretChanges = z.infer<typeof SecretChanges>;
 
 /** Whether a slot is kept for this VPN: setup secrets always, passwords only when remembered. */
-export const isSlotKept = (vpn: Vpn, slot: SecretSlot) => slot.storage === "always" || vpn.rememberPassword;
+export const isSlotKept = (vpn: Vpn, slot: SecretSlot) => slot.storage === 'always' || vpn.rememberPassword;
 
 const allowed = (vpn: Vpn, key: string) => kindSpec(vpn.kind).secrets.some((slot) => slot.key === key && isSlotKept(vpn, slot));
 
@@ -96,7 +96,7 @@ export function validateSecretChanges(changes: SecretChanges, vpns: readonly Vpn
         continue;
       }
       const parsed = slot.schema.safeParse(value);
-      if (!parsed.success) problems.push(`${vpn.name}: ${slot.label}: ${parsed.error.issues[0]?.message ?? "invalid"}`);
+      if (!parsed.success) problems.push(`${vpn.name}: ${slot.label}: ${parsed.error.issues[0]?.message ?? 'invalid'}`);
     }
   }
   return problems;

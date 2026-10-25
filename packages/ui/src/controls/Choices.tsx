@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { cx } from "../tokens.ts";
+import type { ReactNode } from 'react';
+import { cx } from '../tokens.ts';
 
 export interface ChoiceOption<T extends string> {
   value: T;
@@ -26,7 +26,7 @@ export function Choices<T extends string>({ label, value, options, onChange }: {
               className="grid w-full grid-cols-[18px_1fr] gap-2.5 px-3 py-2.5 text-left hover:bg-[color-mix(in_srgb,var(--field)_96%,var(--ink))] disabled:cursor-not-allowed disabled:opacity-55"
               onClick={() => onChange(option.value)}
             >
-              <span className={cx("relative mt-px size-[18px] rounded-full border-2", chosen ? "border-signal after:absolute after:inset-[3px] after:rounded-full after:bg-signal" : "border-track")} />
+              <span className={cx('relative mt-px size-[18px] rounded-full border-2', chosen ? 'border-signal after:absolute after:inset-[3px] after:rounded-full after:bg-signal' : 'border-track')} />
               <span className="min-w-0">
                 <span className="block font-semibold">{option.title}</span>
                 {option.description && <span className="mt-px block text-[13px] leading-snug text-muted">{option.description}</span>}

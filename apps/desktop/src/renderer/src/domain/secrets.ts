@@ -1,4 +1,4 @@
-import type { SecretChanges } from "@repo/core";
+import type { SecretChanges } from '@repo/core';
 
 /** Pending secret edits for one VPN: a new value, or null to clear. Saved together with its settings. */
 export type PendingSecrets = SecretChanges[string];

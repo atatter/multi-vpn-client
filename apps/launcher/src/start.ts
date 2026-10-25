@@ -1,5 +1,5 @@
-import { compareVersions } from "@repo/release";
-import { readFileSync } from "node:fs";
+import { compareVersions } from '@repo/release';
+import { readFileSync } from 'node:fs';
 
 /**
  * Which version to start: the newest one on disk, unless this launcher's own is newer, which then needs downloading.
@@ -13,7 +13,7 @@ export function versionToStart(own: string, installed: string[]) {
 /** Reads a small system file, or undefined where it doesn't exist. */
 export function readOptional(path: string): string | undefined {
   try {
-    return readFileSync(path, "utf8");
+    return readFileSync(path, 'utf8');
   } catch {
     return undefined;
   }
@@ -25,4 +25,4 @@ export function readOptional(path: string): string | undefined {
  * sandbox. It's still context-isolated and only ever loads the app's own files.
  */
 export const needsNoSandbox = (platform: NodeJS.Platform, restrictUserns: string | undefined) =>
-  platform === "linux" && restrictUserns?.trim() === "1";
+  platform === 'linux' && restrictUserns?.trim() === '1';

@@ -1,12 +1,12 @@
-import type { Cipher } from "@repo/core/secret-store";
-import { safeStorage } from "electron";
+import type { Cipher } from '@repo/core/secret-store';
+import { safeStorage } from 'electron';
 
 /** Why secrets can't be stored safely here, or undefined if they can. */
 export async function keychainProblem(): Promise<string | undefined> {
-  if (!(await safeStorage.isAsyncEncryptionAvailable())) return "The OS keychain is not available.";
+  if (!(await safeStorage.isAsyncEncryptionAvailable())) return 'The OS keychain is not available.';
   // Without a secret service, Electron on Linux falls back to a hardcoded key: that's obfuscation, not encryption.
-  if (process.platform === "linux" && safeStorage.getSelectedStorageBackend() === "basic_text") {
-    return "No secret service (GNOME Keyring or KWallet) is running.";
+  if (process.platform === 'linux' && safeStorage.getSelectedStorageBackend() === 'basic_text') {
+    return 'No secret service (GNOME Keyring or KWallet) is running.';
   }
   return undefined;
 }

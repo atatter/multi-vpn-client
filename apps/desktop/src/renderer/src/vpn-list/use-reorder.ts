@@ -1,7 +1,7 @@
-import { type KeyboardEvent, type PointerEvent, useLayoutEffect, useRef, useState } from "react";
-import { orderAfterStep, orderWhileDragging } from "./reorder.ts";
+import { type KeyboardEvent, type PointerEvent, useLayoutEffect, useRef, useState } from 'react';
+import { orderAfterStep, orderWhileDragging } from './reorder.ts';
 
-const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
  * Dragging rows by a grip, or moving them with the keyboard, within one list. While dragging, the order lives
@@ -27,7 +27,7 @@ export function useReorder({ order: saved, commit }: { order: readonly string[];
       const before = tops.current.get(id);
       if (drag.current?.id === id) row.style.transform = `translateY(${drag.current.top - top}px)`;
       else if (before !== undefined && Math.abs(before - top) > 2 && !reduced) {
-        row.animate([{ transform: `translateY(${before - top}px)` }, { transform: "none" }], { duration: 220, easing: "cubic-bezier(.2,.7,.2,1)" });
+        row.animate([{ transform: `translateY(${before - top}px)` }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.2,.7,.2,1)' });
       }
       tops.current.set(id, top);
     }
@@ -66,8 +66,8 @@ export function useReorder({ order: saved, commit }: { order: readonly string[];
     const row = rows.current.get(id);
     if (drag.current?.id !== id || !row) return;
     const offset = row.style.transform;
-    row.style.transform = "";
-    if (offset && !reducedMotion()) row.animate([{ transform: offset }, { transform: "none" }], { duration: 160, easing: "ease-out" });
+    row.style.transform = '';
+    if (offset && !reducedMotion()) row.animate([{ transform: offset }, { transform: 'none' }], { duration: 160, easing: 'ease-out' });
     drag.current = undefined;
     if (dragOrder) commit(dragOrder, id);
     setLifted(undefined);
@@ -76,7 +76,7 @@ export function useReorder({ order: saved, commit }: { order: readonly string[];
   /** The keyboard twin of dragging: Alt+↑/↓ anywhere on a row, or ↑/↓ on its grip. */
   const onKeyDown = (id: string, event: KeyboardEvent<HTMLElement>, onGrip: boolean) => {
     if (!onGrip && !event.altKey) return;
-    const step = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : undefined;
+    const step = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : undefined;
     const next = step && orderAfterStep(order, id, step);
     if (!next) return;
     event.preventDefault();

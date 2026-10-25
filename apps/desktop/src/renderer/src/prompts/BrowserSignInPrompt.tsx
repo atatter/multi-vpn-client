@@ -1,7 +1,7 @@
-import type { Vpn } from "@repo/core";
-import { vpnLabel } from "../domain/labels.ts";
-import { useApp } from "../store/app-model.ts";
-import { link } from "@repo/ui/tokens.ts";
+import type { Vpn } from '@repo/core';
+import { vpnLabel } from '../domain/labels.ts';
+import { useApp } from '../store/app-model.ts';
+import { link } from '@repo/ui/tokens.ts';
 
 /** Shown while the user signs in in the browser the app opened. */
 export function BrowserSignInPrompt({ vpn }: { vpn: Vpn }) {

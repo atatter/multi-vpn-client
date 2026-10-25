@@ -1,11 +1,11 @@
-import type { ChildProcessByStdio } from "node:child_process";
-import { createInterface } from "node:readline";
-import type { Readable } from "node:stream";
-import type { Docker } from "../docker.ts";
-import { markers } from "@repo/vpn-sdk/container";
-import type { BrowserSignIn } from "@repo/vpn-sdk/engine";
-import { classifyLine, UntrustedCertificateError } from "./output.ts";
-import type { StartOptions } from "./start.ts";
+import type { ChildProcessByStdio } from 'node:child_process';
+import { createInterface } from 'node:readline';
+import type { Readable } from 'node:stream';
+import type { Docker } from '../docker.ts';
+import { markers } from '@repo/vpn-sdk/container';
+import type { BrowserSignIn } from '@repo/vpn-sdk/engine';
+import { classifyLine, UntrustedCertificateError } from './output.ts';
+import type { StartOptions } from './start.ts';
 
 /** How long the client may take to connect, from its start or from the user's last answer. */
 const CONNECT_TIMEOUT_MS = 90_000;
@@ -49,7 +49,7 @@ export function waitForTunnel(docker: Docker, name: string, follower: ChildProce
         const reply = await options.onPrompt(prompt);
         // Control characters are stripped on purpose: a reply is one line for the client, nothing more.
         // oxlint-disable-next-line no-control-regex
-        await docker.runChecked(["exec", "-i", name, "sh", "-c", "cat > /run/mvpn/answers"], `${reply.replace(/[\x00-\x1f\x7f]/g, "")}\n`);
+        await docker.runChecked(['exec', '-i', name, 'sh', '-c', 'cat > /run/mvpn/answers'], `${reply.replace(/[\x00-\x1f\x7f]/g, '')}\n`);
       });
     // A browser sign-in's token goes to the client's listener inside the container.
     const signIn = (request: BrowserSignIn) =>
@@ -57,14 +57,14 @@ export function waitForTunnel(docker: Docker, name: string, follower: ChildProce
         const token = await options.onBrowserSignIn(request);
         // The URL goes in on stdin (curl --config -), so the token never shows in a process list.
         await docker.runChecked(
-          ["exec", "-i", name, "curl", "-fsS", "--max-time", "10", "-o", "/dev/null", "--config", "-"],
+          ['exec', '-i', name, 'curl', '-fsS', '--max-time', '10', '-o', '/dev/null', '--config', '-'],
           `url = "http://127.0.0.1:${request.tokenPort}/${token}"\n`,
         );
       });
     startTimeout();
     if (options.signal.aborted) fail(options.signal.reason);
     options.signal.addEventListener(
-      "abort",
+      'abort',
       () => {
         if (!connected) fail(options.signal.reason);
       },
@@ -81,24 +81,24 @@ export function waitForTunnel(docker: Docker, name: string, follower: ChildProce
       if (lastLines.length > 30) lastLines.shift();
       const meaning = classifyLine(line, launch.readLine, connectMarkers);
       if (meaning === undefined || connected || failed) return;
-      if (meaning === "connected") {
+      if (meaning === 'connected') {
         connected = true;
         clearTimeout(timeout);
         resolve();
-      } else if ("prompt" in meaning) {
+      } else if ('prompt' in meaning) {
         void answer(meaning.prompt);
-      } else if ("signInUrl" in meaning) {
+      } else if ('signInUrl' in meaning) {
         void signIn(meaning);
       } else {
-        fail(meaning.untrustedPin ? new UntrustedCertificateError(meaning.failed, meaning.untrustedPin, meaning.server ?? "") : new Error(meaning.failed));
+        fail(meaning.untrustedPin ? new UntrustedCertificateError(meaning.failed, meaning.untrustedPin, meaning.server ?? '') : new Error(meaning.failed));
       }
     };
-    createInterface({ input: follower.stdout }).on("line", onLine);
-    createInterface({ input: follower.stderr }).on("line", onLine);
+    createInterface({ input: follower.stdout }).on('line', onLine);
+    createInterface({ input: follower.stderr }).on('line', onLine);
     // Registered before the tunnel is reported up, so an exit right after connecting is never missed.
-    follower.on("close", () => {
+    follower.on('close', () => {
       clearTimeout(timeout);
-      if (!connected) reject(new Error(`${launch.client} stopped before connecting: ${lastLines.at(-1) ?? "no output"}`));
+      if (!connected) reject(new Error(`${launch.client} stopped before connecting: ${lastLines.at(-1) ?? 'no output'}`));
       else if (!isStopped()) options.onExit([...lastLines]);
     });
   });

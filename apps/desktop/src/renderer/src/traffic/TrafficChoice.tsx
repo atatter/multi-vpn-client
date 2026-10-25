@@ -1,10 +1,10 @@
-import { followsServerRoutes, RouteRule, type TrafficMode, type Vpn } from "@repo/core";
-import { useState } from "react";
-import { FORMS } from "@repo/vpns/ui";
-import { IPV6_BLOCKED, TRAFFIC_LABEL, vpnLabel } from "../domain/labels.ts";
-import { type ChoiceOption, Choices } from "@repo/ui/controls/Choices.tsx";
-import { cx, link, mono } from "@repo/ui/tokens.ts";
-import { SitesEditor, type SiteWarnings } from "./SitesEditor.tsx";
+import { followsServerRoutes, RouteRule, type TrafficMode, type Vpn } from '@repo/core';
+import { useState } from 'react';
+import { FORMS } from '@repo/vpns/ui';
+import { IPV6_BLOCKED, TRAFFIC_LABEL, vpnLabel } from '../domain/labels.ts';
+import { type ChoiceOption, Choices } from '@repo/ui/controls/Choices.tsx';
+import { cx, link, mono } from '@repo/ui/tokens.ts';
+import { SitesEditor, type SiteWarnings } from './SitesEditor.tsx';
 
 /**
  * The one routing decision, per VPN. Two choices by default; "All my traffic" sits behind "More choices":
@@ -24,7 +24,7 @@ export function TrafficChoice({
   onRoutes: (routes: RouteRule[]) => void;
   warnings?: SiteWarnings | undefined;
 }) {
-  const [more, setMore] = useState(vpn.traffic === "all");
+  const [more, setMore] = useState(vpn.traffic === 'all');
   const [addingExtra, setAddingExtra] = useState(false);
   const server = vpn.serverRoutes;
   const name = vpnLabel(vpn);
@@ -41,7 +41,7 @@ export function TrafficChoice({
       Its server sends only its own network:
       <span className="mt-1.5 flex flex-wrap gap-1">
         {server.cidrs.map((cidr) => (
-          <span key={cidr} className={cx(mono, "rounded bg-chip px-1.5 py-px text-[11.5px] text-ink")}>
+          <span key={cidr} className={cx(mono, 'rounded bg-chip px-1.5 py-px text-[11.5px] text-ink')}>
             {cidr}
           </span>
         ))}
@@ -58,24 +58,24 @@ export function TrafficChoice({
           <SitesEditor vpn={vpn} routes={routes} onChange={onRoutes} warnings={warnings} autoFocus={addingExtra && routes.length === 0} />
         </div>
       ) : (
-        <button type="button" className={cx(link, "mt-0.5")} onClick={() => setAddingExtra(true)}>
+        <button type="button" className={cx(link, 'mt-0.5')} onClick={() => setAddingExtra(true)}>
           + Also send a site the server doesn't
         </button>
       )
     ) : undefined;
 
   const options: ChoiceOption<TrafficMode>[] = [
-    { value: "official", title: TRAFFIC_LABEL.official, description: official, extra: extras, disabled: unknowable },
+    { value: 'official', title: TRAFFIC_LABEL.official, description: official, extra: extras, disabled: unknowable },
     {
-      value: "sites",
+      value: 'sites',
       title: TRAFFIC_LABEL.sites,
-      description: "Nothing else goes through it. Good for one or two internal tools.",
+      description: 'Nothing else goes through it. Good for one or two internal tools.',
       extra: <SitesEditor vpn={vpn} routes={routes} onChange={onRoutes} warnings={warnings} autoFocus={routes.length === 0} />,
     },
   ];
   if (more)
     options.push({
-      value: "all",
+      value: 'all',
       title: TRAFFIC_LABEL.all,
       description:
         server && !server.all
@@ -87,7 +87,7 @@ export function TrafficChoice({
     <>
       <Choices label={`What goes through ${name}`} value={vpn.traffic} options={options} onChange={onTraffic} />
       {!more && (
-        <button type="button" className={cx(link, "mt-2")} onClick={() => setMore(true)}>
+        <button type="button" className={cx(link, 'mt-2')} onClick={() => setMore(true)}>
           More choices
         </button>
       )}

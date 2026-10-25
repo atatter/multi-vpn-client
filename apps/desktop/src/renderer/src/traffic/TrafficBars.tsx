@@ -12,7 +12,7 @@ export function TrafficBars({ rates = [] }: { rates?: readonly number[] }) {
       {bars.map((value, index) => {
         const height = Math.max(1.5, (value / max) * 34);
         const now = index === bars.length - 1;
-        return <rect key={index} x={index * 10 + 1} y={36 - height} width={8} height={height} rx={1.5} className={now ? "fill-go" : "fill-go/45 dark:fill-go/55"} />;
+        return <rect key={index} x={index * 10 + 1} y={36 - height} width={8} height={height} rx={1.5} className={now ? 'fill-go' : 'fill-go/45 dark:fill-go/55'} />;
       })}
     </svg>
   );

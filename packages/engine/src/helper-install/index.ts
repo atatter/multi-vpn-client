@@ -1,16 +1,16 @@
-import { HELPER_PORT, HELPER_VERSION, type HelperState } from "@repo/core";
-import { writeJsonAtomic } from "@repo/core/fs";
-import { helperKey } from "@repo/core/helper-crypto";
-import { createHash, randomBytes } from "node:crypto";
-import { readFile, rm } from "node:fs/promises";
-import { join } from "node:path";
-import { setTimeout as sleep } from "node:timers/promises";
-import { z } from "zod";
-import { helperVersion } from "../helper-client.ts";
-import type { SingBoxBinary } from "../singbox-binary.ts";
-import { darwinInstaller } from "./darwin.ts";
-import { linuxInstaller } from "./linux.ts";
-import { win32Installer } from "./win32.ts";
+import { HELPER_PORT, HELPER_VERSION, type HelperState } from '@repo/core';
+import { writeJsonAtomic } from '@repo/core/fs';
+import { helperKey } from '@repo/core/helper-crypto';
+import { createHash, randomBytes } from 'node:crypto';
+import { readFile, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { z } from 'zod';
+import { helperVersion } from '../helper-client.ts';
+import type { SingBoxBinary } from '../singbox-binary.ts';
+import { darwinInstaller } from './darwin.ts';
+import { linuxInstaller } from './linux.ts';
+import { win32Installer } from './win32.ts';
 
 /**
  * Installs the network helper once (one admin prompt), so connecting never
@@ -44,17 +44,17 @@ export interface PlatformInstaller {
 const INSTALLERS: Partial<Record<NodeJS.Platform, PlatformInstaller>> = { darwin: darwinInstaller, linux: linuxInstaller, win32: win32Installer };
 const platformInstaller = () => INSTALLERS[process.platform];
 
-export const helperLogHint = () => platformInstaller()?.logHint ?? "";
+export const helperLogHint = () => platformInstaller()?.logHint ?? '';
 
 /** Whether the helper's service is on this machine, responding or not. */
 export const helperInstalled = () => platformInstaller()?.isInstalled() ?? false;
 
 const HelperSecret = z.object({ token: z.string().min(1) });
-const secretPath = (dataDir: string) => join(dataDir, "helper.json");
+const secretPath = (dataDir: string) => join(dataDir, 'helper.json');
 
 export async function readHelperToken(dataDir: string): Promise<string | undefined> {
   try {
-    return HelperSecret.parse(JSON.parse(await readFile(secretPath(dataDir), "utf8"))).token;
+    return HelperSecret.parse(JSON.parse(await readFile(secretPath(dataDir), 'utf8'))).token;
   } catch {
     return undefined;
   }
@@ -62,14 +62,14 @@ export async function readHelperToken(dataDir: string): Promise<string | undefin
 
 export async function helperState(dataDir: string): Promise<HelperState> {
   const installer = platformInstaller();
-  if (!installer) return "unsupported";
+  if (!installer) return 'unsupported';
   const version = await helperVersion(HELPER_PORT);
-  if (version === undefined) return installer.isInstalled() ? "not-responding" : "not-installed";
-  if (version !== HELPER_VERSION || !(await readHelperToken(dataDir))) return "needs-update";
-  return "ready";
+  if (version === undefined) return installer.isInstalled() ? 'not-responding' : 'not-installed';
+  if (version !== HELPER_VERSION || !(await readHelperToken(dataDir))) return 'needs-update';
+  return 'ready';
 }
 
-const sha256 = (data: Buffer) => createHash("sha256").update(data).digest("hex");
+const sha256 = (data: Buffer) => createHash('sha256').update(data).digest('hex');
 
 function requireInstaller(): PlatformInstaller {
   const installer = platformInstaller();
@@ -82,8 +82,8 @@ export async function installHelper({ dataDir, helperBinary, singBox }: { dataDi
   const binary = await readFile(helperBinary).catch(() => {
     throw new Error(`Helper binary not found at ${helperBinary}. Run "pnpm build:helper".`);
   });
-  const token = randomBytes(32).toString("base64url");
-  const configJson = JSON.stringify({ key: helperKey(token).toString("hex"), singBoxSha256: singBox.sha256 });
+  const token = randomBytes(32).toString('base64url');
+  const configJson = JSON.stringify({ key: helperKey(token).toString('hex'), singBoxSha256: singBox.sha256 });
 
   await installer.install({ helperBinary, helperSha256: sha256(binary), singBox, configJson });
 

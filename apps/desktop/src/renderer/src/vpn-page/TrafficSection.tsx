@@ -1,6 +1,6 @@
-import { isBroad, type RouteRule, type TrafficMode, type Vpn } from "@repo/core";
-import { TrafficChoice } from "../traffic/TrafficChoice.tsx";
-import { heading } from "@repo/ui/tokens.ts";
+import { isBroad, type RouteRule, type TrafficMode, type Vpn } from '@repo/core';
+import { TrafficChoice } from '../traffic/TrafficChoice.tsx';
+import { heading } from '@repo/ui/tokens.ts';
 
 /** What goes through the VPN, and what changing it between all traffic and its own network will do while it's connected. */
 export function TrafficSection({

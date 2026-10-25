@@ -11,4 +11,4 @@ export const smoothRate = (series: readonly number[] | undefined) => {
 };
 
 /** "a, b and c" */
-export const listOf = (items: readonly string[]) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
+export const listOf = (items: readonly string[]) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`);

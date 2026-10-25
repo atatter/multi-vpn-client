@@ -1,6 +1,6 @@
-import { isBroad, isDerivedRule, routingPlan, settleVpn, PASSWORD_SLOT, type Config, type RouteRule, type Vpn } from "@repo/core";
-import { vpnLabel } from "../domain/labels.ts";
-import type { PendingSecrets } from "../domain/secrets.ts";
+import { isBroad, isDerivedRule, routingPlan, settleVpn, PASSWORD_SLOT, type Config, type RouteRule, type Vpn } from '@repo/core';
+import { vpnLabel } from '../domain/labels.ts';
+import type { PendingSecrets } from '../domain/secrets.ts';
 
 /**
  * What the VPN page decides, without React: what the user changed, whether saving reconnects, and the config
@@ -55,7 +55,7 @@ export function siteWarnings(config: Config, draft: Vpn, routes: readonly RouteR
   const everyone = new Set(config.vpns.map((other) => other.id));
   const broadIds = new Set(hypothetical.vpns.filter(isBroad).map((other) => other.id));
   const own = routingPlan(hypothetical, everyone, everyone).find((layer) => layer.vpnId === draft.id);
-  const nameOf = (vpnId: string) => vpnLabel(config.vpns.find((other) => other.id === vpnId) ?? { name: "" });
+  const nameOf = (vpnId: string) => vpnLabel(config.vpns.find((other) => other.id === vpnId) ?? { name: '' });
   return new Map(
     (own?.fates ?? []).flatMap((fate) =>
       fate.taken && !fate.taken.byPin && !broadIds.has(fate.taken.by) && !isDerivedRule(fate.rule) ? [[fate.rule.id, { winner: nameOf(fate.taken.by) }] as const] : [],

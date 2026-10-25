@@ -1,5 +1,5 @@
-import { z } from "zod";
-import type { CommonSettings } from "./fields.ts";
+import { z } from 'zod';
+import type { CommonSettings } from './fields.ts';
 
 /**
  * What every process knows about one VPN kind: its saved settings and the decisions every kind has to make.
@@ -12,7 +12,7 @@ export interface SecretSlot {
   key: string;
   label: string;
   /** "always": part of the setup (OpenVPN's profile). "remember": the login password (PASSWORD_SLOT), kept only if the user opts in. */
-  storage: "always" | "remember";
+  storage: 'always' | 'remember';
   /** Must be stored before the VPN can connect. "remember" slots are asked for at connect time instead. */
   required: boolean;
   /** Only set by importing a file (e.g. the .ovpn profile), never typed in. */
@@ -24,9 +24,9 @@ export interface SecretSlot {
 
 /** The login password: asked for on connect, kept only when the user ticks "Remember password". */
 export const PASSWORD_SLOT = {
-  key: "password",
-  label: "Password",
-  storage: "remember",
+  key: 'password',
+  label: 'Password',
+  storage: 'remember',
   required: false,
   importOnly: false,
   schema: z.string().min(1),

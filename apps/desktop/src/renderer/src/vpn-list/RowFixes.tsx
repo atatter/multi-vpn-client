@@ -1,9 +1,9 @@
-import type { RouteRule, Vpn } from "@repo/core";
-import { shortTarget, vpnLabel } from "../domain/labels.ts";
-import { useApp } from "../store/app-model.ts";
-import { putAbove, standbyWhy } from "../store/vpn-status.ts";
-import { cx, link, primary } from "@repo/ui/tokens.ts";
-import { withPinnedRule } from "./pin-rule.ts";
+import type { RouteRule, Vpn } from '@repo/core';
+import { shortTarget, vpnLabel } from '../domain/labels.ts';
+import { useApp } from '../store/app-model.ts';
+import { putAbove, standbyWhy } from '../store/vpn-status.ts';
+import { cx, link, primary } from '@repo/ui/tokens.ts';
+import { withPinnedRule } from './pin-rule.ts';
 
 /**
  * The one fix a row offers under its status: try a failed VPN again, use a VPN that's on standby instead,
@@ -14,10 +14,10 @@ export function RowFixes({ vpn, failed, starvedBy, lostRule }: { vpn: Vpn; faile
   if (failed) {
     return (
       <div className="flex flex-wrap items-center gap-4">
-        <button type="button" className={cx(primary, "px-3 py-[5px] text-[13px]")} onClick={() => void app.connect(vpn.id)}>
+        <button type="button" className={cx(primary, 'px-3 py-[5px] text-[13px]')} onClick={() => void app.connect(vpn.id)}>
           Try again
         </button>
-        <button type="button" className={link} onClick={() => app.push({ name: "vpn", vpnId: vpn.id })}>
+        <button type="button" className={link} onClick={() => app.push({ name: 'vpn', vpnId: vpn.id })}>
           Settings
         </button>
       </div>

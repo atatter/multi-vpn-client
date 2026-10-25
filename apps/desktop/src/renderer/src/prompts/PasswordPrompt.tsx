@@ -1,17 +1,17 @@
-import type { Vpn } from "@repo/core";
-import { useState } from "react";
-import { vpnLabel } from "../domain/labels.ts";
-import { useApp } from "../store/app-model.ts";
-import { Switch } from "@repo/ui/controls/Switch.tsx";
-import { input, link, primary } from "@repo/ui/tokens.ts";
+import type { Vpn } from '@repo/core';
+import { useState } from 'react';
+import { vpnLabel } from '../domain/labels.ts';
+import { useApp } from '../store/app-model.ts';
+import { Switch } from '@repo/ui/controls/Switch.tsx';
+import { input, link, primary } from '@repo/ui/tokens.ts';
 
 /** Asked in the row when the password isn't remembered. Typed for this connection only, unless "Remember" is on. */
 export function PasswordPrompt({ vpn }: { vpn: Vpn }) {
   const app = useApp();
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState('');
   // Starts as the VPN's own setting: someone who chose to remember it shouldn't have to say so again.
   const [remember, setRemember] = useState(vpn.rememberPassword);
-  const user = "username" in vpn && vpn.username ? vpn.username : undefined;
+  const user = 'username' in vpn && vpn.username ? vpn.username : undefined;
   return (
     <form
       aria-label={`Sign in to ${vpnLabel(vpn)}`}
@@ -20,7 +20,7 @@ export function PasswordPrompt({ vpn }: { vpn: Vpn }) {
         if (password) app.submitPassword(password, remember);
       }}
       onKeyDown={(event) => {
-        if (event.key !== "Escape") return;
+        if (event.key !== 'Escape') return;
         event.preventDefault();
         app.cancelPrompt();
       }}
@@ -29,8 +29,8 @@ export function PasswordPrompt({ vpn }: { vpn: Vpn }) {
         type="password"
         className={input()}
         value={password}
-        placeholder={user ? `Password for ${user}` : "Password"}
-        aria-label={user ? `Password for ${user}` : "Password"}
+        placeholder={user ? `Password for ${user}` : 'Password'}
+        aria-label={user ? `Password for ${user}` : 'Password'}
         autoComplete="off"
         autoFocus
         onChange={(event) => setPassword(event.target.value)}

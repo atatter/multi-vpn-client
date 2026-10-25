@@ -1,7 +1,7 @@
-import type { Vpn, VpnKind, VpnOf } from "@repo/core";
-import type { KindFieldsProps, MainFieldsProps } from "@repo/vpn-sdk/ui";
-import { FORMS } from "@repo/vpns/ui";
-import { formOf } from "../domain/kind-copy.ts";
+import type { Vpn, VpnKind, VpnOf } from '@repo/core';
+import type { KindFieldsProps, MainFieldsProps } from '@repo/vpn-sdk/ui';
+import { FORMS } from '@repo/vpns/ui';
+import { formOf } from '../domain/kind-copy.ts';
 
 /**
  * A VPN's main fields, from its kind's form (@repo/vpns). `kind` lets the lookup type-check without a cast; pass

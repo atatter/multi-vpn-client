@@ -1,5 +1,5 @@
-import { vpnOfOutbound, type StatsEndpoint, type TrafficSnapshot } from "@repo/core";
-import { z } from "zod";
+import { vpnOfOutbound, type StatsEndpoint, type TrafficSnapshot } from '@repo/core';
+import { z } from 'zod';
 
 /**
  * Live traffic for the app's views, read from the host routing engine's Clash API (GET /connections),
@@ -42,13 +42,13 @@ export function createTrafficTally() {
       for (const connection of connections) {
         open.add(connection.id);
         // The VPN it went to, from its outbound; undefined for direct traffic.
-        const vpnId = vpnOfOutbound(connection.chains[0] ?? "");
+        const vpnId = vpnOfOutbound(connection.chains[0] ?? '');
         const total = connection.upload + connection.download;
         const delta = Math.max(0, total - (seen.get(connection.id) ?? 0));
         seen.set(connection.id, total);
         if (!vpnId) continue;
         second.set(vpnId, (second.get(vpnId) ?? 0) + delta);
-        const host = connection.metadata.host || connection.metadata.destinationIP || "";
+        const host = connection.metadata.host || connection.metadata.destinationIP || '';
         if (!host) continue;
         const key = `${vpnId} ${host}`;
         const entry = destinations.get(key) ?? { host, vpnId, samples: [] };

@@ -1,6 +1,6 @@
-import { intersect, parseCidr, rangesToCidrs, subtract, type Range } from "@repo/vpn-sdk/cidr";
-import { isBroad, rankVpns, RouteDomain, type Config, type RouteRule } from "./config.ts";
-import type { Vpn } from "@repo/vpns";
+import { intersect, parseCidr, rangesToCidrs, subtract, type Range } from '@repo/vpn-sdk/cidr';
+import { isBroad, rankVpns, RouteDomain, type Config, type RouteRule } from './config.ts';
+import type { Vpn } from '@repo/vpns';
 
 /** A range kept direct: a VPN gateway outranks every rule; a local network only broader ones (see `local`). */
 export interface ReservedRange {
@@ -19,15 +19,15 @@ export interface HostReserved {
   unresolved: { vpnId: string; host: string }[];
 }
 
-export type Claimant = { kind: "rule"; ruleId: string } | { kind: "reserved"; label: string };
+export type Claimant = { kind: 'rule'; ruleId: string } | { kind: 'reserved'; label: string };
 
 export type CompileWarning =
-  | { kind: "shadowed"; ruleId: string; full: boolean; lost: string[]; by: Claimant[] }
-  | { kind: "invalid-cidr"; ruleId: string; message: string }
-  | { kind: "invalid-domain"; ruleId: string; message: string }
+  | { kind: 'shadowed'; ruleId: string; full: boolean; lost: string[]; by: Claimant[] }
+  | { kind: 'invalid-cidr'; ruleId: string; message: string }
+  | { kind: 'invalid-domain'; ruleId: string; message: string }
   /** A higher domain route already covers this one (subdomains included), or a higher VPN carries everything, so it never applies. */
-  | { kind: "domain-shadowed"; ruleId: string; by: string }
-  | { kind: "unknown-vpn"; ruleId: string; vpnId: string };
+  | { kind: 'domain-shadowed'; ruleId: string; by: string }
+  | { kind: 'unknown-vpn'; ruleId: string; vpnId: string };
 
 /** A domain route that applies: connections to `domain` and its subdomains go through `vpnId`. */
 export interface RoutedDomain {
@@ -48,7 +48,7 @@ export interface CompiledRoutes {
 
 export interface CompileInput {
   /** Ordered by priority, highest first: a higher VPN's rules win overlaps. */
-  vpns: readonly Pick<Vpn, "id">[];
+  vpns: readonly Pick<Vpn, 'id'>[];
   /** Every VPN's rules. Priority comes from the VPN order; within one VPN, from this order. Pinned rules win whatever the order. */
   routes: readonly RouteRule[];
   reserved?: readonly ReservedRange[];
@@ -57,22 +57,22 @@ export interface CompileInput {
 const sizeOf = (range: Range | undefined) => (range ? range[1] - range[0] + 1 : 0);
 
 /** The rule an all-traffic VPN routes. */
-export const ALL_TRAFFIC = "0.0.0.0/0";
-const allRule = (vpnId: string): RouteRule => ({ id: `all:${vpnId}`, kind: "cidr", cidr: ALL_TRAFFIC, vpnId, enabled: true, note: "", pinned: false });
-const serverRule = (vpnId: string, cidr: string): RouteRule => ({ id: `server:${vpnId}:${cidr}`, kind: "cidr", cidr, vpnId, enabled: true, note: "", pinned: false });
+export const ALL_TRAFFIC = '0.0.0.0/0';
+const allRule = (vpnId: string): RouteRule => ({ id: `all:${vpnId}`, kind: 'cidr', cidr: ALL_TRAFFIC, vpnId, enabled: true, note: '', pinned: false });
+const serverRule = (vpnId: string, cidr: string): RouteRule => ({ id: `server:${vpnId}:${cidr}`, kind: 'cidr', cidr, vpnId, enabled: true, note: '', pinned: false });
 
 /** A rule the app derived from the VPN's traffic mode (everything, or what its server sent), not one the user added. */
-export const isDerivedRule = (rule: Pick<RouteRule, "id">) => rule.id.startsWith("all:") || rule.id.startsWith("server:");
+export const isDerivedRule = (rule: Pick<RouteRule, 'id'>) => rule.id.startsWith('all:') || rule.id.startsWith('server:');
 
 /**
  * What a VPN routes, given its traffic mode: everything; what its server sent plus the user's own routes;
  * or only the user's own routes. A VPN carrying everything keeps its pinned routes, which can still win
  * addresses from a higher VPN. Before the first connect, "official" only knows the user's routes.
  */
-export function effectiveRules(vpn: Pick<Vpn, "id" | "traffic" | "serverRoutes">, routes: readonly RouteRule[]): RouteRule[] {
+export function effectiveRules(vpn: Pick<Vpn, 'id' | 'traffic' | 'serverRoutes'>, routes: readonly RouteRule[]): RouteRule[] {
   const own = routes.filter((route) => route.vpnId === vpn.id);
   if (isBroad(vpn)) return [allRule(vpn.id), ...own.filter((route) => route.pinned)];
-  if (vpn.traffic === "official" && vpn.serverRoutes) return [...vpn.serverRoutes.cidrs.map((cidr) => serverRule(vpn.id, cidr)), ...own];
+  if (vpn.traffic === 'official' && vpn.serverRoutes) return [...vpn.serverRoutes.cidrs.map((cidr) => serverRule(vpn.id, cidr)), ...own];
   return own;
 }
 
@@ -97,7 +97,7 @@ export function compileRoutes({ vpns, routes, reserved = [] }: CompileInput): Co
   const claims: { by: Claimant; ranges: Range[]; local: boolean }[] = [];
   for (const { cidr, label, local = false } of reserved) {
     const parsed = parseCidr(cidr);
-    if (parsed.ok) claims.push({ by: { kind: "reserved", label }, ranges: [parsed.range], local });
+    if (parsed.ok) claims.push({ by: { kind: 'reserved', label }, ranges: [parsed.range], local });
   }
 
   const owned = new Map<string, Range[]>(vpns.map((vpn) => [vpn.id, []]));
@@ -114,17 +114,17 @@ export function compileRoutes({ vpns, routes, reserved = [] }: CompileInput): Co
 
   for (const route of byPriority) {
     // Disabled rules route nothing, but are still checked: saving validates every rule.
-    if (route.kind === "domain") {
+    if (route.kind === 'domain') {
       const parsed = RouteDomain.safeParse(route.domain);
       if (!parsed.success) {
-        warnings.push({ kind: "invalid-domain", ruleId: route.id, message: parsed.error.issues[0]?.message ?? "Invalid domain" });
+        warnings.push({ kind: 'invalid-domain', ruleId: route.id, message: parsed.error.issues[0]?.message ?? 'Invalid domain' });
       } else if (!owned.has(route.vpnId)) {
-        warnings.push({ kind: "unknown-vpn", ruleId: route.id, vpnId: route.vpnId });
+        warnings.push({ kind: 'unknown-vpn', ruleId: route.id, vpnId: route.vpnId });
       } else if (route.enabled) {
         const domain = parsed.data;
         const cover = domains.find((higher) => domain === higher.domain || domain.endsWith(`.${higher.domain}`));
-        if (cover) warnings.push({ kind: "domain-shadowed", ruleId: route.id, by: cover.ruleId });
-        else if (everything && everything.vpnId !== route.vpnId && !route.pinned) warnings.push({ kind: "domain-shadowed", ruleId: route.id, by: everything.id });
+        if (cover) warnings.push({ kind: 'domain-shadowed', ruleId: route.id, by: cover.ruleId });
+        else if (everything && everything.vpnId !== route.vpnId && !route.pinned) warnings.push({ kind: 'domain-shadowed', ruleId: route.id, by: everything.id });
         else domains.push({ ruleId: route.id, vpnId: route.vpnId, domain });
       }
       continue;
@@ -132,12 +132,12 @@ export function compileRoutes({ vpns, routes, reserved = [] }: CompileInput): Co
 
     const parsed = parseCidr(route.cidr);
     if (!parsed.ok) {
-      warnings.push({ kind: "invalid-cidr", ruleId: route.id, message: parsed.error });
+      warnings.push({ kind: 'invalid-cidr', ruleId: route.id, message: parsed.error });
       continue;
     }
     const vpnRanges = owned.get(route.vpnId);
     if (!vpnRanges) {
-      warnings.push({ kind: "unknown-vpn", ruleId: route.id, vpnId: route.vpnId });
+      warnings.push({ kind: 'unknown-vpn', ruleId: route.id, vpnId: route.vpnId });
       continue;
     }
     if (!route.enabled) continue;
@@ -149,7 +149,7 @@ export function compileRoutes({ vpns, routes, reserved = [] }: CompileInput): Co
 
     if (shadowedBy.length > 0) {
       warnings.push({
-        kind: "shadowed",
+        kind: 'shadowed',
         ruleId: route.id,
         full: kept.length === 0,
         lost: rangesToCidrs(subtract(requested, kept)),
@@ -158,7 +158,7 @@ export function compileRoutes({ vpns, routes, reserved = [] }: CompileInput): Co
     }
 
     vpnRanges.push(...kept);
-    claims.push({ by: { kind: "rule", ruleId: route.id }, ranges: kept, local: false });
+    claims.push({ by: { kind: 'rule', ruleId: route.id }, ranges: kept, local: false });
     if (route.cidr === ALL_TRAFFIC && !route.pinned) everything ??= route;
   }
 
@@ -200,7 +200,7 @@ export interface PlanLayer {
  * `on`: VPNs the user turned on (connecting, connected or failed); `live`: the connected ones, which route.
  * Reserved ranges are left out: they keep traffic direct, they don't hand it to another VPN.
  */
-export function routingPlan(config: Pick<Config, "vpns" | "routes" | "priority">, on: ReadonlySet<string>, live: ReadonlySet<string>): PlanLayer[] {
+export function routingPlan(config: Pick<Config, 'vpns' | 'routes' | 'priority'>, on: ReadonlySet<string>, live: ReadonlySet<string>): PlanLayer[] {
   const ranked = rankVpns(config).filter((vpn) => on.has(vpn.id) || live.has(vpn.id));
   const connected = ranked.filter((vpn) => live.has(vpn.id));
   const rules = connected.flatMap((vpn) => effectiveRules(vpn, config.routes).filter((route) => route.enabled));
@@ -212,14 +212,14 @@ export function routingPlan(config: Pick<Config, "vpns" | "routes" | "priority">
   };
 
   for (const warning of compileRoutes({ vpns: connected, routes: rules }).warnings) {
-    if (warning.kind === "shadowed") {
+    if (warning.kind === 'shadowed') {
       const own = ruleById.get(warning.ruleId)?.vpnId;
       // Overlaps within one VPN aren't conflicts: the traffic still goes where the rule says. When several
       // higher VPNs share it, one carrying everything is the one that matters: it leaves nothing behind.
-      const others = warning.by.flatMap((claimant) => (claimant.kind === "rule" ? (ruleById.get(claimant.ruleId) ?? []) : [])).filter((route) => route.vpnId !== own);
-      const winner = others.find((route) => route.kind === "cidr" && route.cidr === ALL_TRAFFIC) ?? others[0];
+      const others = warning.by.flatMap((claimant) => (claimant.kind === 'rule' ? (ruleById.get(claimant.ruleId) ?? []) : [])).filter((route) => route.vpnId !== own);
+      const winner = others.find((route) => route.kind === 'cidr' && route.cidr === ALL_TRAFFIC) ?? others[0];
       takenBy(warning.ruleId, winner, !warning.full);
-    } else if (warning.kind === "domain-shadowed") {
+    } else if (warning.kind === 'domain-shadowed') {
       takenBy(warning.ruleId, ruleById.get(warning.by), false);
     }
   }
@@ -227,7 +227,7 @@ export function routingPlan(config: Pick<Config, "vpns" | "routes" | "priority">
   // A higher VPN routing a subdomain takes part of a lower VPN's domain (the compiler keeps both).
   const rank = new Map(connected.map((vpn, index) => [vpn.id, index]));
   const domains = rules.flatMap((route) => {
-    const parsed = route.kind === "domain" ? RouteDomain.safeParse(route.domain) : undefined;
+    const parsed = route.kind === 'domain' ? RouteDomain.safeParse(route.domain) : undefined;
     return parsed?.success ? [{ route, domain: parsed.data }] : [];
   });
   for (const lower of domains) {
@@ -264,7 +264,7 @@ const contains = (cidr: string, address: string) => {
  * Which VPN carries traffic to a host, given the compiled routes, or undefined for the normal connection.
  * Names match first (as the router does), then the host's addresses.
  */
-export function routeFor(compiled: Pick<CompiledRoutes, "byVpn" | "domains">, target: { domain?: string; addresses: readonly string[] }): string | undefined {
+export function routeFor(compiled: Pick<CompiledRoutes, 'byVpn' | 'domains'>, target: { domain?: string; addresses: readonly string[] }): string | undefined {
   const { domain } = target;
   if (domain) {
     const named = compiled.domains.find((route) => domain === route.domain || domain.endsWith(`.${route.domain}`));

@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { hint, label as labelClass } from "../tokens.ts";
+import type { ReactNode } from 'react';
+import { hint, label as labelClass } from '../tokens.ts';
 
 /** Label above a control, with a hint or (once shown) an error below. */
 export function Field({ label, hint: hintText, error, children }: { label: string; hint?: ReactNode; error?: string | undefined; children: ReactNode }) {

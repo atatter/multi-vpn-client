@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { createFramer, frame, ID_CARD_GUARDED_PINS, refusal } from "./vpcd.ts";
+import { describe, expect, it } from 'vitest';
+import { createFramer, frame, ID_CARD_GUARDED_PINS, refusal } from './vpcd.ts';
 
-describe("vpcd framing", () => {
-  it("splits messages however the stream is chunked", () => {
+describe('vpcd framing', () => {
+  it('splits messages however the stream is chunked', () => {
     const messages: number[][] = [];
     const feed = createFramer((message) => messages.push([...message]));
     const stream = Uint8Array.of(...frame(Uint8Array.of(4)), ...frame(Uint8Array.of(0x00, 0xa4, 0x04, 0x00)), ...frame(new Uint8Array(0)));
@@ -14,12 +14,12 @@ describe("vpcd framing", () => {
     expect(messages).toHaveLength(3);
   });
 
-  it("frames with a big-endian length", () => {
+  it('frames with a big-endian length', () => {
     expect([...frame(new Uint8Array(0x0102))].slice(0, 2)).toEqual([0x01, 0x02]);
     expect(() => frame(new Uint8Array(0x10000))).toThrow(RangeError);
   });
 
-  it("refuses changing, turning off or unblocking PINs, in either instruction form, and passes everything else on", () => {
+  it('refuses changing, turning off or unblocking PINs, in either instruction form, and passes everything else on', () => {
     for (const instruction of [0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2c, 0x2d]) {
       expect(refusal(Uint8Array.of(0x00, instruction, 0x00, 0x01))).toEqual(Uint8Array.of(0x6d, 0x00));
     }

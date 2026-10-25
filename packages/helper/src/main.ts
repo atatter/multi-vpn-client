@@ -1,12 +1,12 @@
-import { Hex64, HELPER_PORT, HELPER_VERSION, HELPER_WORK_DIR, HOST_DNS_PORT, LINUX_DNS_ADDRESS, NO_ROUTES, TUN_DNS_ADDRESS, type HostOs } from "@repo/core";
-import { appendFileSync, statSync, truncateSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { z } from "zod";
-import { createNrptDns, createResolvedDns, createResolverDns, type DnsAdapter } from "./dns/index.ts";
-import { createSingBoxBackend, stopLeftover } from "./engine.ts";
-import { psQuote, runPowerShell } from "./powershell.ts";
-import { createHelperServer } from "./server.ts";
+import { Hex64, HELPER_PORT, HELPER_VERSION, HELPER_WORK_DIR, HOST_DNS_PORT, LINUX_DNS_ADDRESS, NO_ROUTES, TUN_DNS_ADDRESS, type HostOs } from '@repo/core';
+import { appendFileSync, statSync, truncateSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { z } from 'zod';
+import { createNrptDns, createResolvedDns, createResolverDns, type DnsAdapter } from './dns/index.ts';
+import { createSingBoxBackend, stopLeftover } from './engine.ts';
+import { psQuote, runPowerShell } from './powershell.ts';
+import { createHelperServer } from './server.ts';
 
 /**
  * Privileged network helper, installed once and run by the OS service manager
@@ -45,36 +45,36 @@ interface Platform {
 function platform(): Platform {
   const installDir = dirname(process.execPath);
   switch (process.platform) {
-    case "darwin":
+    case 'darwin':
       return {
-        os: "darwin",
-        configPath: join(installDir, "helper.json"),
+        os: 'darwin',
+        configPath: join(installDir, 'helper.json'),
         workDir: HELPER_WORK_DIR,
-        singBoxPath: join(installDir, "sing-box"),
+        singBoxPath: join(installDir, 'sing-box'),
         dns: createResolverDns({ server: TUN_DNS_ADDRESS }),
-        cleanUp: () => stopLeftover({ singBoxPath: join(installDir, "sing-box"), workDir: HELPER_WORK_DIR, log }),
+        cleanUp: () => stopLeftover({ singBoxPath: join(installDir, 'sing-box'), workDir: HELPER_WORK_DIR, log }),
       };
-    case "linux": {
+    case 'linux': {
       // systemd hands the settings over as a credential (LoadCredential=) and owns the runtime directory.
       const { CREDENTIALS_DIRECTORY: credentials, RUNTIME_DIRECTORY: runtime } = process.env;
-      if (!credentials || !runtime) throw new Error("Run the helper through its systemd service.");
+      if (!credentials || !runtime) throw new Error('Run the helper through its systemd service.');
       return {
-        os: "linux",
-        configPath: join(credentials, "helper.json"),
+        os: 'linux',
+        configPath: join(credentials, 'helper.json'),
         workDir: runtime,
-        singBoxPath: join(installDir, "sing-box"),
+        singBoxPath: join(installDir, 'sing-box'),
         dns: createResolvedDns({ address: LINUX_DNS_ADDRESS, port: HOST_DNS_PORT }),
-        cleanUp: () => stopLeftover({ singBoxPath: join(installDir, "sing-box"), workDir: runtime, log }),
+        cleanUp: () => stopLeftover({ singBoxPath: join(installDir, 'sing-box'), workDir: runtime, log }),
       };
     }
-    case "win32": {
+    case 'win32': {
       // The installer makes private\ and work\ readable only by SYSTEM and administrators.
-      logToFile(join(installDir, "helper.log"));
-      const singBoxPath = join(installDir, "sing-box.exe");
+      logToFile(join(installDir, 'helper.log'));
+      const singBoxPath = join(installDir, 'sing-box.exe');
       return {
-        os: "win32",
-        configPath: join(installDir, "private", "helper.json"),
-        workDir: join(installDir, "work"),
+        os: 'win32',
+        configPath: join(installDir, 'private', 'helper.json'),
+        workDir: join(installDir, 'work'),
         singBoxPath,
         dns: createNrptDns({ server: TUN_DNS_ADDRESS }),
         // Stopping the task kills the helper outright, which can leave its sing-box running.
@@ -92,7 +92,7 @@ function platform(): Platform {
 
 async function serve() {
   const { os, configPath, workDir, singBoxPath, dns, cleanUp } = platform();
-  const config = HelperConfig.parse(JSON.parse(await readFile(configPath, "utf8")));
+  const config = HelperConfig.parse(JSON.parse(await readFile(configPath, 'utf8')));
   // Leftovers from a crash or power loss. Best effort: a stray process shouldn't keep the helper down.
   await cleanUp?.().catch((error: unknown) => log(`cleanup: ${error instanceof Error ? error.message : String(error)}`));
   await dns.clear();
@@ -107,31 +107,31 @@ async function serve() {
     log,
     onCrash: () => endSession(),
   });
-  const server = createHelperServer({ key: Buffer.from(config.key, "hex"), backend, log });
+  const server = createHelperServer({ key: Buffer.from(config.key, 'hex'), backend, log });
   endSession = server.endSession;
   await server.listen(HELPER_PORT);
   log(`helper v${HELPER_VERSION} listening on 127.0.0.1:${HELPER_PORT}`);
 
   // Tear down first: closing the server waits for open connections, and the app's session stays open.
   const shutdown = async () => {
-    log("stopping");
+    log('stopping');
     server.endSession();
     await backend.apply(NO_ROUTES).catch((error: unknown) => log(String(error)));
     process.exit(0);
   };
-  process.on("SIGTERM", () => void shutdown());
-  process.on("SIGINT", () => void shutdown());
+  process.on('SIGTERM', () => void shutdown());
+  process.on('SIGINT', () => void shutdown());
 }
 
 const [command] = process.argv.slice(2);
-if (command === "--version") {
+if (command === '--version') {
   console.log(HELPER_VERSION);
-} else if (command === "serve") {
+} else if (command === 'serve') {
   serve().catch((error: unknown) => {
     log(error instanceof Error ? error.message : String(error));
     process.exit(1);
   });
 } else {
-  console.error("Usage: mvpn-helper serve | --version");
+  console.error('Usage: mvpn-helper serve | --version');
   process.exit(2);
 }

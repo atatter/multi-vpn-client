@@ -1,16 +1,16 @@
-import { AddForm } from "../add-vpn/AddForm.tsx";
-import { setupBlocker } from "../domain/setup-copy.ts";
-import { SetupCard } from "../setup/SetupCard.tsx";
-import { SetupLine } from "../setup/SetupLine.tsx";
-import { useApp } from "../store/app-model.ts";
-import { openDropped } from "../store/import-profile.ts";
-import { Frame } from "@repo/ui/Frame.tsx";
-import { SlidersIcon, TunnelIcon } from "@repo/ui/icons.tsx";
-import { cx, iconButton, link } from "@repo/ui/tokens.ts";
-import { useFileDrop } from "@repo/ui/use-file-drop.ts";
-import { DropCover } from "./DropCover.tsx";
-import { UpdateButton } from "./UpdateButton.tsx";
-import { VpnList } from "./VpnList.tsx";
+import { AddForm } from '../add-vpn/AddForm.tsx';
+import { setupBlocker } from '../domain/setup-copy.ts';
+import { SetupCard } from '../setup/SetupCard.tsx';
+import { SetupLine } from '../setup/SetupLine.tsx';
+import { useApp } from '../store/app-model.ts';
+import { openDropped } from '../store/import-profile.ts';
+import { Frame } from '@repo/ui/Frame.tsx';
+import { SlidersIcon, TunnelIcon } from '@repo/ui/icons.tsx';
+import { cx, iconButton, link } from '@repo/ui/tokens.ts';
+import { useFileDrop } from '@repo/ui/use-file-drop.ts';
+import { DropCover } from './DropCover.tsx';
+import { UpdateButton } from './UpdateButton.tsx';
+import { VpnList } from './VpnList.tsx';
 
 /** The main screen: what's on, in priority order (top wins), then everything that's off, in a fixed order. */
 export function HomeScreen() {
@@ -21,7 +21,7 @@ export function HomeScreen() {
       {/* No title or search box, only Settings (and an update, when there is one): the list is the whole screen. */}
       <span className="flex-1" />
       <UpdateButton />
-      <button type="button" className={iconButton} aria-label="Settings" title="Settings" onClick={() => app.push({ name: "settings" })}>
+      <button type="button" className={iconButton} aria-label="Settings" title="Settings" onClick={() => app.push({ name: 'settings' })}>
         <SlidersIcon />
       </button>
     </>
@@ -46,10 +46,10 @@ export function HomeScreen() {
           <SetupLine />
           <VpnList afterNotice={!!setupBlocker(app.docker, app.helper)} />
           <div className="flex items-center justify-between gap-3 px-[var(--in)] pt-2.5 pb-3">
-            <button type="button" className={cx(link, "text-sm")} onClick={() => app.push({ name: "add" })}>
+            <button type="button" className={cx(link, 'text-sm')} onClick={() => app.push({ name: 'add' })}>
               + Add VPN
             </button>
-            <button type="button" className={link} onClick={() => app.push({ name: "check" })}>
+            <button type="button" className={link} onClick={() => app.push({ name: 'check' })}>
               Site not loading?
             </button>
           </div>

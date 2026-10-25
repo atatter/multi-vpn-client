@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
-import type { z } from "zod";
-import type { Action } from "./kind.ts";
+import type { ReactNode } from 'react';
+import type { z } from 'zod';
+import type { Action } from './kind.ts';
 
 /**
  * What a VPN kind's window side is made of: its wording and its form's fields, as React components built
@@ -28,10 +28,10 @@ export async function callAction<A extends { [N in keyof A]: Action }, N extends
   runAction: RunAction,
   declared: A,
   name: N,
-  input: z.input<A[N]["input"]>,
-): Promise<z.output<A[N]["output"]>> {
+  input: z.input<A[N]['input']>,
+): Promise<z.output<A[N]['output']>> {
   // Explicit type argument: inferred from declared[name], TypeScript would settle for Action's own schema type.
-  return parse<A[N]["output"]>(declared[name].output, await runAction(name, input));
+  return parse<A[N]['output']>(declared[name].output, await runAction(name, input));
 }
 
 /** A kind's fields get that kind's VPN, so a change can only touch its own fields. */

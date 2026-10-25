@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import { updateTooltip } from "../domain/update-copy.ts";
-import { useApp } from "../store/app-model.ts";
-import { DownloadIcon, RestartIcon } from "@repo/ui/icons.tsx";
-import { cx, iconButton } from "@repo/ui/tokens.ts";
-import { RestartConfirm } from "./RestartConfirm.tsx";
+import { useEffect, useState } from 'react';
+import { updateTooltip } from '../domain/update-copy.ts';
+import { useApp } from '../store/app-model.ts';
+import { DownloadIcon, RestartIcon } from '@repo/ui/icons.tsx';
+import { cx, iconButton } from '@repo/ui/tokens.ts';
+import { RestartConfirm } from './RestartConfirm.tsx';
 
 const RING_RADIUS = 13;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
@@ -17,25 +17,25 @@ export function UpdateButton() {
   const app = useApp();
   const [confirming, setConfirming] = useState(false);
   const { update } = app;
-  const readyOrRestarting = update.state === "ready" || update.state === "restarting";
+  const readyOrRestarting = update.state === 'ready' || update.state === 'restarting';
   const open = confirming && readyOrRestarting;
   useEffect(() => {
     if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => event.key === "Escape" && setConfirming(false);
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    const onKeyDown = (event: KeyboardEvent) => event.key === 'Escape' && setConfirming(false);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, [open]);
   const tip = updateTooltip(update);
   if (!tip) return null;
 
   const onClick = () => {
-    if (update.state === "ready") setConfirming(!confirming);
-    else if (update.state === "available" || update.state === "download-failed") void app.api.downloadUpdate();
+    if (update.state === 'ready') setConfirming(!confirming);
+    else if (update.state === 'available' || update.state === 'download-failed') void app.api.downloadUpdate();
   };
   return (
     <span className="relative">
-      <button type="button" className={cx(iconButton, "relative")} title={tip} aria-label={tip} onClick={onClick}>
-        {update.state === "downloading" ? (
+      <button type="button" className={cx(iconButton, 'relative')} title={tip} aria-label={tip} onClick={onClick}>
+        {update.state === 'downloading' ? (
           <>
             <svg className="pointer-events-none absolute inset-0 size-full -rotate-90" viewBox="0 0 30 30" aria-hidden="true">
               <circle cx="15" cy="15" r={RING_RADIUS} fill="none" stroke="currentColor" strokeOpacity="0.22" strokeWidth="1.5" />
@@ -65,7 +65,7 @@ export function UpdateButton() {
         ) : (
           <span className="relative grid place-items-center">
             <DownloadIcon />
-            <span className={cx("absolute -top-0.5 -right-0.5 size-1.5 rounded-full ring-2 ring-bg", update.state === "download-failed" ? "bg-danger" : "bg-current")} />
+            <span className={cx('absolute -top-0.5 -right-0.5 size-1.5 rounded-full ring-2 ring-bg', update.state === 'download-failed' ? 'bg-danger' : 'bg-current')} />
           </span>
         )}
       </button>

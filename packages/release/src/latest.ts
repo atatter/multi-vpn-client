@@ -1,8 +1,8 @@
-import { z } from "zod";
-import { Manifest } from "./release.ts";
+import { z } from 'zod';
+import { Manifest } from './release.ts';
 
 /** npm's document for the newest published launcher: its package.json, which carries the release it starts. */
-const LATEST_URL = "https://registry.npmjs.org/multi-vpn-client/latest";
+const LATEST_URL = 'https://registry.npmjs.org/multi-vpn-client/latest';
 
 const Latest = z.object({ release: Manifest });
 

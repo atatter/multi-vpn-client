@@ -1,7 +1,7 @@
-import { vpnLabel } from "../domain/labels.ts";
-import { useApp, useTraffic } from "../store/app-model.ts";
-import { Frame } from "@repo/ui/Frame.tsx";
-import { fmtBytes } from "@repo/ui/format.ts";
+import { vpnLabel } from '../domain/labels.ts';
+import { useApp, useTraffic } from '../store/app-model.ts';
+import { Frame } from '@repo/ui/Frame.tsx';
+import { fmtBytes } from '@repo/ui/format.ts';
 
 /**
  * Everything the VPNs carried in the last five minutes: one row per host and VPN, with how much and through
@@ -10,7 +10,7 @@ import { fmtBytes } from "@repo/ui/format.ts";
  */
 export function TrafficScreen() {
   const app = useApp();
-  const nameOf = (vpnId: string) => vpnLabel(app.config.vpns.find((vpn) => vpn.id === vpnId) ?? { name: "Removed VPN" });
+  const nameOf = (vpnId: string) => vpnLabel(app.config.vpns.find((vpn) => vpn.id === vpnId) ?? { name: 'Removed VPN' });
   const rows = useTraffic().destinations;
   return (
     <Frame title="Where traffic goes" onBack={app.back}>
@@ -24,7 +24,7 @@ export function TrafficScreen() {
                 type="button"
                 className="col-span-3 grid grid-cols-subgrid items-baseline gap-x-3 px-[var(--in)] py-[9px] text-left hover:bg-[color-mix(in_srgb,var(--surface)_94%,var(--ink))]"
                 title="Why does it go here?"
-                onClick={() => app.push({ name: "check", query: row.host })}
+                onClick={() => app.push({ name: 'check', query: row.host })}
               >
                 <span className="truncate text-sm tabular-nums">{row.host}</span>
                 <span className="text-right text-[13px] whitespace-nowrap text-muted tabular-nums">{fmtBytes(row.bytes)}</span>

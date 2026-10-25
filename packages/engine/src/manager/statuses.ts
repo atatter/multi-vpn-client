@@ -1,4 +1,4 @@
-import type { ConnectionState, ConnectionStatus } from "@repo/core";
+import type { ConnectionState, ConnectionStatus } from '@repo/core';
 
 const MAX_LOG_LINES = 300;
 

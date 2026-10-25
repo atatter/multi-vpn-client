@@ -1,22 +1,22 @@
-import { isPinnable, routeFor, type Config, type ConnectionState, type ConnectionStatus, type ConnectResult, type ServerRoutes, type TrafficSnapshot, type VpnKind } from "@repo/core";
-import { lookup } from "node:dns/promises";
-import { join } from "node:path";
-import { removeStaleContainers } from "../container/cleanup.ts";
-import { ensureVpnImage, runInImage } from "../container/images.ts";
-import { CancelledError, UntrustedCertificateError } from "../container/output.ts";
-import { CARD_NAME } from "@repo/vpn-sdk/engine";
-import { startVpnContainer, type VpnSession } from "../container/start.ts";
-import { createDocker, findDocker, type Docker } from "../docker.ts";
-import { helperState, installHelper, uninstallHelper } from "../helper-install/index.ts";
-import { ensureSingBox } from "../singbox-binary.ts";
-import type { CardBridge } from "../smart-card.ts";
-import { createHost } from "./host.ts";
-import { noRoutesWarning, planRoutes, sameRoutes } from "./host-routes.ts";
-import { actionOf, launchFor } from "./launch-for.ts";
-import { createQueue } from "./queue.ts";
-import { createStatusBoard } from "./statuses.ts";
-import { untilAborted } from "./until-aborted.ts";
-import { createUserWaits } from "./user-waits.ts";
+import { isPinnable, routeFor, type Config, type ConnectionState, type ConnectionStatus, type ConnectResult, type ServerRoutes, type TrafficSnapshot, type VpnKind } from '@repo/core';
+import { lookup } from 'node:dns/promises';
+import { join } from 'node:path';
+import { removeStaleContainers } from '../container/cleanup.ts';
+import { ensureVpnImage, runInImage } from '../container/images.ts';
+import { CancelledError, UntrustedCertificateError } from '../container/output.ts';
+import { CARD_NAME } from '@repo/vpn-sdk/engine';
+import { startVpnContainer, type VpnSession } from '../container/start.ts';
+import { createDocker, findDocker, type Docker } from '../docker.ts';
+import { helperState, installHelper, uninstallHelper } from '../helper-install/index.ts';
+import { ensureSingBox } from '../singbox-binary.ts';
+import type { CardBridge } from '../smart-card.ts';
+import { createHost } from './host.ts';
+import { noRoutesWarning, planRoutes, sameRoutes } from './host-routes.ts';
+import { actionOf, launchFor } from './launch-for.ts';
+import { createQueue } from './queue.ts';
+import { createStatusBoard } from './statuses.ts';
+import { untilAborted } from './until-aborted.ts';
+import { createUserWaits } from './user-waits.ts';
 
 /**
  * Owns live connections: one container per connected VPN, plus a session with
@@ -69,7 +69,7 @@ export function createConnectionManager(deps: Dependencies) {
       // A snapshot: drop() removes sessions while this awaits.
       // oxlint-disable-next-line unicorn/no-useless-spread
       for (const vpnId of [...sessions.keys()]) {
-        await drop(vpnId, { state: "error", message: "The network helper stopped or couldn't apply the routes, so it removed them. Connect again." });
+        await drop(vpnId, { state: 'error', message: "The network helper stopped or couldn't apply the routes, so it removed them. Connect again." });
       }
     },
   });
@@ -108,7 +108,7 @@ export function createConnectionManager(deps: Dependencies) {
     for (const vpnId of sessions.keys()) {
       const current = statuses.get(vpnId);
       const warning = warningOf(vpnId);
-      if (current?.state === "connected" && current.warning !== warning) statuses.set(vpnId, { ...current, warning });
+      if (current?.state === 'connected' && current.warning !== warning) statuses.set(vpnId, { ...current, warning });
     }
     return warningOf;
   };
@@ -134,7 +134,7 @@ export function createConnectionManager(deps: Dependencies) {
 
   /** Use through startConnect. Aborting `signal` stops it wherever it is (CancelledError: ends disconnected). */
   async function connect(vpnId: string, password: string | undefined, signal: AbortSignal): Promise<ConnectResult> {
-    statuses.begin(vpnId, { state: "connecting", step: "Preparing…" });
+    statuses.begin(vpnId, { state: 'connecting', step: 'Preparing…' });
     const onLog = statuses.logger(vpnId);
     /** Whether a certificate was already trusted for this VPN, i.e. the gateway's certificate changed. */
     let hadPin = false;
@@ -143,23 +143,23 @@ export function createConnectionManager(deps: Dependencies) {
     /** Set if the container stops after starting; before it's routed to, that fails the connect. */
     let dropped: string | undefined;
     // A wait for the user ends at once; the container start notices the signal itself.
-    signal.addEventListener("abort", () => waits.cancel(vpnId), { once: true });
+    signal.addEventListener('abort', () => waits.cancel(vpnId), { once: true });
     try {
       // Quick, but shares the helper session, Docker and secrets with everything else: in the queue.
       const prepared = await exclusive(async () => {
         signal.throwIfAborted();
         const config = await deps.loadConfig();
         const vpn = config.vpns.find((candidate) => candidate.id === vpnId);
-        if (!vpn) throw new Error("Save this VPN before connecting.");
-        hadPin = isPinnable(vpn) && vpn.serverCertPin !== "";
+        if (!vpn) throw new Error('Save this VPN before connecting.');
+        hadPin = isPinnable(vpn) && vpn.serverCertPin !== '';
         await host.getHelper(); // fails early, with a precise reason, if the helper isn't usable
         const launch = await launchFor(vpn, password, deps.readSecret);
-        if (launch === "needs-password") return launch;
-        statuses.set(vpnId, { state: "connecting", step: "Starting the VPN container…" });
+        if (launch === 'needs-password') return launch;
+        statuses.set(vpnId, { state: 'connecting', step: 'Starting the VPN container…' });
         return { vpn, launch, engine: await getDocker() };
       });
-      if (prepared === "needs-password") {
-        statuses.set(vpnId, { state: "disconnected" });
+      if (prepared === 'needs-password') {
+        statuses.set(vpnId, { state: 'disconnected' });
         return { ok: false, needsPassword: true };
       }
 
@@ -168,13 +168,13 @@ export function createConnectionManager(deps: Dependencies) {
       signal.throwIfAborted();
       await untilAborted(ensureVpnImage(engine, launch.image, onLog), signal);
 
-      const signingIn = launch.signInStep ?? "Connecting to the VPN server…";
+      const signingIn = launch.signInStep ?? 'Connecting to the VPN server…';
       if (launch.smartCard) {
-        statuses.set(vpnId, { state: "connecting", step: `Looking for your ${CARD_NAME[launch.smartCard]}…` });
+        statuses.set(vpnId, { state: 'connecting', step: `Looking for your ${CARD_NAME[launch.smartCard]}…` });
         cardBridge = await waits.findCard(vpnId, launch.smartCard);
         onLog(`Using the card in ${cardBridge.reader}.`);
       }
-      statuses.set(vpnId, { state: "connecting", step: signingIn });
+      statuses.set(vpnId, { state: 'connecting', step: signingIn });
       session = await startVpnContainer(engine, {
         vpnId,
         launch,
@@ -185,11 +185,11 @@ export function createConnectionManager(deps: Dependencies) {
         cardBridge,
         signal,
         onExit: (lastLines) => {
-          const message = `The VPN connection dropped: ${lastLines.at(-1) ?? ""}`;
+          const message = `The VPN connection dropped: ${lastLines.at(-1) ?? ''}`;
           dropped = message;
           void exclusive(async () => {
             if (!session || sessions.get(vpnId) !== session) return; // not routed to yet: the connect fails on `dropped`
-            await drop(vpnId, { state: "error", message });
+            await drop(vpnId, { state: 'error', message });
             await syncHost();
           }).catch((error: unknown) => onLog(messageOf(error)));
         },
@@ -201,14 +201,14 @@ export function createConnectionManager(deps: Dependencies) {
         signal.throwIfAborted();
         if (dropped) throw new Error(dropped);
         sessions.set(vpnId, started);
-        statuses.set(vpnId, { state: "connecting", step: "Routing traffic…" });
+        statuses.set(vpnId, { state: 'connecting', step: 'Routing traffic…' });
         // What the server sent decides what "same as the official app" routes, from now on and in the UI.
         // Best effort: failing to save it mustn't drop a working connection.
         if (started.pushedRoutes && !sameRoutes(vpn.serverRoutes, started.pushedRoutes)) {
           await deps.saveServerRoutes(vpnId, started.pushedRoutes).catch((error: unknown) => onLog(`Couldn't save what the server sends: ${messageOf(error)}`));
         }
         const warningOf = await syncHost();
-        statuses.set(vpnId, { state: "connected", since: Date.now(), warning: warningOf(vpnId) });
+        statuses.set(vpnId, { state: 'connected', since: Date.now(), warning: warningOf(vpnId) });
       });
       return { ok: true };
     } catch (error) {
@@ -228,7 +228,7 @@ export function createConnectionManager(deps: Dependencies) {
     // A container that started but was never routed to (cancelled just before) goes too.
     if (session && sessions.get(vpnId) !== session) await session.stop();
     if (error instanceof CancelledError) {
-      statuses.set(vpnId, { state: "disconnected" });
+      statuses.set(vpnId, { state: 'disconnected' });
       return { ok: false, error: error.message };
     }
     const message = messageOf(error);
@@ -236,26 +236,26 @@ export function createConnectionManager(deps: Dependencies) {
     onLog(message);
     if (error instanceof UntrustedCertificateError) {
       presentedPins.set(vpnId, error.pin);
-      statuses.set(vpnId, { state: "disconnected" });
+      statuses.set(vpnId, { state: 'disconnected' });
       return { ok: false, untrustedCertificate: { pin: error.pin, server: error.server, changed: hadPin } };
     }
     await exclusive(async () => {
-      if (!session || sessions.get(vpnId) !== session) return statuses.set(vpnId, { state: "error", message });
-      await drop(vpnId, { state: "error", message });
+      if (!session || sessions.get(vpnId) !== session) return statuses.set(vpnId, { state: 'error', message });
+      await drop(vpnId, { state: 'error', message });
       await syncHost().catch((cleanupError: unknown) => onLog(messageOf(cleanupError)));
     });
     return { ok: false, error: message };
   }
 
   async function disconnect(vpnId: string) {
-    await drop(vpnId, { state: "disconnected" });
+    await drop(vpnId, { state: 'disconnected' });
     await syncHost().catch((error: unknown) => statuses.logger(vpnId)(messageOf(error)));
   }
 
   async function shutdown() {
     // A snapshot: drop() removes sessions while this awaits.
     // oxlint-disable-next-line unicorn/no-useless-spread
-    for (const vpnId of [...sessions.keys()]) await drop(vpnId, { state: "disconnected" });
+    for (const vpnId of [...sessions.keys()]) await drop(vpnId, { state: 'disconnected' });
     await host.close();
   }
 
@@ -306,7 +306,7 @@ export function createConnectionManager(deps: Dependencies) {
     /** Runs one of a kind's actions for its form (e.g. Check Point's login types). The action parses its input; the form parses the output. */
     runAction: async (kind: VpnKind, name: string, input: unknown) => {
       const run = actionOf(kind, name);
-      if (!run) throw new Error("This VPN type has no such action.");
+      if (!run) throw new Error('This VPN type has no such action.');
       // Docker is reached only once the action has parsed its input, so a malformed call does nothing on the host.
       // The build and run stay outside the queue, like a connect's build; a failure says why itself.
       return run(input, { runInImage: async (image, oneOff) => runInImage(await exclusive(getDocker), image, oneOff) });
@@ -331,7 +331,7 @@ export function createConnectionManager(deps: Dependencies) {
       await stopConnects();
       await exclusive(async () => {
         await shutdown();
-        const singBox = await ensureSingBox(join(deps.dataDir, "bin"));
+        const singBox = await ensureSingBox(join(deps.dataDir, 'bin'));
         await installHelper({ dataDir: deps.dataDir, helperBinary: deps.helperBinary, singBox });
       });
     },

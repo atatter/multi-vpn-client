@@ -1,5 +1,5 @@
-import { newRoute, retarget, RouteRule, routeTarget } from "@repo/core";
-import { listOf } from "@repo/ui/format.ts";
+import { newRoute, retarget, RouteRule, routeTarget } from '@repo/core';
+import { listOf } from '@repo/ui/format.ts';
 
 /**
  * Parses typed text (several entries, separated by spaces or commas) into new rules for `vpnId`.
@@ -10,16 +10,16 @@ export function addEntries(text: string, routes: readonly RouteRule[], vpnId: st
   const bad: string[] = [];
   const dupes: string[] = [];
   for (const token of text.split(/[\s,]+/).filter(Boolean)) {
-    const parsed = RouteRule.safeParse(retarget(newRoute("", vpnId), token));
+    const parsed = RouteRule.safeParse(retarget(newRoute('', vpnId), token));
     if (!parsed.success) bad.push(token);
     else if ([...routes, ...added].some((route) => routeTarget(route) === routeTarget(parsed.data))) dupes.push(routeTarget(parsed.data));
     else added.push(parsed.data);
   }
   const problem = [
-    bad.length ? `${listOf(bad)} ${bad.length === 1 ? "isn't a site or IP range" : "aren't sites or IP ranges"}.` : "",
-    dupes.length ? `${listOf(dupes)} ${dupes.length === 1 ? "is" : "are"} already in the list.` : "",
+    bad.length ? `${listOf(bad)} ${bad.length === 1 ? "isn't a site or IP range" : "aren't sites or IP ranges"}.` : '',
+    dupes.length ? `${listOf(dupes)} ${dupes.length === 1 ? 'is' : 'are'} already in the list.` : '',
   ]
-    .join(" ")
+    .join(' ')
     .trim();
-  return { routes: [...routes, ...added], text: bad.join(" "), problem: problem || undefined };
+  return { routes: [...routes, ...added], text: bad.join(' '), problem: problem || undefined };
 }

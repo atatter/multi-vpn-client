@@ -1,10 +1,10 @@
-import { useApp } from "../store/app-model.ts";
-import { openDropped } from "../store/import-profile.ts";
-import { Frame } from "@repo/ui/Frame.tsx";
-import { primary } from "@repo/ui/tokens.ts";
-import { useFileDrop } from "@repo/ui/use-file-drop.ts";
-import { AddressFields } from "./AddressFields.tsx";
-import { useAddress } from "./use-address.ts";
+import { useApp } from '../store/app-model.ts';
+import { openDropped } from '../store/import-profile.ts';
+import { Frame } from '@repo/ui/Frame.tsx';
+import { primary } from '@repo/ui/tokens.ts';
+import { useFileDrop } from '@repo/ui/use-file-drop.ts';
+import { AddressFields } from './AddressFields.tsx';
+import { useAddress } from './use-address.ts';
 
 /** Step 1: one question, the address. A file or picking the type yourself are the fallbacks, not the front door. */
 export function AddScreen() {

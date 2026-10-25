@@ -1,10 +1,10 @@
-import { APP_NAME, HELPER_LABEL, HELPER_WORK_DIR, RESOLVER_MARK } from "@repo/core";
-import { existsSync } from "node:fs";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { run, shQuote } from "../process.ts";
-import type { InstallPlan, PlatformInstaller } from "./index.ts";
+import { APP_NAME, HELPER_LABEL, HELPER_WORK_DIR, RESOLVER_MARK } from '@repo/core';
+import { existsSync } from 'node:fs';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { run, shQuote } from '../process.ts';
+import type { InstallPlan, PlatformInstaller } from './index.ts';
 
 /**
  * macOS: a launchd daemon in root-owned locations, installed through the standard
@@ -13,9 +13,9 @@ import type { InstallPlan, PlatformInstaller } from "./index.ts";
 
 export const HELPER_INSTALL_DIR = `/Library/PrivilegedHelperTools/${HELPER_LABEL}`;
 export const HELPER_PLIST = `/Library/LaunchDaemons/${HELPER_LABEL}.plist`;
-const HELPER_LOG = "/Library/Logs/multi-vpn-client-helper.log";
+const HELPER_LOG = '/Library/Logs/multi-vpn-client-helper.log';
 
-const b64 = (text: string) => Buffer.from(text).toString("base64");
+const b64 = (text: string) => Buffer.from(text).toString('base64');
 
 export function launchdPlist(): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -53,7 +53,7 @@ killall -HUP mDNSResponder 2>/dev/null || true
  * The settings (with the handshake key) come from a private file, so the key never shows up in
  * a command line, which other processes can read.
  */
-export function macInstallScript(p: Omit<InstallPlan, "configJson"> & { configFile: string }): string {
+export function macInstallScript(p: Omit<InstallPlan, 'configJson'> & { configFile: string }): string {
   // umask 077: helper.json (the handshake key) must never exist with looser permissions, even briefly.
   return `set -eu
 umask 077
@@ -84,10 +84,10 @@ async function runAsAdmin(script: string, reason: string): Promise<void> {
   const appleScript =
     `do shell script "echo ${b64(script)} | /usr/bin/base64 --decode | /bin/sh" ` +
     `with prompt ${JSON.stringify(reason)} with administrator privileges`;
-  const result = await run("/usr/bin/osascript", ["-e", appleScript]);
+  const result = await run('/usr/bin/osascript', ['-e', appleScript]);
   if (result.code !== 0) {
-    if (result.stderr.includes("-128")) throw new Error("Administrator access was cancelled.");
-    throw new Error(result.stderr.trim() || "The administrator script failed.");
+    if (result.stderr.includes('-128')) throw new Error('Administrator access was cancelled.');
+    throw new Error(result.stderr.trim() || 'The administrator script failed.');
   }
 }
 
@@ -96,9 +96,9 @@ export const darwinInstaller: PlatformInstaller = {
   isInstalled: () => existsSync(HELPER_PLIST),
   async install({ configJson, ...plan }) {
     // tmpdir() is per-user (0700) on macOS; the file itself is 0600 too.
-    const staging = await mkdtemp(join(tmpdir(), "mvpn-helper-"));
+    const staging = await mkdtemp(join(tmpdir(), 'mvpn-helper-'));
     try {
-      const configFile = join(staging, "helper.json");
+      const configFile = join(staging, 'helper.json');
       await writeFile(configFile, configJson, { mode: 0o600 });
       await runAsAdmin(macInstallScript({ ...plan, configFile }), `${APP_NAME} wants to install its network helper. You'll only be asked once.`);
     } finally {

@@ -17,7 +17,7 @@ export type ParsedCidr =
 
 /** Strictly splits "a.b.c.d/len" (len 0–32, plain digits). A bare address only when `bareMeans32`. */
 function splitCidr(input: string, bareMeans32: boolean): { address: number; prefix: number } | undefined {
-  const [address, length, ...rest] = input.trim().split("/");
+  const [address, length, ...rest] = input.trim().split('/');
   const value = address === undefined ? undefined : parseIpv4(address);
   if (value === undefined || rest.length > 0) return undefined;
   if (length === undefined) return bareMeans32 ? { address: value, prefix: 32 } : undefined;
@@ -30,7 +30,7 @@ const networkAddress = (address: number, prefix: number) => address - (address %
 /** Parses "a.b.c.d/len" (or a bare address, meaning /32) and rejects host bits. */
 export function parseCidr(input: string): ParsedCidr {
   const split = splitCidr(input, true);
-  if (!split) return { ok: false, error: "Expected an IPv4 CIDR like 10.20.0.0/16" };
+  if (!split) return { ok: false, error: 'Expected an IPv4 CIDR like 10.20.0.0/16' };
 
   const { address, prefix } = split;
   const network = networkAddress(address, prefix);
@@ -50,7 +50,7 @@ export function networkOf(interfaceCidr: string): string | undefined {
 export const isIpv4 = (value: string) => parseIpv4(value.trim()) !== undefined;
 
 function parseIpv4(address: string): number | undefined {
-  const octets = address.split(".");
+  const octets = address.split('.');
   if (octets.length !== 4) return undefined;
   let value = 0;
   for (const octet of octets) {
@@ -61,7 +61,7 @@ function parseIpv4(address: string): number | undefined {
 }
 
 function formatIpv4(value: number): string {
-  return [24, 16, 8, 0].map((shift) => Math.floor(value / 2 ** shift) % 256).join(".");
+  return [24, 16, 8, 0].map((shift) => Math.floor(value / 2 ** shift) % 256).join('.');
 }
 
 /** Normalizes any list of ranges into a range set. */

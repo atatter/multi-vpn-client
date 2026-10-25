@@ -1,8 +1,8 @@
-import type { Config, DockerState, SecretChanges, SecretStatus, TrafficSnapshot } from "@repo/core";
-import { createContext, useContext, useSyncExternalStore } from "react";
-import type { MainApi } from "../../../preload/index.ts";
-import type { AppInfo, ConnectionStatuses, HelperInfo, UpdateState } from "../../../shared/ipc-contract.ts";
-import type { Prompt, Screen } from "./screen.ts";
+import type { Config, DockerState, SecretChanges, SecretStatus, TrafficSnapshot } from '@repo/core';
+import { createContext, useContext, useSyncExternalStore } from 'react';
+import type { MainApi } from '../../../preload/index.ts';
+import type { AppInfo, ConnectionStatuses, HelperInfo, UpdateState } from '../../../shared/ipc-contract.ts';
+import type { Prompt, Screen } from './screen.ts';
 
 export interface AppModel {
   /** The bridge to the main process, for one-off questions (detect, checkRoute, …). Only main.tsx touches window.main. */
@@ -53,7 +53,7 @@ export interface AppModel {
   trustCertificate: () => void;
   cancelPrompt: () => void;
   /** Runs a network helper action; resolves to its error, if any. */
-  runHelper: (action: "install" | "uninstall") => Promise<string | undefined>;
+  runHelper: (action: 'install' | 'uninstall') => Promise<string | undefined>;
   /** Starts Docker, or joins the start already running; dockerStart shows how it goes. */
   startDocker: () => Promise<void>;
 }
@@ -62,7 +62,7 @@ export const AppContext = createContext<AppModel | null>(null);
 
 export function useApp(): AppModel {
   const model = useContext(AppContext);
-  if (!model) throw new Error("useApp needs the AppContext provider");
+  if (!model) throw new Error('useApp needs the AppContext provider');
   return model;
 }
 

@@ -1,6 +1,6 @@
-import type { ServerRoutes } from "@repo/core";
-import { loadConfig, saveConfig } from "@repo/core/store";
-import { broadcast } from "./broadcast.ts";
+import type { ServerRoutes } from '@repo/core';
+import { loadConfig, saveConfig } from '@repo/core/store';
+import { broadcast } from './broadcast.ts';
 
 /**
  * Config writes run one at a time: each loads, changes and saves the file, so two at once (the user saving
@@ -18,5 +18,5 @@ export const saveServerRoutes = (configPath: string, vpnId: string, serverRoutes
   writingConfig(async () => {
     const config = await loadConfig(configPath);
     const saved = await saveConfig({ ...config, vpns: config.vpns.map((vpn) => (vpn.id === vpnId ? { ...vpn, serverRoutes } : vpn)) }, configPath);
-    broadcast("config:changed", saved);
+    broadcast('config:changed', saved);
   });

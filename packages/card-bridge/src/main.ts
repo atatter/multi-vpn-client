@@ -1,5 +1,5 @@
-import { openPcsc, PcscError, SCARD_E_NO_SERVICE, SCARD_E_SERVICE_STOPPED, SCARD_W_REMOVED_CARD, SCARD_W_RESET_CARD, type Card, type Pcsc } from "./pcsc.ts";
-import { createFramer, frame, ID_CARD_GUARDED_PINS, refusal, VPCD_CTRL_ATR } from "./vpcd.ts";
+import { openPcsc, PcscError, SCARD_E_NO_SERVICE, SCARD_E_SERVICE_STOPPED, SCARD_W_REMOVED_CARD, SCARD_W_RESET_CARD, type Card, type Pcsc } from './pcsc.ts';
+import { createFramer, frame, ID_CARD_GUARDED_PINS, refusal, VPCD_CTRL_ATR } from './vpcd.ts';
 
 /**
  * Lends the smart card in this computer's reader (e.g. an Estonian ID card) to one VPN container,
@@ -22,9 +22,9 @@ import { createFramer, frame, ID_CARD_GUARDED_PINS, refusal, VPCD_CTRL_ATR } fro
 const TRANSACTION_IDLE_MS = 1500;
 
 const status = (line: string) => process.stderr.write(`${line}\n`);
-const hex = (bytes: Uint8Array) => Buffer.from(bytes).toString("hex");
+const hex = (bytes: Uint8Array) => Buffer.from(bytes).toString('hex');
 
-const idCardOnly = process.argv.includes("--id-card");
+const idCardOnly = process.argv.includes('--id-card');
 let reportedOtherCards = false;
 
 /**
@@ -43,7 +43,7 @@ function findCard(pcsc: Pcsc): Card | undefined {
   const chosen = cards.find((card) => ID_CARD_GUARDED_PINS.has(hex(card.atr))) ?? (idCardOnly ? undefined : cards[0]);
   if (!chosen && cards.length > 0 && !reportedOtherCards) {
     reportedOtherCards = true;
-    status(`Not an Estonian ID card the app knows, so it isn't used: the card in ${cards.map((card) => card.reader).join(", ")}.`);
+    status(`Not an Estonian ID card the app knows, so it isn't used: the card in ${cards.map((card) => card.reader).join(', ')}.`);
   }
   for (const card of cards) if (card !== chosen) card.disconnect();
   return chosen;
@@ -67,7 +67,7 @@ async function waitForCard(): Promise<Card> {
     const card = pcsc && findCard(pcsc);
     if (card) return card;
     pcsc?.close();
-    if (!announced) status("MVPN-CARD-WAITING");
+    if (!announced) status('MVPN-CARD-WAITING');
     announced = true;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
@@ -125,13 +125,13 @@ function relay(card: Card) {
       process.stdout.write(frame(refusal(message, guarded) ?? transmit(message)));
     } catch (error) {
       const removed = error instanceof PcscError && error.code === SCARD_W_REMOVED_CARD;
-      status(`MVPN-ERROR: ${removed ? "The card was removed from the reader." : `The card reader stopped working: ${String(error)}`}`);
+      status(`MVPN-ERROR: ${removed ? 'The card was removed from the reader.' : `The card reader stopped working: ${String(error)}`}`);
       process.exit(1);
     }
   };
 
-  process.stdin.on("data", createFramer(answer));
-  process.stdin.on("end", () => {
+  process.stdin.on('data', createFramer(answer));
+  process.stdin.on('end', () => {
     release();
     card.disconnect();
     process.exit(0);

@@ -1,11 +1,11 @@
-import { DESKTOP_ID, desktopEntryFiles } from "@repo/core/store";
-import { app } from "electron";
-import { homedir } from "node:os";
-import { APP_ICON } from "../window.ts";
-import { syncDesktopEntry } from "./desktop-entry.ts";
-import { tunnelLayers } from "./glyph.ts";
-import { imageOf } from "./images.ts";
-import type { TrayPlatform } from "./index.ts";
+import { DESKTOP_ID, desktopEntryFiles } from '@repo/core/store';
+import { app } from 'electron';
+import { homedir } from 'node:os';
+import { APP_ICON } from '../window.ts';
+import { syncDesktopEntry } from './desktop-entry.ts';
+import { tunnelLayers } from './glyph.ts';
+import { imageOf } from './images.ts';
+import type { TrayPlatform } from './index.ts';
 
 /**
  * Linux: the tray icon is white, for GNOME's top bar, which stays dark in light mode too. The count goes on the dock
@@ -17,7 +17,7 @@ export const linuxTray: TrayPlatform = {
     app.setDesktopName(`${DESKTOP_ID}.desktop`);
     // Only a packaged build: a development one would point the user's app grid at a checkout.
     if (!app.isPackaged) return;
-    const command: [string, ...string[]] = [process.execPath, ...(app.commandLine.hasSwitch("no-sandbox") ? ["--no-sandbox"] : [])];
+    const command: [string, ...string[]] = [process.execPath, ...(app.commandLine.hasSwitch('no-sandbox') ? ['--no-sandbox'] : [])];
     syncDesktopEntry({ files: desktopEntryFiles(process.env, homedir()), command, iconSource: APP_ICON }).catch((error: unknown) => {
       console.error("Couldn't write the desktop entry, so the dock shows no count:", error);
     });

@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { LockIcon } from "../icons.tsx";
+import type { ReactNode } from 'react';
+import { LockIcon } from '../icons.tsx';
 
 /** A stored value shown as a locked chip with a Replace action. Long values (file names) truncate rather than widen the page. */
 export function SavedValue({ children, onReplace }: { children: ReactNode; onReplace: () => void }) {

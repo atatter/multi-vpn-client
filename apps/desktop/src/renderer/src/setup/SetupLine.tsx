@@ -1,12 +1,12 @@
-import { SETUP_BUSY, setupProblems } from "../domain/setup-copy.ts";
-import { useApp } from "../store/app-model.ts";
-import { cx, link } from "@repo/ui/tokens.ts";
-import { useSetupAction } from "./use-setup-action.ts";
+import { SETUP_BUSY, setupProblems } from '../domain/setup-copy.ts';
+import { useApp } from '../store/app-model.ts';
+import { cx, link } from '@repo/ui/tokens.ts';
+import { useSetupAction } from './use-setup-action.ts';
 
 /** Returning users only need the one thing that's wrong, not the first-run checklist. */
 export function SetupLine() {
   const app = useApp();
-  const helper = useSetupAction(() => app.runHelper("install"));
+  const helper = useSetupAction(() => app.runHelper('install'));
   const { docker: dockerProblem, helper: helperProblem } = setupProblems(app.docker, app.helper?.state);
   if (!dockerProblem && !helperProblem) return null;
   const line = (text: string, action: string | undefined, busy: boolean, busyText: string, error: string | undefined, run: () => void) => (
@@ -14,7 +14,7 @@ export function SetupLine() {
       <span className="flex items-baseline justify-between gap-2.5">
         <span>{busy ? busyText : text}</span>
         {action && !busy && (
-          <button type="button" className={cx(link, "whitespace-nowrap")} onClick={run}>
+          <button type="button" className={cx(link, 'whitespace-nowrap')} onClick={run}>
             {action}
           </button>
         )}

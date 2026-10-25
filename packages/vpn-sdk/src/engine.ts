@@ -1,6 +1,6 @@
-import type { Action } from "./kind.ts";
-import type { VpnImage } from "./container.ts";
-import type { z } from "zod";
+import type { Action } from './kind.ts';
+import type { VpnImage } from './container.ts';
+import type { z } from 'zod';
 
 /**
  * What a VPN kind's engine side is made of (Node only): how to run its client in a container, read the
@@ -28,7 +28,7 @@ export interface BrowserSignIn {
 export type ReadLine = (line: string) => Failure | BrowserSignIn | undefined;
 
 /** What the user calls the card a launch's `smartCard` signs in with. */
-export const CARD_NAME = { "id-card": "ID card", "any-card": "smart card" } as const;
+export const CARD_NAME = { 'id-card': 'ID card', 'any-card': 'smart card' } as const;
 
 /** How to run one VPN kind's client in the container. */
 export interface VpnLaunch {
@@ -56,7 +56,7 @@ export interface VpnLaunch {
 // never trust it (connecting still checks the certificate).
 
 /** One HTTPS request's outcome: status, Location header and the start of the body; undefined if it failed. */
-export type Probe = (options: { host: string; port: number; method: "GET" | "POST"; path: string; body?: string; headers?: Record<string, string> }) => Promise<
+export type Probe = (options: { host: string; port: number; method: 'GET' | 'POST'; path: string; body?: string; headers?: Record<string, string> }) => Promise<
   { status: number; location: string; body: string } | undefined
 >;
 
@@ -88,7 +88,7 @@ export interface ActionContext {
 export type ErasedAction = (input: unknown, context: ActionContext) => Promise<unknown>;
 
 type Implementations<A extends { [N in keyof A]: Action }> = {
-  [N in keyof A]: (input: z.output<A[N]["input"]>, context: ActionContext) => Promise<z.input<A[N]["output"]>>;
+  [N in keyof A]: (input: z.output<A[N]['input']>, context: ActionContext) => Promise<z.input<A[N]['output']>>;
 };
 
 /** One action, implemented: parses its input before running. Its output is parsed once, by the form, so a transforming schema still works. */
@@ -104,7 +104,7 @@ const erase =
 export function implement<A extends { [N in keyof A]: Action }>(declared: A, implementations: Implementations<A>): Readonly<Record<string, ErasedAction>> {
   const erased: Record<string, ErasedAction> = {};
   // Explicit type arguments: inferred from declared[name], TypeScript would settle for Action's own schema types.
-  for (const name in declared) erased[name] = erase<A[typeof name]["input"], A[typeof name]["output"]>(declared[name], implementations[name]);
+  for (const name in declared) erased[name] = erase<A[typeof name]['input'], A[typeof name]['output']>(declared[name], implementations[name]);
   return erased;
 }
 
@@ -115,7 +115,7 @@ export interface LaunchSecrets {
 }
 
 /** How to run one kind's client from its saved settings; "needs-password" when the UI has to ask first. */
-export type Launcher<V> = (vpn: V, secrets: LaunchSecrets) => Promise<VpnLaunch | "needs-password">;
+export type Launcher<V> = (vpn: V, secrets: LaunchSecrets) => Promise<VpnLaunch | 'needs-password'>;
 
 /**
  * One kind's client, as the engine calls it: how to run it, how to recognise its server from an address,

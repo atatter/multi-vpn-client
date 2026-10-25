@@ -1,4 +1,4 @@
-import { placeVpn, type Config } from "@repo/core";
+import { placeVpn, type Config } from '@repo/core';
 
 /** Where a dragged row lands: after every other row whose middle is above the dragged row's middle. */
 export function orderWhileDragging(order: readonly string[], id: string, center: number, middleOf: (id: string) => number | undefined): string[] {
@@ -24,5 +24,5 @@ export function priorityAfterMove(config: Config, ids: readonly string[], moved:
   const index = ids.indexOf(moved);
   const next = ids[index + 1];
   const previous = ids[index - 1];
-  return next ? placeVpn(config, moved, next, "above") : previous ? placeVpn(config, moved, previous, "below") : config.priority;
+  return next ? placeVpn(config, moved, next, 'above') : previous ? placeVpn(config, moved, previous, 'below') : config.priority;
 }

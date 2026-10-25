@@ -1,7 +1,7 @@
-import { appProofMessage, HELPER_VERSION, helperProofMessage, MAX_HELPER_LINE, NO_ROUTES, parseHelperLine, type HelperResponse, type HostRoutes } from "@repo/core";
-import { proofMatches, signProof } from "@repo/core/helper-crypto";
-import { randomBytes } from "node:crypto";
-import { createServer, type Server, type Socket } from "node:net";
+import { appProofMessage, HELPER_VERSION, helperProofMessage, MAX_HELPER_LINE, NO_ROUTES, parseHelperLine, type HelperResponse, type HostRoutes } from '@repo/core';
+import { proofMatches, signProof } from '@repo/core/helper-crypto';
+import { randomBytes } from 'node:crypto';
+import { createServer, type Server, type Socket } from 'node:net';
 
 /** What the helper does with a validated routing state. Applying `NO_ROUTES` removes everything. */
 export interface HostBackend {
@@ -9,7 +9,7 @@ export interface HostBackend {
 }
 
 /** Where a connection is in the handshake (see core/helper-protocol). */
-type Phase = { name: "new" } | { name: "challenged"; challenge: string } | { name: "authenticated" };
+type Phase = { name: 'new' } | { name: 'challenged'; challenge: string } | { name: 'authenticated' };
 
 /**
  * Loopback server speaking the helper protocol (see core/helper-protocol).
@@ -40,21 +40,21 @@ export function createHelperServer({ key, backend, log }: { key: Buffer; backend
   };
 
   const server: Server = createServer((socket) => {
-    let phase: Phase = { name: "new" };
-    let buffer = "";
+    let phase: Phase = { name: 'new' };
+    let buffer = '';
     let pending: Promise<void> = Promise.resolve();
     const reply = (response: HelperResponse) => {
       if (socket.writable) socket.write(`${JSON.stringify(response)}\n`);
     };
     const refuse = () => {
-      reply({ ok: false, error: "Unauthorized" });
+      reply({ ok: false, error: 'Unauthorized' });
       socket.destroy();
     };
     // A failed apply can leave part of it in place (e.g. DNS set, sing-box not started), and a refused one leaves
     // the previous routes pointing at VPNs the app may have stopped. Either way the session ends: everything is
     // removed, and the app drops its VPNs instead of showing them on.
     const endAfterFailedApply = () => {
-      if (active === socket) endActive("ending the session");
+      if (active === socket) endActive('ending the session');
       socket.end();
     };
 
@@ -62,25 +62,25 @@ export function createHelperServer({ key, backend, log }: { key: Buffer; backend
       const parsed = parseHelperLine(line);
       if (!parsed.ok) {
         reply(parsed);
-        if (phase.name === "authenticated") endAfterFailedApply();
+        if (phase.name === 'authenticated') endAfterFailedApply();
         return;
       }
       const request = parsed.request;
 
       switch (request.command) {
-        case "status":
+        case 'status':
           return reply({ ok: true, version: HELPER_VERSION });
 
-        case "hello": {
-          if (phase.name !== "new") return refuse();
-          const challenge = randomBytes(32).toString("base64url");
-          phase = { name: "challenged", challenge };
+        case 'hello': {
+          if (phase.name !== 'new') return refuse();
+          const challenge = randomBytes(32).toString('base64url');
+          phase = { name: 'challenged', challenge };
           return reply({ ok: true, version: HELPER_VERSION, challenge, proof: sign(helperProofMessage(request.nonce)) });
         }
 
-        case "auth": {
-          if (phase.name !== "challenged" || !proofMatches(request.proof, sign(appProofMessage(phase.challenge)))) return refuse();
-          phase = { name: "authenticated" };
+        case 'auth': {
+          if (phase.name !== 'challenged' || !proofMatches(request.proof, sign(appProofMessage(phase.challenge)))) return refuse();
+          phase = { name: 'authenticated' };
           if (active && active !== socket) {
             active.destroy();
             void exclusive(() => backend.apply(NO_ROUTES)).catch((error: unknown) => log(`teardown failed: ${String(error)}`));
@@ -89,9 +89,9 @@ export function createHelperServer({ key, backend, log }: { key: Buffer; backend
           return reply({ ok: true, version: HELPER_VERSION });
         }
 
-        case "apply": {
+        case 'apply': {
           // A replaced session may still have requests queued; they must not touch the new session's state.
-          if (phase.name !== "authenticated" || active !== socket) return refuse();
+          if (phase.name !== 'authenticated' || active !== socket) return refuse();
           try {
             await exclusive(() => backend.apply(request.routes));
             reply({ ok: true, version: HELPER_VERSION });
@@ -104,30 +104,30 @@ export function createHelperServer({ key, backend, log }: { key: Buffer; backend
       }
     }
 
-    socket.setEncoding("utf8");
-    socket.on("data", (chunk: string) => {
+    socket.setEncoding('utf8');
+    socket.on('data', (chunk: string) => {
       buffer += chunk;
       let newline: number;
-      while ((newline = buffer.indexOf("\n")) >= 0) {
+      while ((newline = buffer.indexOf('\n')) >= 0) {
         const line = buffer.slice(0, newline);
         buffer = buffer.slice(newline + 1);
         pending = pending.then(() => handle(line));
       }
       if (buffer.length > MAX_HELPER_LINE) socket.destroy();
     });
-    socket.on("error", () => undefined);
-    socket.on("close", () => {
-      if (active === socket) endActive("session ended");
+    socket.on('error', () => undefined);
+    socket.on('close', () => {
+      if (active === socket) endActive('session ended');
     });
   });
 
   return {
     listen: (port: number) =>
       new Promise<number>((resolve, reject) => {
-        server.once("error", reject);
-        server.listen(port, "127.0.0.1", () => {
+        server.once('error', reject);
+        server.listen(port, '127.0.0.1', () => {
           const address = server.address();
-          resolve(typeof address === "object" && address ? address.port : port);
+          resolve(typeof address === 'object' && address ? address.port : port);
         });
       }),
     /** Ends the active session (e.g. the engine crashed), which tears everything down. */

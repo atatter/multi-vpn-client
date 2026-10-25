@@ -1,4 +1,4 @@
-import { SH_MARKERS } from "./markers.ts";
+import { SH_MARKERS } from './markers.ts';
 
 // Every image: the entry point, which starts the SOCKS proxy and hands over to a VPN client, and the ready step.
 

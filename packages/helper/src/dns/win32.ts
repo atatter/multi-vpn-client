@@ -1,9 +1,9 @@
-import { Domain, RESOLVER_MARK } from "@repo/core";
-import { runPowerShell, type RunPowerShell } from "../powershell.ts";
-import type { DnsAdapter } from "./index.ts";
+import { Domain, RESOLVER_MARK } from '@repo/core';
+import { runPowerShell, type RunPowerShell } from '../powershell.ts';
+import type { DnsAdapter } from './index.ts';
 
 /** Group Policy NRPT rules make Windows ignore local ones, silently. */
-const GROUP_POLICY_NRPT = "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient\\DnsPolicyConfig";
+const GROUP_POLICY_NRPT = 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient\\DnsPolicyConfig';
 
 const removeOurs = `Get-DnsClientNrptRule | Where-Object Comment -eq '${RESOLVER_MARK}' | Remove-DnsClientNrptRule -Force`;
 
@@ -18,14 +18,14 @@ export function nrptScript(domains: readonly string[], server: string): string {
       ? [
           `if ((Test-Path '${GROUP_POLICY_NRPT}') -and (Get-ChildItem '${GROUP_POLICY_NRPT}').Count -gt 0) {`,
           "  [Console]::Error.WriteLine('Domain routes are unavailable here: DNS rules on this PC are managed by Group Policy, which overrides ours.')",
-          "  exit 3",
-          "}",
+          '  exit 3',
+          '}',
           // ".corp.example" covers subdomains; the bare name is listed too, to be sure it's covered.
           ...valid.map((domain) => `Add-DnsClientNrptRule -Namespace '.${domain}','${domain}' -NameServers '${server}' -Comment '${RESOLVER_MARK}' | Out-Null`),
         ]
       : []),
-    "Clear-DnsClientCache",
-  ].join("\n");
+    'Clear-DnsClientCache',
+  ].join('\n');
 }
 
 /**

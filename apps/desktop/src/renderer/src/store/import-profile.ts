@@ -1,14 +1,14 @@
-import { kindSpec, newVpn, VPN_KINDS, type Vpn, type VpnKind } from "@repo/core";
-import { FORMS } from "@repo/vpns/ui";
-import { nameFromFile, uniqueName } from "../domain/names.ts";
-import { FILE_TYPES } from "../domain/provider-files.ts";
-import type { AppModel } from "./app-model.ts";
-import type { Screen } from "./screen.ts";
+import { kindSpec, newVpn, VPN_KINDS, type Vpn, type VpnKind } from '@repo/core';
+import { FORMS } from '@repo/vpns/ui';
+import { nameFromFile, uniqueName } from '../domain/names.ts';
+import { FILE_TYPES } from '../domain/provider-files.ts';
+import type { AppModel } from './app-model.ts';
+import type { Screen } from './screen.ts';
 
 /** A drop on the window: one provider file opens like a chosen one; several are turned away. */
 export function openDropped(app: AppModel, files: readonly File[]) {
   const [file, ...more] = files;
-  if (more.length > 0) return app.showNotice("Drop one file at a time.");
+  if (more.length > 0) return app.showNotice('Drop one file at a time.');
   if (file) openProfile(app, file);
 }
 
@@ -24,7 +24,7 @@ const readAs = <K extends VpnKind>(kind: K, text: string, draft: { id: string; n
  * Reads a dropped or chosen provider file into a new VPN's sign-in step. Kinds that read the file's extension
  * try it in VPN_KINDS order, and the first that reads it wins.
  */
-export async function importProfile(file: File, vpns: readonly Vpn[]): Promise<{ ok: true; screen: Extract<Screen, { name: "signin" }> } | { ok: false; error: string }> {
+export async function importProfile(file: File, vpns: readonly Vpn[]): Promise<{ ok: true; screen: Extract<Screen, { name: 'signin' }> } | { ok: false; error: string }> {
   const lower = file.name.toLowerCase();
   const kinds = VPN_KINDS.filter((kind) => kindSpec(kind).fromFile?.extensions.some((extension) => lower.endsWith(extension)));
   if (kinds.length === 0) return { ok: false, error: `${file.name} isn't a VPN file this app reads. It takes ${FILE_TYPES} files.` };
@@ -38,7 +38,7 @@ export async function importProfile(file: File, vpns: readonly Vpn[]): Promise<{
       firstError ??= `${file.name} isn't a valid ${FORMS[kind].label} file: ${read.error}`;
       continue;
     }
-    return { ok: true, screen: { name: "signin", draft: read.vpn, secrets: read.secrets, source: { from: "file", fileName: file.name } } };
+    return { ok: true, screen: { name: 'signin', draft: read.vpn, secrets: read.secrets, source: { from: 'file', fileName: file.name } } };
   }
   return { ok: false, error: firstError ?? `${file.name} isn't a VPN file this app reads.` };
 }

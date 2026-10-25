@@ -1,6 +1,6 @@
-import { type RouteRule, routeTarget } from "@repo/core";
-import { PinIcon, XIcon } from "@repo/ui/icons.tsx";
-import { cx, link, mono } from "@repo/ui/tokens.ts";
+import { type RouteRule, routeTarget } from '@repo/core';
+import { PinIcon, XIcon } from '@repo/ui/icons.tsx';
+import { cx, link, mono } from '@repo/ui/tokens.ts';
 
 /** One of a VPN's sites: pinned or paused, a remove button, and a note when a higher VPN wins it. */
 export function SiteRow({
@@ -20,7 +20,7 @@ export function SiteRow({
   const target = routeTarget(route);
   return (
     <li className="flex min-h-[34px] flex-wrap items-center justify-between gap-x-2 border-b border-rule py-[3px] pr-1 pl-2.5 last:border-b-0">
-      <span className={cx(mono, "min-w-0 break-all select-text", !route.enabled && "text-muted")}>
+      <span className={cx(mono, 'min-w-0 break-all select-text', !route.enabled && 'text-muted')}>
         {target}
         {route.pinned && (
           <span className="ml-1.5 font-sans text-[11px] font-semibold text-go" title="Goes through this VPN whatever the order">
@@ -29,7 +29,7 @@ export function SiteRow({
         )}
         {!route.enabled && (
           <span className="ml-1.5 font-sans text-[12px]">
-            paused ·{" "}
+            paused ·{' '}
             <button type="button" className={link} onClick={() => onUpdate({ enabled: true })}>
               Resume
             </button>
@@ -47,8 +47,8 @@ export function SiteRow({
       </button>
       {winner && (
         <p className="mb-1 basis-full text-[12.5px] leading-snug text-sodium">
-          {winner} also covers this and is higher, so it goes through {winner}.{" "}
-          <button type="button" className={cx(link, "text-[12.5px]")} onClick={() => onUpdate({ pinned: true })}>
+          {winner} also covers this and is higher, so it goes through {winner}.{' '}
+          <button type="button" className={cx(link, 'text-[12.5px]')} onClick={() => onUpdate({ pinned: true })}>
             Send it through {vpnName} anyway
           </button>
         </p>

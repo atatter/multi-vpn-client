@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 /** Runs a setup action, showing it as busy meanwhile and its error after. */
 export function useSetupAction(run: () => Promise<string | undefined>) {

@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useState } from 'react';
 
 /**
  * Takes provider files dropped anywhere on the window while mounted. Returns whether a file is over the
@@ -10,7 +10,7 @@ export function useFileDrop(onFiles: (files: File[]) => void): boolean {
   const onDrop = useEffectEvent(onFiles);
   useEffect(() => {
     let depth = 0; // dragenter/leave fire for every element crossed, so count them
-    const hasFiles = (event: DragEvent) => event.dataTransfer?.types.includes("Files") ?? false;
+    const hasFiles = (event: DragEvent) => event.dataTransfer?.types.includes('Files') ?? false;
     const enter = (event: DragEvent) => {
       if (!hasFiles(event)) return;
       depth++;
@@ -28,15 +28,15 @@ export function useFileDrop(onFiles: (files: File[]) => void): boolean {
       const files = [...(event.dataTransfer?.files ?? [])];
       if (files.length > 0) onDrop(files);
     };
-    window.addEventListener("dragenter", enter);
-    window.addEventListener("dragleave", leave);
-    window.addEventListener("dragover", dragOver);
-    window.addEventListener("drop", drop);
+    window.addEventListener('dragenter', enter);
+    window.addEventListener('dragleave', leave);
+    window.addEventListener('dragover', dragOver);
+    window.addEventListener('drop', drop);
     return () => {
-      window.removeEventListener("dragenter", enter);
-      window.removeEventListener("dragleave", leave);
-      window.removeEventListener("dragover", dragOver);
-      window.removeEventListener("drop", drop);
+      window.removeEventListener('dragenter', enter);
+      window.removeEventListener('dragleave', leave);
+      window.removeEventListener('dragover', dragOver);
+      window.removeEventListener('drop', drop);
     };
   }, []);
   return over;

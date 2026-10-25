@@ -1,4 +1,4 @@
-import type { Failure, ReadLine } from "@repo/vpn-sdk/engine";
+import type { Failure, ReadLine } from '@repo/vpn-sdk/engine';
 
 /**
  * What every VPN kind that runs through OpenConnect shares (FortiGate SSL VPN, Palo Alto GlobalProtect):
@@ -8,7 +8,7 @@ import type { Failure, ReadLine } from "@repo/vpn-sdk/engine";
  */
 
 /** A certificate pin as OpenConnect prints it: SHA-256 of the public key, base64. */
-const PIN = "pin-sha256:[A-Za-z0-9+/]{43}=";
+const PIN = 'pin-sha256:[A-Za-z0-9+/]{43}=';
 
 /** OpenConnect's hint when it doesn't trust a server's certificate: "    --servercert pin-sha256:…". */
 const UNTRUSTED = new RegExp(`^\\s*--servercert\\s+(${PIN})\\s*$`);
@@ -37,4 +37,4 @@ export function readOpenConnect(firstServer: string, readProtocol: (line: string
   };
 }
 
-export const REJECTED: Failure = { failed: "The VPN server rejected the username or password." };
+export const REJECTED: Failure = { failed: 'The VPN server rejected the username or password.' };

@@ -1,12 +1,12 @@
-import { execFile } from "node:child_process";
-import { createHash } from "node:crypto";
-import { createWriteStream, existsSync } from "node:fs";
-import { mkdir, mkdtemp, readdir, rename, rm, stat } from "node:fs/promises";
-import { get as httpGet, type IncomingMessage } from "node:http";
-import { get as httpsGet } from "node:https";
-import { join } from "node:path";
-import { pipeline } from "node:stream/promises";
-import { archiveUrl, compareVersions, executableIn, isVersion, type Manifest } from "./release.ts";
+import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { createWriteStream, existsSync } from 'node:fs';
+import { mkdir, mkdtemp, readdir, rename, rm, stat } from 'node:fs/promises';
+import { get as httpGet, type IncomingMessage } from 'node:http';
+import { get as httpsGet } from 'node:https';
+import { join } from 'node:path';
+import { pipeline } from 'node:stream/promises';
+import { archiveUrl, compareVersions, executableIn, isVersion, type Manifest } from './release.ts';
 
 interface InstallOptions {
   manifest: Manifest;
@@ -33,18 +33,18 @@ const removeWithNode: Remove = (path) => rm(path, { recursive: true, force: true
  */
 export async function ensureInstalled({ manifest, target, dir, platform, env, onProgress, remove = removeWithNode }: InstallOptions): Promise<string> {
   const archive = manifest.archives[target];
-  if (!archive) throw new Error(`Multi VPN Client ${manifest.version} isn't available for ${target}. It's built for ${Object.keys(manifest.archives).join(", ")}.`);
+  if (!archive) throw new Error(`Multi VPN Client ${manifest.version} isn't available for ${target}. It's built for ${Object.keys(manifest.archives).join(', ')}.`);
   const versionDir = join(dir, manifest.version);
   if (existsSync(executableIn(versionDir, platform))) return executableIn(versionDir, platform);
 
   await mkdir(dir, { recursive: true });
-  const work = await mkdtemp(join(dir, ".download-"));
+  const work = await mkdtemp(join(dir, '.download-'));
   try {
     const file = join(work, archive.file);
     const sha256 = await download(archiveUrl(manifest, archive, env), file, (received, length) => onProgress?.(received / (length ?? archive.size)));
     if (sha256 !== archive.sha256) throw new Error(`The download of ${archive.file} doesn't match its checksum, so it wasn't opened. Try again; if it keeps happening, report it.`);
 
-    const unpacked = join(work, "unpacked");
+    const unpacked = join(work, 'unpacked');
     await mkdir(unpacked);
     await extract(file, unpacked, platform, env);
     const root = await singleFolder(unpacked);
@@ -83,7 +83,7 @@ export async function removeOlderVersions(dir: string, version: string, remove: 
  */
 function request(url: string, redirects = 5): Promise<IncomingMessage> {
   return new Promise((resolve, reject) => {
-    const get = url.startsWith("https:") ? httpsGet : httpGet;
+    const get = url.startsWith('https:') ? httpsGet : httpGet;
     get(url, (response) => {
       const { statusCode = 0, headers } = response;
       if (statusCode >= 300 && statusCode < 400 && headers.location) {
@@ -94,15 +94,15 @@ function request(url: string, redirects = 5): Promise<IncomingMessage> {
         response.resume();
         reject(new Error(`Downloading ${url} failed: HTTP ${statusCode}.`));
       } else resolve(response);
-    }).on("error", (error) => reject(new Error(`Downloading ${url} failed: ${error.message}. Check the internet connection and try again.`)));
+    }).on('error', (error) => reject(new Error(`Downloading ${url} failed: ${error.message}. Check the internet connection and try again.`)));
   });
 }
 
 /** Streams `url` into `file`, reporting the bytes received and the response's length, and returns its SHA-256. */
 async function download(url: string, file: string, onProgress: (received: number, length: number | undefined) => void): Promise<string> {
-  const hash = createHash("sha256");
+  const hash = createHash('sha256');
   const response = await request(url);
-  const length = Number(response.headers["content-length"]) || undefined;
+  const length = Number(response.headers['content-length']) || undefined;
   let received = 0;
   await pipeline(
     response,
@@ -116,7 +116,7 @@ async function download(url: string, file: string, onProgress: (received: number
     },
     createWriteStream(file),
   );
-  return hash.digest("hex");
+  return hash.digest('hex');
 }
 
 /**
@@ -124,9 +124,9 @@ async function download(url: string, file: string, onProgress: (received: number
  * (it reads zip too). The full path matters there: Git for Windows puts a GNU tar on PATH that can't read zip.
  */
 function extract(file: string, into: string, platform: NodeJS.Platform, env: NodeJS.ProcessEnv): Promise<void> {
-  const tar = platform === "win32" ? join(env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe") : "tar";
+  const tar = platform === 'win32' ? join(env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe') : 'tar';
   return new Promise((resolve, reject) =>
-    execFile(tar, ["-xf", file, "-C", into], { maxBuffer: 16 * 1024 * 1024 }, (error, _stdout, stderr) =>
+    execFile(tar, ['-xf', file, '-C', into], { maxBuffer: 16 * 1024 * 1024 }, (error, _stdout, stderr) =>
       error ? reject(new Error(`Unpacking ${file} failed: ${stderr.trim() || error.message}`)) : resolve(),
     ),
   );
@@ -136,6 +136,6 @@ function extract(file: string, into: string, platform: NodeJS.Platform, env: Nod
 async function singleFolder(dir: string): Promise<string> {
   const entries = await readdir(dir);
   const [only] = entries;
-  if (entries.length === 1 && only && !only.endsWith(".app") && (await stat(join(dir, only))).isDirectory()) return join(dir, only);
+  if (entries.length === 1 && only && !only.endsWith('.app') && (await stat(join(dir, only))).isDirectory()) return join(dir, only);
   return dir;
 }

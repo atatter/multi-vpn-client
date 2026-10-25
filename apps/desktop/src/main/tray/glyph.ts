@@ -1,4 +1,4 @@
-import { crc32, deflateSync } from "node:zlib";
+import { crc32, deflateSync } from 'node:zlib';
 
 // The tray icon, the menu's dot and the strokes win32.ts draws its taskbar badge from, at whatever size each OS asks for.
 // Electron only loads PNG and JPEG, so a count can't come from an SVG; everything is round-capped strokes on a
@@ -30,21 +30,21 @@ export const point = (x: number, y: number): Stroke => line(x, y, x, y);
 const NUMERAL_WIDTH = 18;
 const NUMERAL_HEIGHT = 26;
 const NUMERALS: Record<string, Stroke[]> = {
-  "0": [arc(9, 9, 9, 180, 360), line(18, 9, 18, 17), arc(9, 17, 9, 0, 180), line(0, 17, 0, 9)],
-  "1": [line(9, 0, 9, 26), line(9, 0, 3, 5)],
-  "2": [arc(9, 9, 9, 180, 395), line(16.4, 14.2, 0, 26), line(0, 26, 18, 26)],
-  "3": [line(1, 0, 17, 0), line(17, 0, 7.5, 9.1), arc(9, 17.5, 8.5, 260, 510)],
-  "4": [line(13, 26, 13, 0), line(13, 0, 0, 18), line(0, 18, 18, 18)],
-  "5": [line(17, 0, 2, 0), line(2, 0, 2, 12.6), arc(9, 17.5, 8.5, 215, 510)],
-  "6": [line(14, 0, 1.6, 13.3), arc(9, 17.5, 8.5, 0, 360)],
-  "7": [line(0, 0, 18, 0), line(18, 0, 6, 26)],
-  "8": [arc(9, 5.75, 5.75, 0, 360), arc(9, 18.75, 7.25, 0, 360)],
-  "9": [arc(9, 8.5, 8.5, 0, 360), line(16.4, 12.7, 4, 26)],
-  "+": [line(1, 15, 17, 15), line(9, 7, 9, 23)],
+  '0': [arc(9, 9, 9, 180, 360), line(18, 9, 18, 17), arc(9, 17, 9, 0, 180), line(0, 17, 0, 9)],
+  '1': [line(9, 0, 9, 26), line(9, 0, 3, 5)],
+  '2': [arc(9, 9, 9, 180, 395), line(16.4, 14.2, 0, 26), line(0, 26, 18, 26)],
+  '3': [line(1, 0, 17, 0), line(17, 0, 7.5, 9.1), arc(9, 17.5, 8.5, 260, 510)],
+  '4': [line(13, 26, 13, 0), line(13, 0, 0, 18), line(0, 18, 18, 18)],
+  '5': [line(17, 0, 2, 0), line(2, 0, 2, 12.6), arc(9, 17.5, 8.5, 215, 510)],
+  '6': [line(14, 0, 1.6, 13.3), arc(9, 17.5, 8.5, 0, 360)],
+  '7': [line(0, 0, 18, 0), line(18, 0, 6, 26)],
+  '8': [arc(9, 5.75, 5.75, 0, 360), arc(9, 18.75, 7.25, 0, 360)],
+  '9': [arc(9, 8.5, 8.5, 0, 360), line(16.4, 12.7, 4, 26)],
+  '+': [line(1, 15, 17, 15), line(9, 7, 9, 23)],
 };
 
 /** What the count reads as: nothing at 0, "9+" from 10, so it always fits. */
-export const countLabel = (count: number) => (count <= 0 ? "" : count > 9 ? "9+" : String(count));
+export const countLabel = (count: number) => (count <= 0 ? '' : count > 9 ? '9+' : String(count));
 
 /** A label's strokes, centered on `centerX` and sitting on `baseline`, `scale` times the 18 × 26 box. */
 export function numeral(label: string, centerX: number, baseline: number, scale: number): Stroke[] {
@@ -56,7 +56,7 @@ export function numeral(label: string, centerX: number, baseline: number, scale:
   return [...label].flatMap((char, index) => {
     const offset = index * (NUMERAL_WIDTH + gap);
     return (NUMERALS[char] ?? []).map((stroke): Stroke => {
-      if ("line" in stroke) return { line: [place(stroke.line[0], offset), place(stroke.line[1], offset)] };
+      if ('line' in stroke) return { line: [place(stroke.line[0], offset), place(stroke.line[1], offset)] };
       const { center, radius, from, to } = stroke.arc;
       return { arc: { center: place(center, offset), radius: radius * scale, from, to } };
     });
@@ -77,7 +77,7 @@ export function tunnelLayers(count: number, color: Rgb, hasUpdate: boolean): Lay
 export const dotLayers = (color: Rgb): Layer[] => [{ strokes: [point(32, 32)], width: 28, color }];
 
 function distance([x, y]: Point, stroke: Stroke): number {
-  if ("line" in stroke) {
+  if ('line' in stroke) {
     const [[ax, ay], [bx, by]] = stroke.line;
     const [dx, dy] = [bx - ax, by - ay];
     const along = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1)));
@@ -118,7 +118,7 @@ export function rasterize(layers: Layer[], size: number, margin = 0): Uint8Array
 /** A PNG of a `size`-pixel square of RGBA, which nativeImage reads at any scale factor. */
 export function encodePng(pixels: Uint8Array, size: number): Buffer {
   const chunk = (type: string, data: Buffer) => {
-    const body = Buffer.concat([Buffer.from(type, "latin1"), data]);
+    const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
     const framed = Buffer.alloc(body.length + 8);
     framed.writeUInt32BE(data.length, 0);
     body.copy(framed, 4);
@@ -133,5 +133,5 @@ export function encodePng(pixels: Uint8Array, size: number): Buffer {
   const rows = Buffer.alloc(size * (size * 4 + 1));
   for (let row = 0; row < size; row++) rows.set(pixels.subarray(row * size * 4, (row + 1) * size * 4), row * (size * 4 + 1) + 1);
   const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-  return Buffer.concat([signature, chunk("IHDR", header), chunk("IDAT", deflateSync(rows)), chunk("IEND", Buffer.alloc(0))]);
+  return Buffer.concat([signature, chunk('IHDR', header), chunk('IDAT', deflateSync(rows)), chunk('IEND', Buffer.alloc(0))]);
 }

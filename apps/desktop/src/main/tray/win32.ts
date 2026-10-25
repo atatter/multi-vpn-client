@@ -1,8 +1,8 @@
-import { nativeTheme } from "electron";
-import { countLabel, type Layer, numeral, point, tunnelLayers } from "./glyph.ts";
-import { imageOf } from "./images.ts";
-import type { TrayPlatform } from "./index.ts";
-import { countHeadline } from "./menu.ts";
+import { nativeTheme } from 'electron';
+import { countLabel, type Layer, numeral, point, tunnelLayers } from './glyph.ts';
+import { imageOf } from './images.ts';
+import type { TrayPlatform } from './index.ts';
+import { countHeadline } from './menu.ts';
 
 /**
  * Windows: the tray doesn't recolor icons, so it's drawn white or black for the taskbar's theme. The taskbar has no
@@ -12,7 +12,7 @@ export const win32Tray: TrayPlatform = {
   registerDesktopApp() {},
   icon: (count, hasUpdate) => imageOf(tunnelLayers(count, nativeTheme.shouldUseDarkColorsForSystemIntegratedUI ? [255, 255, 255] : [0, 0, 0], hasUpdate), 16),
   badge(count, window) {
-    window.setOverlayIcon(count > 0 ? imageOf(badgeLayers(count), 16) : null, count > 0 ? countHeadline(count) : "");
+    window.setOverlayIcon(count > 0 ? imageOf(badgeLayers(count), 16) : null, count > 0 ? countHeadline(count) : '');
   },
   // The taskbar drops the overlay while the window is hidden.
   windowShown(count, window) {

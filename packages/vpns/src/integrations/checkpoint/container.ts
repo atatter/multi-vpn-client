@@ -1,5 +1,5 @@
-import { install, INSTALL_SING_BOX, installScripts, TCL_MARKERS, USE_PUSHED_DNS, vpnImage } from "@repo/vpn-sdk/container";
-import { SYSCTL_SHIM } from "./sysctl-shim.ts";
+import { install, INSTALL_SING_BOX, installScripts, TCL_MARKERS, USE_PUSHED_DNS, vpnImage } from '@repo/vpn-sdk/container';
+import { SYSCTL_SHIM } from './sysctl-shim.ts';
 
 /** snx-rs: runs on a terminal under expect, which relays its prompts (see SNX_WRAPPER). */
 export const START_SNX = `#!/bin/sh
@@ -92,18 +92,18 @@ exec /usr/local/bin/mvpn-ready
  * builds link against glibc, so that container is Debian-based. Digests are the SHA-256 GitHub
  * publishes for each `snx-rs-v<version>-linux-<arch>.tar.xz` asset.
  */
-export const SNX_RS_VERSION = "6.5.1";
+export const SNX_RS_VERSION = '6.5.1';
 export const SNX_RS_TARBALLS = {
-  x86_64: "6109cb1df8e1a0277c04b55b5d74864775a81dfe85f2d97ce94ab15254bc72b4",
-  arm64: "88222f236188269963174261d11d6a94a1afe84c9b7e587faa26fa2417bfd448",
+  x86_64: '6109cb1df8e1a0277c04b55b5d74864775a81dfe85f2d97ce94ab15254bc72b4',
+  arm64: '88222f236188269963174261d11d6a94a1afe84c9b7e587faa26fa2417bfd448',
 } as const;
 
 /** Check Point through snx-rs, whose Linux builds need glibc; hence Debian, plus expect for its prompts. */
 export const CHECKPOINT_IMAGE = vpnImage(
-  "mvpn-checkpoint",
+  'mvpn-checkpoint',
   `FROM debian:trixie-slim AS shim
 RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev && rm -rf /var/lib/apt/lists/*
-RUN ${install("/tmp/shim.c", SYSCTL_SHIM)} && gcc -O2 -Wall -shared -fPIC -o /tmp/mvpn-sysctl-shim.so /tmp/shim.c -ldl
+RUN ${install('/tmp/shim.c', SYSCTL_SHIM)} && gcc -O2 -Wall -shared -fPIC -o /tmp/mvpn-sysctl-shim.so /tmp/shim.c -ldl
 
 FROM debian:trixie-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl expect iproute2 xz-utils && rm -rf /var/lib/apt/lists/*
@@ -124,9 +124,9 @@ RUN set -eu; \\
     snx-rs --version
 COPY --from=shim /tmp/mvpn-sysctl-shim.so /usr/local/lib/mvpn-sysctl-shim.so
 ${installScripts(
-  ["/usr/local/bin/mvpn-start-snx", START_SNX],
-  ["/usr/local/bin/mvpn-snx", SNX_WRAPPER],
-  ["/usr/local/bin/mvpn-snx-up", SNX_UP],
+  ['/usr/local/bin/mvpn-start-snx', START_SNX],
+  ['/usr/local/bin/mvpn-snx', SNX_WRAPPER],
+  ['/usr/local/bin/mvpn-snx-up', SNX_UP],
 )}
 `,
 );

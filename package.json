@@ -18,6 +18,7 @@
     "lint": "oxlint"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin": "5.10.0",
     "@types/node": "26.6.5",
     "oxlint": "1.89.0",
     "typescript": "7.0.2",

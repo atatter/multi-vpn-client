@@ -46,9 +46,9 @@ const WRONG_LENGTH = Uint8Array.of(0x67, 0x00);
  * Signing in uses PIN1. From OpenSC's esteid2018 and esteid2025 drivers.
  */
 export const ID_CARD_GUARDED_PINS = new Map<string, readonly number[]>([
-  ["3bdb960080b1fe451f830012233f536549440f9000f1", [0x85, 0x02]], // EstEID 2018 (IDEMIA)
-  ["3bdc960080b1fe451f830012233f54654944320f9000c3", [0x85, 0x02]], // EstEID 2018 v2 (IDEMIA, 2025)
-  ["3bff9600008031fe438031b85365494464b085051012233f1d", [0x82, 0x83]], // EstEID 2025 (Thales)
+  ['3bdb960080b1fe451f830012233f536549440f9000f1', [0x85, 0x02]], // EstEID 2018 (IDEMIA)
+  ['3bdc960080b1fe451f830012233f54654944320f9000c3', [0x85, 0x02]], // EstEID 2018 v2 (IDEMIA, 2025)
+  ['3bff9600008031fe438031b85365494464b085051012233f1d', [0x82, 0x83]], // EstEID 2025 (Thales)
 ]);
 /**
  * Instructions a VPN sign-in never needs and the bridge refuses: changing a PIN (CHANGE REFERENCE
