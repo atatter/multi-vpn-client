@@ -37,7 +37,8 @@ export function SitesEditor({
     setText(result.text);
     setProblem(result.problem);
   };
-  const update = (id: string, patch: { enabled?: boolean; pinned?: boolean }) => onChange(routes.map((route) => (route.id === id ? { ...route, ...patch } : route)));
+  const update = (id: string, patch: { enabled?: boolean; pinned?: boolean }) =>
+    onChange(routes.map((route) => (route.id === id ? { ...route, ...patch } : route)));
 
   return (
     <div className="mt-2">
@@ -69,7 +70,11 @@ export function SitesEditor({
             type="button"
             className={link}
             onClick={() => {
-              onChange([...routes.slice(0, removed.index), removed.route, ...routes.slice(removed.index)]);
+              onChange([
+                ...routes.slice(0, removed.index),
+                removed.route,
+                ...routes.slice(removed.index),
+              ]);
               setRemoved(undefined);
             }}
           >
@@ -94,7 +99,9 @@ export function SitesEditor({
           ))}
         </ul>
       )}
-      <span className="mt-1.5 block text-[12.5px] text-muted">Paste links, hosts or IP ranges. Sites include their subdomains.</span>
+      <span className="mt-1.5 block text-[12.5px] text-muted">
+        Paste links, hosts or IP ranges. Sites include their subdomains.
+      </span>
     </div>
   );
 }

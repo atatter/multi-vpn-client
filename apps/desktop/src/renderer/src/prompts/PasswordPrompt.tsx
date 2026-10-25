@@ -37,7 +37,13 @@ export function PasswordPrompt({ vpn }: { vpn: Vpn }) {
       />
       <div className="my-2.5 flex items-center justify-between gap-3">
         <span className="text-[13px] font-medium">Remember password</span>
-        <Switch label="Remember password" checked={remember} disabled={!!app.keychainProblem} title={app.keychainProblem} onChange={setRemember} />
+        <Switch
+          label="Remember password"
+          checked={remember}
+          disabled={!!app.keychainProblem}
+          title={app.keychainProblem}
+          onChange={setRemember}
+        />
       </div>
       <div className="flex items-center justify-end gap-4">
         <button type="button" className={link} onClick={app.cancelPrompt}>

@@ -6,7 +6,9 @@ import { crc32, deflateSync } from 'node:zlib';
 
 type Point = readonly [x: number, y: number];
 /** A centerline: a straight line, or a circular arc from `from` to `to` degrees, clockwise (y points down). */
-type Stroke = { line: readonly [Point, Point] } | { arc: { center: Point; radius: number; from: number; to: number } };
+type Stroke =
+  | { line: readonly [Point, Point] }
+  | { arc: { center: Point; radius: number; from: number; to: number } };
 /** Opaque strokes of one width and color; a later layer paints over an earlier one. */
 export interface Layer {
   strokes: Stroke[];
@@ -17,13 +19,30 @@ export type Rgb = readonly [r: number, g: number, b: number];
 
 const VIEW = 64;
 const TUNNEL: Stroke[] = [
-  { line: [[10, 56], [10, 32]] },
+  {
+    line: [
+      [10, 56],
+      [10, 32],
+    ],
+  },
   { arc: { center: [32, 32], radius: 22, from: 180, to: 360 } },
-  { line: [[54, 32], [54, 56]] },
+  {
+    line: [
+      [54, 32],
+      [54, 56],
+    ],
+  },
 ];
 
-const line = (x1: number, y1: number, x2: number, y2: number): Stroke => ({ line: [[x1, y1], [x2, y2]] });
-const arc = (x: number, y: number, radius: number, from: number, to: number): Stroke => ({ arc: { center: [x, y], radius, from, to } });
+const line = (x1: number, y1: number, x2: number, y2: number): Stroke => ({
+  line: [
+    [x1, y1],
+    [x2, y2],
+  ],
+});
+const arc = (x: number, y: number, radius: number, from: number, to: number): Stroke => ({
+  arc: { center: [x, y], radius, from, to },
+});
 export const point = (x: number, y: number): Stroke => line(x, y, x, y);
 
 // Numerals in an 18 × 26 box, baseline at 26: a rounded geometric face that matches the tunnel's strokes.
@@ -52,11 +71,15 @@ export function numeral(label: string, centerX: number, baseline: number, scale:
   const width = label.length * NUMERAL_WIDTH + (label.length - 1) * gap;
   const left = centerX - (width * scale) / 2;
   const top = baseline - NUMERAL_HEIGHT * scale;
-  const place = ([x, y]: Point, offset: number): Point => [left + (offset + x) * scale, top + y * scale];
+  const place = ([x, y]: Point, offset: number): Point => [
+    left + (offset + x) * scale,
+    top + y * scale,
+  ];
   return [...label].flatMap((char, index) => {
     const offset = index * (NUMERAL_WIDTH + gap);
     return (NUMERALS[char] ?? []).map((stroke): Stroke => {
-      if ('line' in stroke) return { line: [place(stroke.line[0], offset), place(stroke.line[1], offset)] };
+      if ('line' in stroke)
+        return { line: [place(stroke.line[0], offset), place(stroke.line[1], offset)] };
       const { center, radius, from, to } = stroke.arc;
       return { arc: { center: place(center, offset), radius: radius * scale, from, to } };
     });
@@ -69,8 +92,15 @@ export function numeral(label: string, centerX: number, baseline: number, scale:
  */
 export function tunnelLayers(count: number, color: Rgb, hasUpdate: boolean): Layer[] {
   const label = countLabel(count);
-  const digits = label.length > 1 ? { strokes: numeral(label, 32, 51, 0.46), width: 4 } : { strokes: numeral(label, 32, 51, 0.7), width: 5 };
-  return [{ strokes: TUNNEL, width: 7, color }, { ...digits, color }, ...(hasUpdate ? [{ strokes: [point(50, 14)], width: 24, color }] : [])];
+  const digits =
+    label.length > 1
+      ? { strokes: numeral(label, 32, 51, 0.46), width: 4 }
+      : { strokes: numeral(label, 32, 51, 0.7), width: 5 };
+  return [
+    { strokes: TUNNEL, width: 7, color },
+    { ...digits, color },
+    ...(hasUpdate ? [{ strokes: [point(50, 14)], width: 24, color }] : []),
+  ];
 }
 
 /** The menu's mark for a VPN that's on. */
@@ -80,14 +110,29 @@ function distance([x, y]: Point, stroke: Stroke): number {
   if ('line' in stroke) {
     const [[ax, ay], [bx, by]] = stroke.line;
     const [dx, dy] = [bx - ax, by - ay];
-    const along = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1)));
+    const along = Math.max(
+      0,
+      Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1)),
+    );
     return Math.hypot(x - ax - along * dx, y - ay - along * dy);
   }
-  const { center: [cx, cy], radius, from, to } = stroke.arc;
+  const {
+    center: [cx, cy],
+    radius,
+    from,
+    to,
+  } = stroke.arc;
   const angle = (Math.atan2(y - cy, x - cx) * 180) / Math.PI;
-  if ((((angle - from) % 360) + 360) % 360 <= to - from) return Math.abs(Math.hypot(x - cx, y - cy) - radius);
-  const end = (degrees: number): Point => [cx + radius * Math.cos((degrees * Math.PI) / 180), cy + radius * Math.sin((degrees * Math.PI) / 180)];
-  return Math.min(Math.hypot(x - end(from)[0], y - end(from)[1]), Math.hypot(x - end(to)[0], y - end(to)[1]));
+  if ((((angle - from) % 360) + 360) % 360 <= to - from)
+    return Math.abs(Math.hypot(x - cx, y - cy) - radius);
+  const end = (degrees: number): Point => [
+    cx + radius * Math.cos((degrees * Math.PI) / 180),
+    cy + radius * Math.sin((degrees * Math.PI) / 180),
+  ];
+  return Math.min(
+    Math.hypot(x - end(from)[0], y - end(from)[1]),
+    Math.hypot(x - end(to)[0], y - end(to)[1]),
+  );
 }
 
 const SAMPLES = 4;
@@ -103,13 +148,23 @@ export function rasterize(layers: Layer[], size: number, margin = 0): Uint8Array
     for (let column = 0; column < size; column++) {
       let [r, g, b, covered] = [0, 0, 0, 0];
       for (let sample = 0; sample < SAMPLES * SAMPLES; sample++) {
-        const point: Point = [(column + ((sample % SAMPLES) + 0.5) / SAMPLES) * unit - margin, (row + (Math.floor(sample / SAMPLES) + 0.5) / SAMPLES) * unit - margin];
-        const top = layers.findLast((layer) => layer.strokes.some((stroke) => distance(point, stroke) <= layer.width / 2));
+        const point: Point = [
+          (column + ((sample % SAMPLES) + 0.5) / SAMPLES) * unit - margin,
+          (row + (Math.floor(sample / SAMPLES) + 0.5) / SAMPLES) * unit - margin,
+        ];
+        const top = layers.findLast((layer) =>
+          layer.strokes.some((stroke) => distance(point, stroke) <= layer.width / 2),
+        );
         if (!top) continue;
         [r, g, b, covered] = [r + top.color[0], g + top.color[1], b + top.color[2], covered + 1];
       }
       if (covered === 0) continue;
-      pixels.set([r / covered, g / covered, b / covered, (255 * covered) / (SAMPLES * SAMPLES)].map(Math.round), (row * size + column) * 4);
+      pixels.set(
+        [r / covered, g / covered, b / covered, (255 * covered) / (SAMPLES * SAMPLES)].map(
+          Math.round,
+        ),
+        (row * size + column) * 4,
+      );
     }
   }
   return pixels;
@@ -131,7 +186,13 @@ export function encodePng(pixels: Uint8Array, size: number): Buffer {
   header.set([8, 6, 0, 0, 0], 8); // 8 bits per channel, RGBA, no interlacing
   // Each row starts with its filter type, 0 (none).
   const rows = Buffer.alloc(size * (size * 4 + 1));
-  for (let row = 0; row < size; row++) rows.set(pixels.subarray(row * size * 4, (row + 1) * size * 4), row * (size * 4 + 1) + 1);
+  for (let row = 0; row < size; row++)
+    rows.set(pixels.subarray(row * size * 4, (row + 1) * size * 4), row * (size * 4 + 1) + 1);
   const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-  return Buffer.concat([signature, chunk('IHDR', header), chunk('IDAT', deflateSync(rows)), chunk('IEND', Buffer.alloc(0))]);
+  return Buffer.concat([
+    signature,
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(rows)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
 }

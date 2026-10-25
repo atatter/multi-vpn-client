@@ -27,7 +27,8 @@ export function createFramer(onMessage: (message: Uint8Array) => void) {
 
 /** One message as vpcd expects it. Its 2-byte length can't describe more than 65535 bytes, so longer ones throw. */
 export function frame(message: Uint8Array): Uint8Array {
-  if (message.length > 0xffff) throw new RangeError(`A ${message.length}-byte message doesn't fit vpcd's framing.`);
+  if (message.length > 0xffff)
+    throw new RangeError(`A ${message.length}-byte message doesn't fit vpcd's framing.`);
   const framed = new Uint8Array(message.length + 2);
   framed[0] = message.length >> 8;
   framed[1] = message.length & 0xff;
@@ -73,6 +74,7 @@ export function refusal(apdu: Uint8Array, guarded: readonly number[] = []): Uint
   if (apdu.length < 4 || instruction === undefined) return WRONG_LENGTH;
   const command = instruction & 0xfe;
   if (REFUSED_INSTRUCTIONS.has(command)) return INS_NOT_SUPPORTED;
-  if (command === VERIFY && guarded.some((pin) => (pin & 0x7f) === ((reference ?? 0) & 0x7f))) return SECURITY_NOT_SATISFIED;
+  if (command === VERIFY && guarded.some((pin) => (pin & 0x7f) === ((reference ?? 0) & 0x7f)))
+    return SECURITY_NOT_SATISFIED;
   return undefined;
 }

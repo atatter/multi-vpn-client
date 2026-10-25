@@ -40,7 +40,8 @@ export function createStatusBoard(onChange: (statuses: Record<string, Connection
       const status = statuses.get(vpnId);
       if (!status) return;
       status.log.push(line);
-      if (status.log.length > MAX_LOG_LINES) status.log.splice(0, status.log.length - MAX_LOG_LINES);
+      if (status.log.length > MAX_LOG_LINES)
+        status.log.splice(0, status.log.length - MAX_LOG_LINES);
       emitSoon();
     },
   };

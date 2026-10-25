@@ -11,7 +11,10 @@ describe('localNetworks', () => {
     expect(
       localNetworks({
         lo: [iface('127.0.0.1', '127.0.0.1/8', true)],
-        'Wi-Fi': [iface('192.168.1.23', '192.168.1.23/24'), iface('fe80::1', 'fe80::1/64', false, 'IPv6')],
+        'Wi-Fi': [
+          iface('192.168.1.23', '192.168.1.23/24'),
+          iface('fe80::1', 'fe80::1/64', false, 'IPv6'),
+        ],
       }),
     ).toEqual([{ cidr: '192.168.1.0/24', label: 'Local network (Wi-Fi)', local: true }]);
   });
@@ -40,6 +43,11 @@ describe('gatewayAddresses', () => {
   it('keeps at most a few addresses per host, whatever the local DNS answers', async () => {
     const resolve = async () => Array.from({ length: 40 }, (_, i) => `10.20.0.${i}`);
     const { reserved } = await gatewayAddresses([vpns[0]!], resolve);
-    expect(reserved.map((range) => range.cidr)).toEqual(['10.20.0.0/32', '10.20.0.1/32', '10.20.0.2/32', '10.20.0.3/32']);
+    expect(reserved.map((range) => range.cidr)).toEqual([
+      '10.20.0.0/32',
+      '10.20.0.1/32',
+      '10.20.0.2/32',
+      '10.20.0.3/32',
+    ]);
   });
 });

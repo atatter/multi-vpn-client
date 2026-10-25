@@ -12,18 +12,44 @@ export function SetupCard() {
   const helperReady = helperState === 'ready';
   if ((dockerReady || !app.docker) && (helperReady || !helperState)) return null;
 
-  const step = (done: boolean, busy: boolean, title: string, body: string, action: string | undefined, error: string | undefined, run: () => void) => (
+  const step = (
+    done: boolean,
+    busy: boolean,
+    title: string,
+    body: string,
+    action: string | undefined,
+    error: string | undefined,
+    run: () => void,
+  ) => (
     <div className="grid grid-cols-[20px_1fr_auto] items-center gap-2 border-t border-sodium/20 px-3 py-2 text-[13.5px]">
-      <span className={cx('grid size-[18px] place-items-center rounded-full border-[1.5px]', done ? 'border-go-track bg-go-track text-white' : 'border-off')}>
-        {done ? '✓' : busy ? <span className="size-3 animate-spin rounded-full border-2 border-rule-strong border-t-sodium" /> : null}
+      <span
+        className={cx(
+          'grid size-[18px] place-items-center rounded-full border-[1.5px]',
+          done ? 'border-go-track bg-go-track text-white' : 'border-off',
+        )}
+      >
+        {done ? (
+          '✓'
+        ) : busy ? (
+          <span className="size-3 animate-spin rounded-full border-2 border-rule-strong border-t-sodium" />
+        ) : null}
       </span>
       <span className="min-w-0">
         <span className="font-semibold">{title}</span>
         <span className="block text-[12.5px] text-muted">{body}</span>
-        {error && <span className="block text-[12.5px] whitespace-pre-wrap text-danger select-text">{error}</span>}
+        {error && (
+          <span className="block text-[12.5px] whitespace-pre-wrap text-danger select-text">
+            {error}
+          </span>
+        )}
       </span>
       {!done && action && (
-        <button type="button" className={cx(primary, 'px-3 py-[5px] text-[13px]')} disabled={busy} onClick={run}>
+        <button
+          type="button"
+          className={cx(primary, 'px-3 py-[5px] text-[13px]')}
+          disabled={busy}
+          onClick={run}
+        >
           {busy ? 'Waiting…' : action}
         </button>
       )}
@@ -32,11 +58,44 @@ export function SetupCard() {
 
   const problems = setupProblems(app.docker, helperState);
   return (
-    <section aria-label="Finish setting up" className="mx-[var(--in)] mt-3 rounded-[10px] border border-sodium/35 bg-[color-mix(in_srgb,var(--sodium)_7%,var(--field))]">
-      <h2 className="px-3 pt-2.5 pb-0.5 text-sm font-semibold">Two things before the first connection</h2>
-      <p className="px-3 pb-1.5 text-[13px] text-muted">You can add VPNs now. They connect as soon as these are done.</p>
-      {app.docker && step(dockerReady, app.dockerStart.starting, 'Docker', dockerReady ? 'Running' : app.dockerStart.starting ? SETUP_BUSY.docker : (problems.docker?.card ?? ''), problems.docker?.action?.button, app.dockerStart.error, () => void app.startDocker())}
-      {helperState && step(helperReady, helper.busy, 'Network helper', helperReady ? 'Installed' : helper.busy ? SETUP_BUSY.helper : (problems.helper?.card ?? ''), problems.helper?.action?.button, helper.error, helper.go)}
+    <section
+      aria-label="Finish setting up"
+      className="mx-[var(--in)] mt-3 rounded-[10px] border border-sodium/35 bg-[color-mix(in_srgb,var(--sodium)_7%,var(--field))]"
+    >
+      <h2 className="px-3 pt-2.5 pb-0.5 text-sm font-semibold">
+        Two things before the first connection
+      </h2>
+      <p className="px-3 pb-1.5 text-[13px] text-muted">
+        You can add VPNs now. They connect as soon as these are done.
+      </p>
+      {app.docker &&
+        step(
+          dockerReady,
+          app.dockerStart.starting,
+          'Docker',
+          dockerReady
+            ? 'Running'
+            : app.dockerStart.starting
+              ? SETUP_BUSY.docker
+              : (problems.docker?.card ?? ''),
+          problems.docker?.action?.button,
+          app.dockerStart.error,
+          () => void app.startDocker(),
+        )}
+      {helperState &&
+        step(
+          helperReady,
+          helper.busy,
+          'Network helper',
+          helperReady
+            ? 'Installed'
+            : helper.busy
+              ? SETUP_BUSY.helper
+              : (problems.helper?.card ?? ''),
+          problems.helper?.action?.button,
+          helper.error,
+          helper.go,
+        )}
     </section>
   );
 }

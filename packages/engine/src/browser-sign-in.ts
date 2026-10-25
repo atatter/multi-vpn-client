@@ -36,12 +36,20 @@ export function receiveBrowserToken(port: number, timeoutMs: number): TokenWait 
   const server = createServer((request, response) => {
     // Like the client's own listener: the raw path is the token, and the first request with one counts, preflight or not.
     const candidate = ((request.url ?? '/').split('?')[0] ?? '').replace(/^\/+/, '');
-    const valid = (request.method === 'GET' || request.method === 'OPTIONS') && TOKEN.test(candidate);
+    const valid =
+      (request.method === 'GET' || request.method === 'OPTIONS') && TOKEN.test(candidate);
     response.writeHead(valid ? 200 : 400, CORS_HEADERS).end();
     if (valid) finish(() => settle?.resolve(candidate));
   });
   const timer = setTimeout(
-    () => finish(() => settle?.reject(new Error(`The browser sign-in didn't finish within ${Math.round(timeoutMs / 1000)} seconds. Connect again to retry.`))),
+    () =>
+      finish(() =>
+        settle?.reject(
+          new Error(
+            `The browser sign-in didn't finish within ${Math.round(timeoutMs / 1000)} seconds. Connect again to retry.`,
+          ),
+        ),
+      ),
     timeoutMs,
   );
   const finish = (done: () => void) => {
@@ -55,7 +63,9 @@ export function receiveBrowserToken(port: number, timeoutMs: number): TokenWait 
     finish(() =>
       settle?.reject(
         error.code === 'EADDRINUSE'
-          ? new Error(`Port ${port} is in use, so the browser sign-in can't finish. Quit other VPN apps that may be using it and try again.`)
+          ? new Error(
+              `Port ${port} is in use, so the browser sign-in can't finish. Quit other VPN apps that may be using it and try again.`,
+            )
           : error,
       ),
     ),

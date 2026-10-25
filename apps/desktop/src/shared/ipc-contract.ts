@@ -1,4 +1,14 @@
-import type { Config, ConnectionStatus, ConnectResult, Detection, DockerState, HelperState, SecretChanges, SecretStatus, TrafficSnapshot } from '@repo/core';
+import type {
+  Config,
+  ConnectionStatus,
+  ConnectResult,
+  Detection,
+  DockerState,
+  HelperState,
+  SecretChanges,
+  SecretStatus,
+  TrafficSnapshot,
+} from '@repo/core';
 
 /**
  * Single source of truth for main ⇄ renderer IPC. Main registers handlers and
@@ -10,7 +20,10 @@ export interface IpcContract {
   /** Works out a VPN's type from its address (what the user would type into the vendor's app). */
   'vpn:detect': { args: [address: string]; result: Detection };
   /** Which connected VPN carries traffic to a site right now; `site` is what was understood from the text. */
-  'route:check': { args: [text: string]; result: { site: string; vpnId: string | null } | { site: null } };
+  'route:check': {
+    args: [text: string];
+    result: { site: string; vpnId: string | null } | { site: null };
+  };
   'docker:state': { args: []; result: DockerState };
   'docker:start': { args: []; result: HelperActionResult };
   /** `password` is a one-off login password when it isn't remembered; null otherwise. */

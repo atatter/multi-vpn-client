@@ -19,7 +19,9 @@ export function Switch({
   tone?: 'go' | 'busy' | 'error' | 'standby';
   title?: string | undefined;
 }) {
-  const on = { go: 'bg-go-track', busy: 'bg-sodium', error: 'bg-danger', standby: 'bg-standby' }[tone];
+  const on = { go: 'bg-go-track', busy: 'bg-sodium', error: 'bg-danger', standby: 'bg-standby' }[
+    tone
+  ];
   return (
     <button
       type="button"

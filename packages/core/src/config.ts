@@ -19,13 +19,17 @@ import { Vpn, vpnHosts } from '@repo/vpns';
 export function keepServerRoutes(previous: readonly Vpn[], next: readonly Vpn[]): Vpn[] {
   return next.map((vpn) => {
     const before = previous.find((candidate) => candidate.id === vpn.id);
-    const sameServer = before !== undefined && before.kind === vpn.kind && vpnHosts(before).join() === vpnHosts(vpn).join();
+    const sameServer =
+      before !== undefined &&
+      before.kind === vpn.kind &&
+      vpnHosts(before).join() === vpnHosts(vpn).join();
     return { ...vpn, serverRoutes: sameServer ? before.serverRoutes : null };
   });
 }
 
 /** Carries all traffic: set to, or its server sends everything (known after the first connect). */
-export const isBroad = (vpn: Pick<Vpn, 'traffic' | 'serverRoutes'>) => vpn.traffic === 'all' || (vpn.traffic === 'official' && vpn.serverRoutes?.all === true);
+export const isBroad = (vpn: Pick<Vpn, 'traffic' | 'serverRoutes'>) =>
+  vpn.traffic === 'all' || (vpn.traffic === 'official' && vpn.serverRoutes?.all === true);
 
 // --- Routes & config -------------------------------------------------------
 
@@ -51,7 +55,9 @@ export function normalizeDomain(input: string): string {
 export function parseSite(text: string): { site: string; isAddress: boolean } | undefined {
   const site = normalizeDomain(text);
   if (isIpv4(site)) return { site, isAddress: true };
-  return site.includes('.') && Domain.safeParse(site).success ? { site, isAddress: false } : undefined;
+  return site.includes('.') && Domain.safeParse(site).success
+    ? { site, isAddress: false }
+    : undefined;
 }
 
 /** A route domain, stored normalized. Routing a domain always includes its subdomains. */
@@ -73,20 +79,36 @@ const DomainRule = z.object({ ...routeFields, kind: z.literal('domain'), domain:
 
 /** Routes saved before domain routes existed have no `kind`; they're CIDR routes. */
 const withKind = (value: unknown) =>
-  typeof value === 'object' && value !== null && !('kind' in value) ? { ...value, kind: 'cidr' } : value;
+  typeof value === 'object' && value !== null && !('kind' in value)
+    ? { ...value, kind: 'cidr' }
+    : value;
 
-export const RouteRule = z.preprocess(withKind, z.discriminatedUnion('kind', [CidrRule, DomainRule]));
+export const RouteRule = z.preprocess(
+  withKind,
+  z.discriminatedUnion('kind', [CidrRule, DomainRule]),
+);
 export type RouteRule = z.infer<typeof RouteRule>;
 
-export const newRoute = (cidr: string, vpnId: string): RouteRule => ({ id: crypto.randomUUID(), kind: 'cidr', cidr, vpnId, enabled: true, note: '', pinned: false });
+export const newRoute = (cidr: string, vpnId: string): RouteRule => ({
+  id: crypto.randomUUID(),
+  kind: 'cidr',
+  cidr,
+  vpnId,
+  enabled: true,
+  note: '',
+  pinned: false,
+});
 
 /** What the route points at, as shown in its input field. */
-export const routeTarget = (route: RouteRule) => (route.kind === 'cidr' ? route.cidr : route.domain);
+export const routeTarget = (route: RouteRule) =>
+  route.kind === 'cidr' ? route.cidr : route.domain;
 
 /** Sets a route's destination from typed text: digits, dots and slashes make an IP range, anything else a domain. */
 export function retarget(route: RouteRule, text: string): RouteRule {
   const { id, vpnId, enabled, note, pinned } = route;
-  return /^[\d./\s]*$/.test(text) ? { id, vpnId, enabled, note, pinned, kind: 'cidr', cidr: text } : { id, vpnId, enabled, note, pinned, kind: 'domain', domain: text };
+  return /^[\d./\s]*$/.test(text)
+    ? { id, vpnId, enabled, note, pinned, kind: 'cidr', cidr: text }
+    : { id, vpnId, enabled, note, pinned, kind: 'domain', domain: text };
 }
 
 export const Config = z
@@ -104,16 +126,30 @@ export const Config = z
   .superRefine((config, ctx) => {
     const vpnIds = new Set<string>();
     config.vpns.forEach((vpn, index) => {
-      if (vpnIds.has(vpn.id)) ctx.addIssue({ code: 'custom', message: `Duplicate VPN id "${vpn.id}"`, path: ['vpns', index, 'id'] });
+      if (vpnIds.has(vpn.id))
+        ctx.addIssue({
+          code: 'custom',
+          message: `Duplicate VPN id "${vpn.id}"`,
+          path: ['vpns', index, 'id'],
+        });
       vpnIds.add(vpn.id);
     });
 
     const routeIds = new Set<string>();
     config.routes.forEach((route, index) => {
-      if (routeIds.has(route.id)) ctx.addIssue({ code: 'custom', message: `Duplicate route id "${route.id}"`, path: ['routes', index, 'id'] });
+      if (routeIds.has(route.id))
+        ctx.addIssue({
+          code: 'custom',
+          message: `Duplicate route id "${route.id}"`,
+          path: ['routes', index, 'id'],
+        });
       routeIds.add(route.id);
       if (!vpnIds.has(route.vpnId)) {
-        ctx.addIssue({ code: 'custom', message: `Route points at unknown VPN "${route.vpnId}"`, path: ['routes', index, 'vpnId'] });
+        ctx.addIssue({
+          code: 'custom',
+          message: `Route points at unknown VPN "${route.vpnId}"`,
+          path: ['routes', index, 'vpnId'],
+        });
       }
     });
   })
@@ -140,8 +176,15 @@ export function rankVpns(config: Pick<Config, 'vpns' | 'priority'>): Vpn[] {
 }
 
 /** The priority with `id` moved directly above or below `target`. */
-export function placeVpn(config: Pick<Config, 'vpns' | 'priority'>, id: string, target: string, where: 'above' | 'below'): string[] {
-  const ids = rankVpns(config).map((vpn) => vpn.id).filter((other) => other !== id);
+export function placeVpn(
+  config: Pick<Config, 'vpns' | 'priority'>,
+  id: string,
+  target: string,
+  where: 'above' | 'below',
+): string[] {
+  const ids = rankVpns(config)
+    .map((vpn) => vpn.id)
+    .filter((other) => other !== id);
   const at = ids.indexOf(target);
   if (at < 0) return config.priority;
   ids.splice(where === 'above' ? at : at + 1, 0, id);
@@ -152,6 +195,8 @@ export function placeVpn(config: Pick<Config, 'vpns' | 'priority'>, id: string, 
 export function settleVpn(config: Pick<Config, 'vpns' | 'priority'>, id: string): string[] {
   const vpn = config.vpns.find((candidate) => candidate.id === id);
   if (!vpn) return config.priority;
-  const ids = rankVpns(config).map((other) => other.id).filter((other) => other !== id);
+  const ids = rankVpns(config)
+    .map((other) => other.id)
+    .filter((other) => other !== id);
   return isBroad(vpn) ? [...ids, id] : [id, ...ids];
 }

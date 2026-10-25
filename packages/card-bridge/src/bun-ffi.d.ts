@@ -9,5 +9,8 @@ declare module 'bun:ffi' {
   export function dlopen<Symbols extends Record<string, Signature>>(
     path: string,
     symbols: Symbols,
-  ): { symbols: { [Name in keyof Symbols]: (...args: NativeArgument[]) => number | bigint }; close(): void };
+  ): {
+    symbols: { [Name in keyof Symbols]: (...args: NativeArgument[]) => number | bigint };
+    close(): void;
+  };
 }

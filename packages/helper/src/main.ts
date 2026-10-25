@@ -1,9 +1,24 @@
-import { Hex64, HELPER_PORT, HELPER_VERSION, HELPER_WORK_DIR, HOST_DNS_PORT, LINUX_DNS_ADDRESS, NO_ROUTES, TUN_DNS_ADDRESS, type HostOs } from '@repo/core';
+import {
+  Hex64,
+  HELPER_PORT,
+  HELPER_VERSION,
+  HELPER_WORK_DIR,
+  HOST_DNS_PORT,
+  LINUX_DNS_ADDRESS,
+  NO_ROUTES,
+  TUN_DNS_ADDRESS,
+  type HostOs,
+} from '@repo/core';
 import { appendFileSync, statSync, truncateSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { z } from 'zod';
-import { createNrptDns, createResolvedDns, createResolverDns, type DnsAdapter } from './dns/index.ts';
+import {
+  createNrptDns,
+  createResolvedDns,
+  createResolverDns,
+  type DnsAdapter,
+} from './dns/index.ts';
 import { createSingBoxBackend, stopLeftover } from './engine.ts';
 import { psQuote, runPowerShell } from './powershell.ts';
 import { createHelperServer } from './server.ts';
@@ -52,7 +67,12 @@ function platform(): Platform {
         workDir: HELPER_WORK_DIR,
         singBoxPath: join(installDir, 'sing-box'),
         dns: createResolverDns({ server: TUN_DNS_ADDRESS }),
-        cleanUp: () => stopLeftover({ singBoxPath: join(installDir, 'sing-box'), workDir: HELPER_WORK_DIR, log }),
+        cleanUp: () =>
+          stopLeftover({
+            singBoxPath: join(installDir, 'sing-box'),
+            workDir: HELPER_WORK_DIR,
+            log,
+          }),
       };
     case 'linux': {
       // systemd hands the settings over as a credential (LoadCredential=) and owns the runtime directory.
@@ -64,7 +84,8 @@ function platform(): Platform {
         workDir: runtime,
         singBoxPath: join(installDir, 'sing-box'),
         dns: createResolvedDns({ address: LINUX_DNS_ADDRESS, port: HOST_DNS_PORT }),
-        cleanUp: () => stopLeftover({ singBoxPath: join(installDir, 'sing-box'), workDir: runtime, log }),
+        cleanUp: () =>
+          stopLeftover({ singBoxPath: join(installDir, 'sing-box'), workDir: runtime, log }),
       };
     }
     case 'win32': {
@@ -94,7 +115,9 @@ async function serve() {
   const { os, configPath, workDir, singBoxPath, dns, cleanUp } = platform();
   const config = HelperConfig.parse(JSON.parse(await readFile(configPath, 'utf8')));
   // Leftovers from a crash or power loss. Best effort: a stray process shouldn't keep the helper down.
-  await cleanUp?.().catch((error: unknown) => log(`cleanup: ${error instanceof Error ? error.message : String(error)}`));
+  await cleanUp?.().catch((error: unknown) =>
+    log(`cleanup: ${error instanceof Error ? error.message : String(error)}`),
+  );
   await dns.clear();
 
   let endSession = () => {};

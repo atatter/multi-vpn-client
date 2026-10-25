@@ -8,9 +8,6 @@
     "react",
     "vitest"
   ],
-  "jsPlugins": [
-    "@stylistic/eslint-plugin"
-  ],
   "categories": {
     "correctness": "error"
   },
@@ -48,15 +45,7 @@
     ],
     "vitest/no-focused-tests": "error",
     "vitest/no-disabled-tests": "error",
-    "react/rules-of-hooks": "error",
-    "@stylistic/quotes": [
-      "error",
-      "single",
-      {
-        "avoidEscape": true,
-        "allowTemplateLiterals": "always"
-      }
-    ]
+    "react/rules-of-hooks": "error"
   },
   "overrides": [
     {

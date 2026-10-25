@@ -6,8 +6,13 @@ import { readFileSync } from 'node:fs';
  * Never an older one: the app may have updated itself past this launcher, which can be pinned, cached by npx or offline.
  */
 export function versionToStart(own: string, installed: string[]) {
-  const newest = installed.reduce<string | undefined>((best, version) => (!best || compareVersions(version, best) > 0 ? version : best), undefined);
-  return newest && compareVersions(newest, own) >= 0 ? { version: newest, download: false } : { version: own, download: true };
+  const newest = installed.reduce<string | undefined>(
+    (best, version) => (!best || compareVersions(version, best) > 0 ? version : best),
+    undefined,
+  );
+  return newest && compareVersions(newest, own) >= 0
+    ? { version: newest, download: false }
+    : { version: own, download: true };
 }
 
 /** Reads a small system file, or undefined where it doesn't exist. */

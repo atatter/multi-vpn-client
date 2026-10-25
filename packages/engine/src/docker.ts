@@ -20,16 +20,35 @@ const START_TIMEOUT_MS = 120_000;
 function knownLocations(platform = process.platform, env = process.env): string[] {
   if (platform === 'win32') {
     return [
-      join(env.ProgramFiles ?? 'C:\\Program Files', 'Docker', 'Docker', 'resources', 'bin', 'docker.exe'),
-      ...(env.LOCALAPPDATA ? [join(env.LOCALAPPDATA, 'Programs', 'DockerDesktop', 'resources', 'bin', 'docker.exe')] : []),
+      join(
+        env.ProgramFiles ?? 'C:\\Program Files',
+        'Docker',
+        'Docker',
+        'resources',
+        'bin',
+        'docker.exe',
+      ),
+      ...(env.LOCALAPPDATA
+        ? [join(env.LOCALAPPDATA, 'Programs', 'DockerDesktop', 'resources', 'bin', 'docker.exe')]
+        : []),
     ];
   }
-  return ['/usr/local/bin/docker', '/opt/homebrew/bin/docker', '/Applications/Docker.app/Contents/Resources/bin/docker'];
+  return [
+    '/usr/local/bin/docker',
+    '/opt/homebrew/bin/docker',
+    '/Applications/Docker.app/Contents/Resources/bin/docker',
+  ];
 }
 
 export async function findDocker(path = process.env.PATH ?? ''): Promise<string> {
   const name = process.platform === 'win32' ? 'docker.exe' : 'docker';
-  const candidates = [...path.split(delimiter).filter(Boolean).map((dir) => join(dir, name)), ...knownLocations()];
+  const candidates = [
+    ...path
+      .split(delimiter)
+      .filter(Boolean)
+      .map((dir) => join(dir, name)),
+    ...knownLocations(),
+  ];
   for (const candidate of candidates) {
     try {
       await access(candidate, constants.X_OK);
@@ -38,7 +57,9 @@ export async function findDocker(path = process.env.PATH ?? ''): Promise<string>
       // try the next one
     }
   }
-  throw new Error("Docker isn't installed (no docker command found). Install Docker Desktop and try again.");
+  throw new Error(
+    "Docker isn't installed (no docker command found). Install Docker Desktop and try again.",
+  );
 }
 
 export type Docker = ReturnType<typeof createDocker>;
@@ -51,10 +72,17 @@ export function createDocker(bin: string) {
 
     /** Throws a readable error when the daemon isn't reachable (e.g. Docker Desktop not started). */
     async assertRunning() {
-      const result = await run(bin, ['info', '--format', '{{.ServerVersion}}'], undefined, INFO_TIMEOUT_MS);
+      const result = await run(
+        bin,
+        ['info', '--format', '{{.ServerVersion}}'],
+        undefined,
+        INFO_TIMEOUT_MS,
+      );
       if (result.code !== 0) {
         const reason = result.stderr.trim().split('\n').at(-1) ?? '';
-        throw new Error(`Docker isn't reachable. Start Docker Desktop and try again.${reason ? `\n${reason}` : ''}`);
+        throw new Error(
+          `Docker isn't reachable. Start Docker Desktop and try again.${reason ? `\n${reason}` : ''}`,
+        );
       }
     },
   };
@@ -64,10 +92,12 @@ export function createDocker(bin: string) {
 export async function dockerState(): Promise<DockerState> {
   const bin = await findDocker().catch(() => undefined);
   if (!bin) return 'missing';
-  return createDocker(bin).assertRunning().then(
-    () => 'running',
-    () => 'stopped',
-  );
+  return createDocker(bin)
+    .assertRunning()
+    .then(
+      () => 'running',
+      () => 'stopped',
+    );
 }
 
 /**
@@ -78,7 +108,10 @@ export async function startDocker(): Promise<void> {
   await launchDocker();
   const deadline = Date.now() + START_TIMEOUT_MS;
   while ((await dockerState()) !== 'running') {
-    if (Date.now() > deadline) throw new Error(`Docker didn't start within ${START_TIMEOUT_MS / 60_000} minutes. Open Docker Desktop to see why.`);
+    if (Date.now() > deadline)
+      throw new Error(
+        `Docker didn't start within ${START_TIMEOUT_MS / 60_000} minutes. Open Docker Desktop to see why.`,
+      );
     await sleep(1000);
   }
 }
@@ -97,10 +130,22 @@ async function launchDocker(): Promise<void> {
   if (process.platform === 'darwin') {
     // `open` returns once the app is launched, and fails when there's no Docker Desktop (Colima, OrbStack).
     const opened = await run('open', ['-a', 'Docker']);
-    if (opened.code !== 0) throw new Error("Docker Desktop isn't installed, so the app can't start Docker. Start the Docker you use, such as Colima or OrbStack.");
+    if (opened.code !== 0)
+      throw new Error(
+        "Docker Desktop isn't installed, so the app can't start Docker. Start the Docker you use, such as Colima or OrbStack.",
+      );
     return;
   }
-  if (process.platform === 'win32') return launch(join(process.env.ProgramFiles ?? 'C:\\Program Files', 'Docker', 'Docker', 'Docker Desktop.exe'), []);
+  if (process.platform === 'win32')
+    return launch(
+      join(
+        process.env.ProgramFiles ?? 'C:\\Program Files',
+        'Docker',
+        'Docker',
+        'Docker Desktop.exe',
+      ),
+      [],
+    );
   // Docker Desktop for Linux is a user service; Docker Engine needs root, which the app doesn't have.
   const started = await new Promise<boolean>((resolve) => {
     const child = spawn('systemctl', ['--user', 'start', 'docker-desktop'], { stdio: 'ignore' });

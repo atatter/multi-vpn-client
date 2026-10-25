@@ -11,12 +11,13 @@ export type Range = readonly [first: number, last: number];
 
 const OCTET = /^(0|[1-9]\d{0,2})$/;
 
-export type ParsedCidr =
-  | { ok: true; cidr: string; range: Range }
-  | { ok: false; error: string };
+export type ParsedCidr = { ok: true; cidr: string; range: Range } | { ok: false; error: string };
 
 /** Strictly splits "a.b.c.d/len" (len 0–32, plain digits). A bare address only when `bareMeans32`. */
-function splitCidr(input: string, bareMeans32: boolean): { address: number; prefix: number } | undefined {
+function splitCidr(
+  input: string,
+  bareMeans32: boolean,
+): { address: number; prefix: number } | undefined {
   const [address, length, ...rest] = input.trim().split('/');
   const value = address === undefined ? undefined : parseIpv4(address);
   if (value === undefined || rest.length > 0) return undefined;
@@ -25,7 +26,8 @@ function splitCidr(input: string, bareMeans32: boolean): { address: number; pref
   return { address: value, prefix: Number(length) };
 }
 
-const networkAddress = (address: number, prefix: number) => address - (address % 2 ** (32 - prefix));
+const networkAddress = (address: number, prefix: number) =>
+  address - (address % 2 ** (32 - prefix));
 
 /** Parses "a.b.c.d/len" (or a bare address, meaning /32) and rejects host bits. */
 export function parseCidr(input: string): ParsedCidr {
@@ -105,7 +107,8 @@ export function rangesToCidrs(ranges: readonly Range[]): string[] {
     while (cursor <= last) {
       // Largest block that is aligned at `cursor` and still fits before `last`.
       let bits = 0;
-      while (bits < 32 && cursor % 2 ** (bits + 1) === 0 && cursor + 2 ** (bits + 1) - 1 <= last) bits++;
+      while (bits < 32 && cursor % 2 ** (bits + 1) === 0 && cursor + 2 ** (bits + 1) - 1 <= last)
+        bits++;
       cidrs.push(`${formatIpv4(cursor)}/${32 - bits}`);
       cursor += 2 ** bits;
     }

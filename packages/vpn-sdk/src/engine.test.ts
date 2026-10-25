@@ -5,7 +5,10 @@ import { implement } from './engine.ts';
 const context = { runInImage: async () => ({ code: 0, stdout: '', stderr: '' }) };
 
 describe('implement', () => {
-  const actions = implement({ double: { input: z.number(), output: z.number() } }, { double: async (value) => value * 2 });
+  const actions = implement(
+    { double: { input: z.number(), output: z.number() } },
+    { double: async (value) => value * 2 },
+  );
 
   it('runs an action with its parsed input', async () => {
     expect(await actions.double?.(2, context)).toBe(4);

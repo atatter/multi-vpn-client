@@ -1,4 +1,11 @@
-import { install, INSTALL_SING_BOX, installScripts, TCL_MARKERS, USE_PUSHED_DNS, vpnImage } from '@repo/vpn-sdk/container';
+import {
+  install,
+  INSTALL_SING_BOX,
+  installScripts,
+  TCL_MARKERS,
+  USE_PUSHED_DNS,
+  vpnImage,
+} from '@repo/vpn-sdk/container';
 import { SYSCTL_SHIM } from './sysctl-shim.ts';
 
 /** snx-rs: runs on a terminal under expect, which relays its prompts (see SNX_WRAPPER). */

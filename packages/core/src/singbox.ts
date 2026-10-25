@@ -65,15 +65,20 @@ export type HostOs = 'darwin' | 'linux' | 'win32';
 
 /** VPN DNS domains that resolve through a tunnel: only VPNs that have a DNS server route their domains. */
 export const routedDnsDomains = (tunnels: readonly VpnTunnel[]) => [
-  ...new Set(tunnels.flatMap((tunnel) => (tunnel.dns.servers.length > 0 ? tunnel.dns.domains : []))),
+  ...new Set(
+    tunnels.flatMap((tunnel) => (tunnel.dns.servers.length > 0 ? tunnel.dns.domains : [])),
+  ),
 ];
 
 /** Every domain whose lookups must reach the host sing-box: domain routes plus VPN DNS domains. */
-export const resolverDomains = ({ tunnels, domains }: Pick<HostRoutes, 'tunnels' | 'domains'>) => [...new Set([...domains.map((route) => route.domain), ...routedDnsDomains(tunnels)])];
+export const resolverDomains = ({ tunnels, domains }: Pick<HostRoutes, 'tunnels' | 'domains'>) => [
+  ...new Set([...domains.map((route) => route.domain), ...routedDnsDomains(tunnels)]),
+];
 
 /** A VPN's outbound tag in the routing engine, and back: live traffic tells VPNs apart by it. */
 const outboundTag = (vpnId: string) => `vpn-${vpnId}`;
-export const vpnOfOutbound = (tag: string) => (tag.startsWith(outboundTag('')) ? tag.slice(outboundTag('').length) : undefined);
+export const vpnOfOutbound = (tag: string) =>
+  tag.startsWith(outboundTag('')) ? tag.slice(outboundTag('').length) : undefined;
 const dnsTag = (vpnId: string) => `dns-${vpnId}`;
 
 /**
@@ -81,10 +86,15 @@ const dnsTag = (vpnId: string) => `dns-${vpnId}`;
  * already cached keep working across reloads and restarts. `localIpv6`: the machine's own IPv6 subnets,
  * which stay reachable while IPv6 is blocked.
  */
-export function hostSingBoxConfig(routes: HostRoutes, { os, cachePath, localIpv6 }: { os: HostOs; cachePath: string; localIpv6: readonly string[] }) {
+export function hostSingBoxConfig(
+  routes: HostRoutes,
+  { os, cachePath, localIpv6 }: { os: HostOs; cachePath: string; localIpv6: readonly string[] },
+) {
   const { tunnels, domains, blockIpv6 } = routes;
   const routed = tunnels.filter((tunnel) => tunnel.cidrs.length > 0);
-  const withDns = tunnels.filter((tunnel) => tunnel.dns.servers.length > 0 && tunnel.dns.domains.length > 0);
+  const withDns = tunnels.filter(
+    (tunnel) => tunnel.dns.servers.length > 0 && tunnel.dns.domains.length > 0,
+  );
   const routedNames = domains.map((route) => route.domain);
   const needsDns = resolverDomains(routes).length > 0;
   const dnsInTun = os !== 'linux' && needsDns;
@@ -101,8 +111,15 @@ export function hostSingBoxConfig(routes: HostRoutes, { os, cachePath, localIpv6
     dns: {
       servers: [
         { type: 'local', tag: 'local' },
-        ...(domains.length > 0 ? [{ type: 'fakeip', tag: 'fakeip', inet4_range: FAKEIP_RANGE }] : []),
-        ...withDns.map((tunnel) => ({ type: 'tcp', tag: dnsTag(tunnel.vpnId), server: tunnel.dns.servers[0], detour: outboundTag(tunnel.vpnId) })),
+        ...(domains.length > 0
+          ? [{ type: 'fakeip', tag: 'fakeip', inet4_range: FAKEIP_RANGE }]
+          : []),
+        ...withDns.map((tunnel) => ({
+          type: 'tcp',
+          tag: dnsTag(tunnel.vpnId),
+          server: tunnel.dns.servers[0],
+          detour: outboundTag(tunnel.vpnId),
+        })),
       ],
       rules: [
         // Routed domains first: placeholders for IPv4, empty answers for everything else (no IPv6 placeholders).
@@ -113,8 +130,21 @@ export function hostSingBoxConfig(routes: HostRoutes, { os, cachePath, localIpv6
             ]
           : []),
         // No VPN carries IPv6, so a VPN's own names get no IPv6 addresses: the machine would reach them outside it.
-        ...(vpnDnsDomains.length > 0 ? [{ domain_suffix: vpnDnsDomains, query_type: ['AAAA'], action: 'predefined', rcode: 'NOERROR' }] : []),
-        ...withDns.map((tunnel) => ({ domain_suffix: tunnel.dns.domains, action: 'route', server: dnsTag(tunnel.vpnId) })),
+        ...(vpnDnsDomains.length > 0
+          ? [
+              {
+                domain_suffix: vpnDnsDomains,
+                query_type: ['AAAA'],
+                action: 'predefined',
+                rcode: 'NOERROR',
+              },
+            ]
+          : []),
+        ...withDns.map((tunnel) => ({
+          domain_suffix: tunnel.dns.domains,
+          action: 'route',
+          server: dnsTag(tunnel.vpnId),
+        })),
       ],
       final: 'local',
     },
@@ -126,7 +156,9 @@ export function hostSingBoxConfig(routes: HostRoutes, { os, cachePath, localIpv6
               type: 'tun',
               tag: 'tun-in',
               ...(os === 'darwin' ? {} : { interface_name: TUN_NAME[os] }),
-              ...(os === 'linux' ? { iproute2_table_index: LINUX_ROUTE_TABLE, iproute2_rule_index: LINUX_RULE_INDEX } : {}),
+              ...(os === 'linux'
+                ? { iproute2_table_index: LINUX_ROUTE_TABLE, iproute2_rule_index: LINUX_RULE_INDEX }
+                : {}),
               address: [TUN_ADDRESS, ...(blockIpv6 ? [TUN_ADDRESS_IPV6] : [])],
               // Userspace TCP/IP: the default hands TCP back to the kernel as incoming traffic on the
               // TUN, which host firewalls (ufw, firewalld, Windows Firewall) drop.
@@ -162,11 +194,28 @@ export function hostSingBoxConfig(routes: HostRoutes, { os, cachePath, localIpv6
         // Refused at once (a TCP reset, "unreachable" for UDP), so apps fall back to IPv4 without waiting. no_drop
         // keeps it that way: by default sing-box starts silently dropping after 50 refusals in 30 seconds.
         ...(blockIpv6 ? [{ ip_version: 6, action: 'reject', no_drop: true }] : []),
-        ...(dnsInTun ? [{ inbound: 'tun-in', ip_cidr: [`${TUN_DNS_ADDRESS}/32`], port: 53, action: 'hijack-dns' }] : []),
+        ...(dnsInTun
+          ? [
+              {
+                inbound: 'tun-in',
+                ip_cidr: [`${TUN_DNS_ADDRESS}/32`],
+                port: 53,
+                action: 'hijack-dns',
+              },
+            ]
+          : []),
         ...(needsDns && !dnsInTun ? [{ inbound: 'dns-in', action: 'hijack-dns' }] : []),
         // In priority order; sing-box restores the name from the placeholder IP before matching.
-        ...domains.map((route) => ({ domain_suffix: [route.domain], action: 'route', outbound: outboundTag(route.vpnId) })),
-        ...routed.map((tunnel) => ({ ip_cidr: tunnel.cidrs, action: 'route', outbound: outboundTag(tunnel.vpnId) })),
+        ...domains.map((route) => ({
+          domain_suffix: [route.domain],
+          action: 'route',
+          outbound: outboundTag(route.vpnId),
+        })),
+        ...routed.map((tunnel) => ({
+          ip_cidr: tunnel.cidrs,
+          action: 'route',
+          outbound: outboundTag(tunnel.vpnId),
+        })),
       ],
       final: 'direct',
       // Required since 1.14; only used if something dials a hostname, which our IP-only outbounds don't.
@@ -180,17 +229,37 @@ export function hostSingBoxConfig(routes: HostRoutes, { os, cachePath, localIpv6
       // Live connections for the app's traffic views. Loopback only, behind a secret, and only a loopback
       // origin may call it from a browser (an empty list would mean any origin).
       ...(routes.stats
-        ? { clash_api: { external_controller: `127.0.0.1:${routes.stats.port}`, secret: routes.stats.secret, access_control_allow_origin: ['http://127.0.0.1'] } }
+        ? {
+            clash_api: {
+              external_controller: `127.0.0.1:${routes.stats.port}`,
+              secret: routes.stats.secret,
+              access_control_allow_origin: ['http://127.0.0.1'],
+            },
+          }
         : {}),
     },
   };
 }
 
 /** SOCKS server inside a VPN container; credentials keep other local processes from borrowing the tunnel. */
-export function containerProxyConfig({ username, password }: { username: string; password: string }) {
+export function containerProxyConfig({
+  username,
+  password,
+}: {
+  username: string;
+  password: string;
+}) {
   return {
     log: { level: 'warn' },
-    inbounds: [{ type: 'socks', tag: 'socks-in', listen: '0.0.0.0', listen_port: CONTAINER_SOCKS_PORT, users: [{ username, password }] }],
+    inbounds: [
+      {
+        type: 'socks',
+        tag: 'socks-in',
+        listen: '0.0.0.0',
+        listen_port: CONTAINER_SOCKS_PORT,
+        users: [{ username, password }],
+      },
+    ],
     outbounds: [{ type: 'direct', tag: 'direct' }],
   };
 }

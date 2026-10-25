@@ -16,7 +16,9 @@ export function RestartConfirm({ version, onCancel }: { version: string; onCance
   const on = onIds(app.connections, app.prompt, app.waiting);
 
   if (wereOn && app.update.state === 'restarting') {
-    const vpns = app.config.vpns.filter((vpn) => wereOn.has(vpn.id)).map((vpn) => ({ name: vpnLabel(vpn), status: app.connections[vpn.id] }));
+    const vpns = app.config.vpns
+      .filter((vpn) => wereOn.has(vpn.id))
+      .map((vpn) => ({ name: vpnLabel(vpn), status: app.connections[vpn.id] }));
     const { title, body, steps } = restartProgress(version, vpns);
     return (
       <div>
@@ -24,7 +26,13 @@ export function RestartConfirm({ version, onCancel }: { version: string; onCance
         <p className="mt-0.5 text-muted">{body}</p>
         <ul className="mt-2 grid gap-1.5">
           {steps.map(({ label, state }) => (
-            <li key={label} className={cx('flex items-center gap-2', state === 'active' ? 'font-medium' : 'text-muted')}>
+            <li
+              key={label}
+              className={cx(
+                'flex items-center gap-2',
+                state === 'active' ? 'font-medium' : 'text-muted',
+              )}
+            >
               <span className="grid size-3.5 place-items-center">
                 {state === 'done' ? (
                   <span className="text-go">✓</span>
@@ -55,7 +63,11 @@ export function RestartConfirm({ version, onCancel }: { version: string; onCance
         <button type="button" className={link} onClick={onCancel}>
           Not now
         </button>
-        <button type="button" className={cx(primary, 'px-3 py-[5px] text-[13px]')} onClick={restart}>
+        <button
+          type="button"
+          className={cx(primary, 'px-3 py-[5px] text-[13px]')}
+          onClick={restart}
+        >
           Restart
         </button>
       </div>

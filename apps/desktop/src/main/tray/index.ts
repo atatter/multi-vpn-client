@@ -25,7 +25,11 @@ export interface TrayPlatform {
   quitShortcut: string | undefined;
 }
 
-const PLATFORMS: Record<AppInfo['platform'], TrayPlatform> = { darwin: darwinTray, linux: linuxTray, win32: win32Tray };
+const PLATFORMS: Record<AppInfo['platform'], TrayPlatform> = {
+  darwin: darwinTray,
+  linux: linuxTray,
+  win32: win32Tray,
+};
 export const trayPlatform = PLATFORMS[platform()];
 
 /**
@@ -71,7 +75,19 @@ export function createTray(deps: {
     if (countChanged) trayPlatform.badge(count, deps.window);
     if (countChanged || dotChanged) tray.setImage(trayPlatform.icon(count, hasUpdate));
     tray.setToolTip(`${APP_NAME}: ${countHeadline(count)}`);
-    tray.setContextMenu(Menu.buildFromTemplate(trayMenu({ count, names, dot, update: item, quitShortcut: trayPlatform.quitShortcut, open: deps.open, quit: deps.quit })));
+    tray.setContextMenu(
+      Menu.buildFromTemplate(
+        trayMenu({
+          count,
+          names,
+          dot,
+          update: item,
+          quitShortcut: trayPlatform.quitShortcut,
+          open: deps.open,
+          quit: deps.quit,
+        }),
+      ),
+    );
   }
 
   update();

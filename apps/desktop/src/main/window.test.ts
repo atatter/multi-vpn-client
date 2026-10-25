@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
 type Handler = (event: { preventDefault: () => void }) => void;
-const created: { options: Electron.BrowserWindowConstructorOptions; openHandler?: () => unknown; handlers: Map<string, Handler> }[] = [];
+const created: {
+  options: Electron.BrowserWindowConstructorOptions;
+  openHandler?: () => unknown;
+  handlers: Map<string, Handler>;
+}[] = [];
 
 vi.mock('electron', () => ({
   nativeTheme: { shouldUseDarkColors: false, on: () => {} },
@@ -29,7 +33,12 @@ describe('the main window', () => {
   it('keeps the renderer sandboxed and isolated, without Node, with only the preload added', () => {
     createWindow();
     const preferences = created.at(-1)?.options.webPreferences;
-    expect(preferences).toEqual({ preload: expect.stringMatching(/preload[/\\]index\.js$/), sandbox: true, contextIsolation: true, nodeIntegration: false });
+    expect(preferences).toEqual({
+      preload: expect.stringMatching(/preload[/\\]index\.js$/),
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+    });
   });
 
   it('never opens or navigates to another page', () => {

@@ -11,12 +11,14 @@ import type { Action } from './kind.ts';
 export type FormErrors = Record<string, string>;
 
 /** The error at `path` or anywhere under it, e.g. "addresses" for an issue at "addresses.1". */
-export const errorAt = (errors: FormErrors, path: string) => errors[path] ?? Object.entries(errors).find(([key]) => key.startsWith(`${path}.`))?.[1];
+export const errorAt = (errors: FormErrors, path: string) =>
+  errors[path] ?? Object.entries(errors).find(([key]) => key.startsWith(`${path}.`))?.[1];
 
 /** Secrets typed in the form so far, by slot: a new value, or null to clear the stored one. */
 export type PendingSecrets = Record<string, string | null>;
 
-export const CERT_PIN_HINT = "Filled in when you trust the gateway's certificate. Clear it to be asked again.";
+export const CERT_PIN_HINT =
+  "Filled in when you trust the gateway's certificate. Clear it to be asked again.";
 
 /** Runs one of this kind's actions in main by name. Rejects with an Error whose message is for the user. Call it through `callAction`. */
 export type RunAction = (name: string, input: unknown) => Promise<unknown>;

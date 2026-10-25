@@ -4,8 +4,20 @@ import type { RouteRule } from './config.ts';
 import { newVpn, type Vpn } from '@repo/vpns';
 
 const vpn = (id: string): Vpn => newVpn('openvpn', { id, name: id.toUpperCase() });
-const rule = (id: string, cidr: string, vpnId: string, enabled = true, pinned = false): RouteRule => ({ id, kind: 'cidr', cidr, vpnId, enabled, note: '', pinned });
-const domain = (id: string, name: string, vpnId: string, enabled = true, pinned = false): RouteRule => ({ id, kind: 'domain', domain: name, vpnId, enabled, note: '', pinned });
+const rule = (
+  id: string,
+  cidr: string,
+  vpnId: string,
+  enabled = true,
+  pinned = false,
+): RouteRule => ({ id, kind: 'cidr', cidr, vpnId, enabled, note: '', pinned });
+const domain = (
+  id: string,
+  name: string,
+  vpnId: string,
+  enabled = true,
+  pinned = false,
+): RouteRule => ({ id, kind: 'domain', domain: name, vpnId, enabled, note: '', pinned });
 
 const vpns = [vpn('a'), vpn('b')];
 
@@ -30,7 +42,13 @@ describe('compileRoutes', () => {
     expect(result.byVpn.b).not.toContain('10.20.0.0/16');
     expect(result.all).toEqual(['10.0.0.0/8']);
     expect(result.warnings).toEqual([
-      { kind: 'shadowed', ruleId: 'r2', full: false, lost: ['10.20.0.0/16'], by: [{ kind: 'rule', ruleId: 'r1' }] },
+      {
+        kind: 'shadowed',
+        ruleId: 'r2',
+        full: false,
+        lost: ['10.20.0.0/16'],
+        by: [{ kind: 'rule', ruleId: 'r1' }],
+      },
     ]);
   });
 
@@ -42,7 +60,13 @@ describe('compileRoutes', () => {
     });
     expect(result.byVpn).toEqual({ a: ['10.0.0.0/8'], b: [] });
     expect(result.warnings).toEqual([
-      { kind: 'shadowed', ruleId: 'r2', full: true, lost: ['10.20.0.0/16'], by: [{ kind: 'rule', ruleId: 'r1' }] },
+      {
+        kind: 'shadowed',
+        ruleId: 'r2',
+        full: true,
+        lost: ['10.20.0.0/16'],
+        by: [{ kind: 'rule', ruleId: 'r1' }],
+      },
     ]);
   });
 
@@ -58,7 +82,11 @@ describe('compileRoutes', () => {
   it('names every rule that took part of a range', () => {
     const result = compileRoutes({
       vpns,
-      routes: [rule('r1', '10.1.0.0/16', 'a'), rule('r2', '10.2.0.0/16', 'a'), rule('r3', '10.0.0.0/8', 'b')],
+      routes: [
+        rule('r1', '10.1.0.0/16', 'a'),
+        rule('r2', '10.2.0.0/16', 'a'),
+        rule('r3', '10.0.0.0/8', 'b'),
+      ],
     });
     expect(result.warnings).toEqual([
       {
@@ -95,15 +123,27 @@ describe('compileRoutes', () => {
   it("lets a narrower rule win a local network's addresses, as the OS would, and the network keep a broader rule's", () => {
     // A network handing out a /8 (a hostile Wi-Fi, say) mustn't take a VPN's /16; all traffic still leaves it local.
     const lan = { cidr: '10.0.0.0/8', label: 'Local network (Wi-Fi)', local: true };
-    const result = compileRoutes({ vpns, routes: [rule('r1', '10.20.0.0/16', 'a'), rule('r2', '0.0.0.0/0', 'b')], reserved: [lan] });
+    const result = compileRoutes({
+      vpns,
+      routes: [rule('r1', '10.20.0.0/16', 'a'), rule('r2', '0.0.0.0/0', 'b')],
+      reserved: [lan],
+    });
     expect(result.byVpn.a).toEqual(['10.20.0.0/16']);
     expect(result.byVpn.b?.some((cidr) => cidr.startsWith('10.'))).toBe(false);
     expect(result.warnings.find((warning) => warning.ruleId === 'r1')).toBeUndefined();
 
     // Equal size: the network keeps it, so a VPN routing exactly the LAN doesn't cut it off.
-    expect(compileRoutes({ vpns, routes: [rule('r1', '10.0.0.0/8', 'a')], reserved: [lan] }).byVpn.a).toEqual([]);
+    expect(
+      compileRoutes({ vpns, routes: [rule('r1', '10.0.0.0/8', 'a')], reserved: [lan] }).byVpn.a,
+    ).toEqual([]);
     // Other reserved ranges, like a VPN's server, outrank even narrower rules.
-    expect(compileRoutes({ vpns, routes: [rule('r1', '203.0.113.10/32', 'a')], reserved: [{ cidr: '203.0.113.0/24', label: 'A gateway' }] }).byVpn.a).toEqual([]);
+    expect(
+      compileRoutes({
+        vpns,
+        routes: [rule('r1', '203.0.113.10/32', 'a')],
+        reserved: [{ cidr: '203.0.113.0/24', label: 'A gateway' }],
+      }).byVpn.a,
+    ).toEqual([]);
   });
 
   it('ignores disabled rules, so they shadow nothing', () => {
@@ -118,7 +158,11 @@ describe('compileRoutes', () => {
   it('still reports invalid disabled rules, since saving would reject them', () => {
     const result = compileRoutes({ vpns, routes: [rule('r1', '10.20.1.5/16', 'a', false)] });
     expect(result.warnings).toEqual([
-      { kind: 'invalid-cidr', ruleId: 'r1', message: 'Host bits are set. Did you mean 10.20.0.0/16?' },
+      {
+        kind: 'invalid-cidr',
+        ruleId: 'r1',
+        message: 'Host bits are set. Did you mean 10.20.0.0/16?',
+      },
     ]);
   });
 
@@ -129,7 +173,11 @@ describe('compileRoutes', () => {
     });
     expect(result.byVpn).toEqual({ a: [], b: [] });
     expect(result.warnings).toEqual([
-      { kind: 'invalid-cidr', ruleId: 'r1', message: 'Host bits are set. Did you mean 10.20.0.0/16?' },
+      {
+        kind: 'invalid-cidr',
+        ruleId: 'r1',
+        message: 'Host bits are set. Did you mean 10.20.0.0/16?',
+      },
       { kind: 'unknown-vpn', ruleId: 'r2', vpnId: 'ghost' },
     ]);
   });
@@ -139,7 +187,12 @@ describe('compileRoutes: domain routes', () => {
   it('lists enabled domain routes in priority order, separate from IP routes', () => {
     const result = compileRoutes({
       vpns: [vpn('b'), vpn('a')], // B above A, so B's subdomain wins over A's domain
-      routes: [domain('d1', 'argo.lab.example', 'b'), rule('r1', '10.20.0.0/16', 'a'), domain('d2', 'lab.example', 'a'), domain('d3', 'off.example', 'a', false)],
+      routes: [
+        domain('d1', 'argo.lab.example', 'b'),
+        rule('r1', '10.20.0.0/16', 'a'),
+        domain('d2', 'lab.example', 'a'),
+        domain('d3', 'off.example', 'a', false),
+      ],
     });
     expect(result.domains).toEqual([
       { ruleId: 'd1', vpnId: 'b', domain: 'argo.lab.example' },
@@ -150,7 +203,14 @@ describe('compileRoutes: domain routes', () => {
   });
 
   it('warns when a higher route already covers a domain (subdomains included)', () => {
-    const result = compileRoutes({ vpns, routes: [domain('d1', 'lab.example', 'a'), domain('d2', 'argo.lab.example', 'b'), domain('d3', 'Lab.example', 'b')] });
+    const result = compileRoutes({
+      vpns,
+      routes: [
+        domain('d1', 'lab.example', 'a'),
+        domain('d2', 'argo.lab.example', 'b'),
+        domain('d3', 'Lab.example', 'b'),
+      ],
+    });
     expect(result.domains).toEqual([{ ruleId: 'd1', vpnId: 'a', domain: 'lab.example' }]);
     expect(result.warnings).toEqual([
       { kind: 'domain-shadowed', ruleId: 'd2', by: 'd1' },
@@ -159,12 +219,18 @@ describe('compileRoutes: domain routes', () => {
   });
 
   it("doesn't treat a name that merely ends with the same letters as covered", () => {
-    const result = compileRoutes({ vpns, routes: [domain('d1', 'lab.example', 'a'), domain('d2', 'notlab.example', 'b')] });
+    const result = compileRoutes({
+      vpns,
+      routes: [domain('d1', 'lab.example', 'a'), domain('d2', 'notlab.example', 'b')],
+    });
     expect(result.warnings).toEqual([]);
   });
 
   it('reports invalid domains and unknown VPNs', () => {
-    const result = compileRoutes({ vpns, routes: [domain('d1', 'not a domain', 'a'), domain('d2', 'ok.example', 'ghost')] });
+    const result = compileRoutes({
+      vpns,
+      routes: [domain('d1', 'not a domain', 'a'), domain('d2', 'ok.example', 'ghost')],
+    });
     expect(result.domains).toEqual([]);
     expect(result.warnings).toEqual([
       { kind: 'invalid-domain', ruleId: 'd1', message: 'Expected a domain, e.g. corp.example' },
@@ -179,21 +245,37 @@ describe('compileRoutes: domain routes', () => {
     });
     expect(result.byVpn).toEqual({ a: ['10.0.0.0/8'], b: [] });
     expect(result.warnings).toEqual([
-      { kind: 'shadowed', ruleId: 'r1', full: true, lost: ['10.20.0.0/16'], by: [{ kind: 'rule', ruleId: 'r2' }] },
+      {
+        kind: 'shadowed',
+        ruleId: 'r1',
+        full: true,
+        lost: ['10.20.0.0/16'],
+        by: [{ kind: 'rule', ruleId: 'r2' }],
+      },
     ]);
   });
 });
 
 describe('effectiveRules', () => {
-  const own = [rule('a1', '10.20.0.0/16', 'a'), rule('a2', '10.30.0.0/16', 'a', true, true), rule('b1', '10.140.0.0/16', 'b')];
+  const own = [
+    rule('a1', '10.20.0.0/16', 'a'),
+    rule('a2', '10.30.0.0/16', 'a', true, true),
+    rule('b1', '10.140.0.0/16', 'b'),
+  ];
   const base = vpn('a');
 
   it("routes only the VPN's own rules when it chooses its sites", () => {
-    expect(effectiveRules({ ...base, traffic: 'sites' }, own).map((r) => r.id)).toEqual(['a1', 'a2']);
+    expect(effectiveRules({ ...base, traffic: 'sites' }, own).map((r) => r.id)).toEqual([
+      'a1',
+      'a2',
+    ]);
   });
 
   it("adds what the server sent to the VPN's own rules on the official app's routes", () => {
-    const rules = effectiveRules({ ...base, traffic: 'official', serverRoutes: { all: false, cidrs: ['10.0.0.0/8'] } }, own);
+    const rules = effectiveRules(
+      { ...base, traffic: 'official', serverRoutes: { all: false, cidrs: ['10.0.0.0/8'] } },
+      own,
+    );
     expect(rules.map((r) => [r.id, r.kind === 'cidr' ? r.cidr : r.domain])).toEqual([
       ['server:a:10.0.0.0/8', '10.0.0.0/8'],
       ['a1', '10.20.0.0/16'],
@@ -202,24 +284,45 @@ describe('effectiveRules', () => {
   });
 
   it("only knows the VPN's own rules before the first connect", () => {
-    expect(effectiveRules({ ...base, traffic: 'official', serverRoutes: null }, own).map((r) => r.id)).toEqual(['a1', 'a2']);
+    expect(
+      effectiveRules({ ...base, traffic: 'official', serverRoutes: null }, own).map((r) => r.id),
+    ).toEqual(['a1', 'a2']);
   });
 
   it('routes everything, keeping only pinned rules, when the VPN carries all traffic', () => {
-    expect(effectiveRules({ ...base, traffic: 'all' }, own).map((r) => r.id)).toEqual(['all:a', 'a2']);
-    expect(effectiveRules({ ...base, traffic: 'official', serverRoutes: { all: true, cidrs: [] } }, own).map((r) => r.id)).toEqual(['all:a', 'a2']);
+    expect(effectiveRules({ ...base, traffic: 'all' }, own).map((r) => r.id)).toEqual([
+      'all:a',
+      'a2',
+    ]);
+    expect(
+      effectiveRules(
+        { ...base, traffic: 'official', serverRoutes: { all: true, cidrs: [] } },
+        own,
+      ).map((r) => r.id),
+    ).toEqual(['all:a', 'a2']);
   });
 });
 
 describe('compileRoutes: pins and all-traffic VPNs', () => {
   it('gives a pinned rule its addresses whatever the order', () => {
-    const { byVpn } = compileRoutes({ vpns, routes: [rule('a1', '10.143.1.20/32', 'a'), rule('b1', '10.143.1.20/32', 'b', true, true)] });
+    const { byVpn } = compileRoutes({
+      vpns,
+      routes: [rule('a1', '10.143.1.20/32', 'a'), rule('b1', '10.143.1.20/32', 'b', true, true)],
+    });
     expect(byVpn).toEqual({ a: [], b: ['10.143.1.20/32'] });
   });
 
   it("lets a higher VPN carrying everything take lower VPNs' addresses and names", () => {
-    const routes = [...effectiveRules({ ...vpn('a'), traffic: 'all' }, []), rule('b1', '10.140.0.0/16', 'b'), domain('b2', 'corp.example', 'b')];
-    const result = compileRoutes({ vpns, routes, reserved: [{ cidr: '192.168.1.0/24', label: 'LAN' }] });
+    const routes = [
+      ...effectiveRules({ ...vpn('a'), traffic: 'all' }, []),
+      rule('b1', '10.140.0.0/16', 'b'),
+      domain('b2', 'corp.example', 'b'),
+    ];
+    const result = compileRoutes({
+      vpns,
+      routes,
+      reserved: [{ cidr: '192.168.1.0/24', label: 'LAN' }],
+    });
     expect(result.byVpn.b).toEqual([]);
     expect(result.domains).toEqual([]);
     expect(result.byVpn.a).not.toContain('192.168.1.0/24');
@@ -227,7 +330,13 @@ describe('compileRoutes: pins and all-traffic VPNs', () => {
   });
 
   it('leaves higher VPNs and pinned names alone when a lower VPN carries everything', () => {
-    const routes = [rule('a1', '10.140.0.0/16', 'a'), domain('a2', 'corp.example', 'a'), ...effectiveRules({ ...vpn('b'), traffic: 'all' }, [domain('b2', 'pinned.example', 'b', true, true)])];
+    const routes = [
+      rule('a1', '10.140.0.0/16', 'a'),
+      domain('a2', 'corp.example', 'a'),
+      ...effectiveRules({ ...vpn('b'), traffic: 'all' }, [
+        domain('b2', 'pinned.example', 'b', true, true),
+      ]),
+    ];
     const result = compileRoutes({ vpns, routes });
     expect(result.byVpn.a).toEqual(['10.140.0.0/16']);
     expect(result.domains.map((d) => d.domain)).toEqual(['pinned.example', 'corp.example']);
@@ -236,7 +345,11 @@ describe('compileRoutes: pins and all-traffic VPNs', () => {
 
 describe('routingPlan', () => {
   const on = (...ids: string[]) => new Set(ids);
-  const config = (routes: RouteRule[], list: Vpn[] = vpns) => ({ vpns: list, routes, priority: list.map((v) => v.id) });
+  const config = (routes: RouteRule[], list: Vpn[] = vpns) => ({
+    vpns: list,
+    routes,
+    priority: list.map((v) => v.id),
+  });
 
   it("names the higher VPN that takes all or part of a lower VPN's rule", () => {
     const routes = [
@@ -257,7 +370,11 @@ describe('routingPlan', () => {
   });
 
   it("only counts connected VPNs, and lists turned-on ones that aren't connected yet without fates", () => {
-    const plan = routingPlan(config([rule('a1', '10.0.0.0/8', 'a'), rule('b1', '10.1.0.0/16', 'b')]), on('a', 'b'), on('b'));
+    const plan = routingPlan(
+      config([rule('a1', '10.0.0.0/8', 'a'), rule('b1', '10.1.0.0/16', 'b')]),
+      on('a', 'b'),
+      on('b'),
+    );
     expect(plan.map((l) => [l.vpnId, l.live, l.fates.length])).toEqual([
       ['a', false, 0],
       ['b', true, 1],
@@ -266,7 +383,12 @@ describe('routingPlan', () => {
   });
 
   it('ignores paused rules and overlaps within one VPN', () => {
-    const routes = [rule('a1', '10.0.0.0/8', 'a'), rule('a2', '10.1.0.0/16', 'a'), rule('a3', '10.0.0.0/8', 'a', false), rule('b1', '10.2.0.0/16', 'b')];
+    const routes = [
+      rule('a1', '10.0.0.0/8', 'a'),
+      rule('a2', '10.1.0.0/16', 'a'),
+      rule('a3', '10.0.0.0/8', 'a', false),
+      rule('b1', '10.2.0.0/16', 'b'),
+    ];
     const [a, b] = routingPlan(config(routes), on('a', 'b'), on('a', 'b'));
     expect(a?.fates.map((f) => f.rule.id)).toEqual(['a1', 'a2']);
     expect(a?.fates.every((f) => !f.taken)).toBe(true);
@@ -275,7 +397,11 @@ describe('routingPlan', () => {
 
   it('says when a higher all-traffic VPN leaves a VPN nothing, and marks pins', () => {
     const list = [{ ...vpn('a'), traffic: 'all' as const }, vpn('b'), vpn('c')];
-    const routes = [rule('b1', '10.140.0.0/16', 'b'), rule('c1', '10.50.0.0/16', 'c'), rule('c2', '10.60.0.0/16', 'c', true, true)];
+    const routes = [
+      rule('b1', '10.140.0.0/16', 'b'),
+      rule('c1', '10.50.0.0/16', 'c'),
+      rule('c2', '10.60.0.0/16', 'c', true, true),
+    ];
     const [a, b, c] = routingPlan(config(routes, list), on('a', 'b', 'c'), on('a', 'b', 'c'));
     expect(a).toMatchObject({ broad: true });
     expect(b).toMatchObject({ starvedBy: 'a' });
@@ -284,20 +410,34 @@ describe('routingPlan', () => {
   });
 
   it('puts a second all-traffic VPN on standby under the first, even below a VPN for its own network', () => {
-    const list = [vpn('b'), { ...vpn('a'), traffic: 'all' as const }, { ...vpn('c'), traffic: 'all' as const }];
-    const [, , c] = routingPlan(config([rule('b1', '10.140.0.0/16', 'b')], list), on('b', 'a', 'c'), on('b', 'a', 'c'));
+    const list = [
+      vpn('b'),
+      { ...vpn('a'), traffic: 'all' as const },
+      { ...vpn('c'), traffic: 'all' as const },
+    ];
+    const [, , c] = routingPlan(
+      config([rule('b1', '10.140.0.0/16', 'b')], list),
+      on('b', 'a', 'c'),
+      on('b', 'a', 'c'),
+    );
     expect(c).toMatchObject({ broad: true, starvedBy: 'a' });
   });
 
   it('puts a second all-traffic VPN on standby under the first', () => {
-    const list = [{ ...vpn('a'), traffic: 'all' as const }, { ...vpn('b'), traffic: 'all' as const }];
+    const list = [
+      { ...vpn('a'), traffic: 'all' as const },
+      { ...vpn('b'), traffic: 'all' as const },
+    ];
     const [, b] = routingPlan(config([], list), on('a', 'b'), on('a', 'b'));
     expect(b).toMatchObject({ broad: true, starvedBy: 'a' });
   });
 });
 
 describe('routeFor', () => {
-  const compiled = { byVpn: { a: ['10.0.0.0/8'], b: ['0.0.0.0/1'] }, domains: [{ ruleId: 'd', vpnId: 'c', domain: 'corp.example' }] };
+  const compiled = {
+    byVpn: { a: ['10.0.0.0/8'], b: ['0.0.0.0/1'] },
+    domains: [{ ruleId: 'd', vpnId: 'c', domain: 'corp.example' }],
+  };
 
   it('matches names first, subdomains included', () => {
     expect(routeFor(compiled, { domain: 'wiki.corp.example', addresses: ['10.1.2.3'] })).toBe('c');
@@ -313,8 +453,15 @@ describe('routeFor', () => {
 describe('routingPlan: subdomains taken by pins', () => {
   it("doesn't say a pinned domain loses part to a subdomain the pin already took", () => {
     const list = [vpn('a'), vpn('b')];
-    const routes = [domain('a1', 'a.corp.example', 'a'), domain('b1', 'corp.example', 'b', true, true)];
-    const [a, b] = routingPlan({ vpns: list, routes, priority: ['a', 'b'] }, new Set(['a', 'b']), new Set(['a', 'b']));
+    const routes = [
+      domain('a1', 'a.corp.example', 'a'),
+      domain('b1', 'corp.example', 'b', true, true),
+    ];
+    const [a, b] = routingPlan(
+      { vpns: list, routes, priority: ['a', 'b'] },
+      new Set(['a', 'b']),
+      new Set(['a', 'b']),
+    );
     expect(a?.fates[0]?.taken).toMatchObject({ by: 'b' });
     expect(b?.fates[0]?.taken).toBeUndefined();
   });

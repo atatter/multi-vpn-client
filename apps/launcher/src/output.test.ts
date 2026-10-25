@@ -33,7 +33,9 @@ describe("the launcher's messages", () => {
     output.progress(0.0001, 2e6);
     output.progress(1, 2e6);
     output.log('Started.');
-    expect(written.join('')).toBe('Downloading…\n\r0 MB downloaded, 2 MB left\x1b[K\r2 MB downloaded, unpacking…\x1b[K\nStarted.\n');
+    expect(written.join('')).toBe(
+      'Downloading…\n\r0 MB downloaded, 2 MB left\x1b[K\r2 MB downloaded, unpacking…\x1b[K\nStarted.\n',
+    );
   });
 
   it("leaves the counter out when the output isn't a terminal", () => {

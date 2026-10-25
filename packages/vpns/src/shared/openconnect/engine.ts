@@ -24,15 +24,28 @@ export const extraArguments = (advanced: string) => advanced.split(/\s+/).filter
  * server that presented them, which can be a gateway the portal redirected to), then the
  * protocol's own messages.
  */
-export function readOpenConnect(firstServer: string, readProtocol: (line: string) => Failure | undefined): ReadLine {
+export function readOpenConnect(
+  firstServer: string,
+  readProtocol: (line: string) => Failure | undefined,
+): ReadLine {
   let server = firstServer;
   return (line) => {
     const negotiating = /^SSL negotiation with (\S+)/.exec(line)?.[1];
     if (negotiating) server = negotiating;
     const changed = PIN_MISMATCH.exec(line)?.[1];
-    if (changed) return { failed: `${server} presented a different certificate than the one you trusted.`, untrustedPin: changed, server };
+    if (changed)
+      return {
+        failed: `${server} presented a different certificate than the one you trusted.`,
+        untrustedPin: changed,
+        server,
+      };
     const untrusted = UNTRUSTED.exec(line)?.[1];
-    if (untrusted) return { failed: `${server}'s certificate isn't publicly trusted.`, untrustedPin: untrusted, server };
+    if (untrusted)
+      return {
+        failed: `${server}'s certificate isn't publicly trusted.`,
+        untrustedPin: untrusted,
+        server,
+      };
     return readProtocol(line);
   };
 }

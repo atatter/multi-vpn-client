@@ -13,7 +13,10 @@ describe('names', () => {
   });
 
   it("numbers a name that's taken", () => {
-    const vpns = [newVpn('openvpn', { id: '1', name: 'Client A' }), newVpn('openvpn', { id: '2', name: 'Client A 2' })];
+    const vpns = [
+      newVpn('openvpn', { id: '1', name: 'Client A' }),
+      newVpn('openvpn', { id: '2', name: 'Client A 2' }),
+    ];
     expect(uniqueName('Client A', vpns)).toBe('Client A 3');
     expect(uniqueName('Client B', vpns)).toBe('Client B');
   });

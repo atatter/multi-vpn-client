@@ -7,8 +7,13 @@ import { desktopEntry, syncDesktopEntry } from './desktop-entry.ts';
 
 describe('desktopEntry', () => {
   it('starts the build that runs, and names the window the dock matches', () => {
-    const entry = desktopEntry({ command: ['/home/ann/.cache/multi-vpn-client/0.2.0/multi-vpn-client', '--no-sandbox'], icon: '/home/ann/icon.png' });
-    expect(entry).toContain('\nExec="/home/ann/.cache/multi-vpn-client/0.2.0/multi-vpn-client" "--no-sandbox"\n');
+    const entry = desktopEntry({
+      command: ['/home/ann/.cache/multi-vpn-client/0.2.0/multi-vpn-client', '--no-sandbox'],
+      icon: '/home/ann/icon.png',
+    });
+    expect(entry).toContain(
+      '\nExec="/home/ann/.cache/multi-vpn-client/0.2.0/multi-vpn-client" "--no-sandbox"\n',
+    );
     expect(entry).toContain('\nTryExec=/home/ann/.cache/multi-vpn-client/0.2.0/multi-vpn-client\n');
     expect(entry).toContain('\nStartupWMClass=dev.multi-vpn-client\n');
   });
@@ -37,7 +42,9 @@ describe('syncDesktopEntry', () => {
     expect(await readFile(files().icon, 'utf8')).toBe('png');
     expect(await readFile(files().entry, 'utf8')).toContain('Exec="/v1/app"');
 
-    expect(await syncDesktopEntry({ files: files(), command: ['/v1/app'], iconSource })).toBe(false);
+    expect(await syncDesktopEntry({ files: files(), command: ['/v1/app'], iconSource })).toBe(
+      false,
+    );
 
     expect(await syncDesktopEntry({ files: files(), command: ['/v2/app'], iconSource })).toBe(true);
     expect(await readFile(files().entry, 'utf8')).toContain('Exec="/v2/app"');

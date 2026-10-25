@@ -1,4 +1,28 @@
-import { applySecretChanges, changesForSave, compileRoutes, Config, type ConnectionState, type ConnectResult, type DockerState, effectiveRules, type HelperState, keepServerRoutes, newVpn, parseSite, isIpv4, rankVpns, ROUTING_RESERVED_RANGE, type RouteRule, routeFor, type SecretChanges, type SecretMap, secretStatusOf, type TrafficSnapshot, validateSecretChanges, vpnHosts } from '@repo/core';
+import {
+  applySecretChanges,
+  changesForSave,
+  compileRoutes,
+  Config,
+  type ConnectionState,
+  type ConnectResult,
+  type DockerState,
+  effectiveRules,
+  type HelperState,
+  keepServerRoutes,
+  newVpn,
+  parseSite,
+  isIpv4,
+  rankVpns,
+  ROUTING_RESERVED_RANGE,
+  type RouteRule,
+  routeFor,
+  type SecretChanges,
+  type SecretMap,
+  secretStatusOf,
+  type TrafficSnapshot,
+  validateSecretChanges,
+  vpnHosts,
+} from '@repo/core';
 import type { MainApi } from '../../../preload/index.ts';
 import type { ConnectionStatuses, UpdateState } from '../../../shared/ipc-contract.ts';
 import { createFakeUpdater, UPDATES } from './fake-update.ts';
@@ -17,11 +41,25 @@ export type Scenario = (typeof SCENARIOS)[number];
 // newVpn's defaults (no DNS, no extra options, server routes unknown), but with the password remembered.
 const common = { rememberPassword: true };
 
-const gp = (id: string, name: string) => ({ ...newVpn('globalprotect', { id, name }), ...common, portal: 'vpn.client-a.example', username: 'jane.doe' });
+const gp = (id: string, name: string) => ({
+  ...newVpn('globalprotect', { id, name }),
+  ...common,
+  portal: 'vpn.client-a.example',
+  username: 'jane.doe',
+});
 
 const VPNS = {
-  a: { ...gp('a', 'Client A'), signIn: 'card', rememberPassword: false, serverRoutes: { all: true, cidrs: [] } },
-  a2: { ...gp('a2', 'Client A (test)'), username: 'svc-jane-test', serverRoutes: { all: true, cidrs: [] } },
+  a: {
+    ...gp('a', 'Client A'),
+    signIn: 'card',
+    rememberPassword: false,
+    serverRoutes: { all: true, cidrs: [] },
+  },
+  a2: {
+    ...gp('a2', 'Client A (test)'),
+    username: 'svc-jane-test',
+    serverRoutes: { all: true, cidrs: [] },
+  },
   b: {
     ...newVpn('checkpoint', { id: 'b', name: 'Client B' }),
     ...common,
@@ -30,36 +68,81 @@ const VPNS = {
     username: 'jdoe',
     serverRoutes: { all: false, cidrs: ['10.140.0.0/16', '172.24.0.0/14'] },
   },
-  c: { ...newVpn('fortinet-ssl', { id: 'c', name: 'Client C' }), ...common, traffic: 'sites', rememberPassword: false, gateway: 'sslvpn.client-c.example:10443', username: 'jane' },
-  e: { ...gp('e', 'Client E'), portal: 'gp.client-e.example', username: 'jane', serverRoutes: { all: false, cidrs: ['10.140.0.0/16', '10.141.0.0/16'] } },
-  h: { ...newVpn('openvpn', { id: 'h', name: 'Home OpenVPN' }), ...common, remotes: ['home.example.net'], serverRoutes: { all: true, cidrs: [] } },
+  c: {
+    ...newVpn('fortinet-ssl', { id: 'c', name: 'Client C' }),
+    ...common,
+    traffic: 'sites',
+    rememberPassword: false,
+    gateway: 'sslvpn.client-c.example:10443',
+    username: 'jane',
+  },
+  e: {
+    ...gp('e', 'Client E'),
+    portal: 'gp.client-e.example',
+    username: 'jane',
+    serverRoutes: { all: false, cidrs: ['10.140.0.0/16', '10.141.0.0/16'] },
+  },
+  h: {
+    ...newVpn('openvpn', { id: 'h', name: 'Home OpenVPN' }),
+    ...common,
+    remotes: ['home.example.net'],
+    serverRoutes: { all: true, cidrs: [] },
+  },
 } satisfies Record<string, Config['vpns'][number]>;
 
 const route = (id: string, vpnId: string, target: string): RouteRule =>
-  /^[\d./]+$/.test(target) ? { id, vpnId, kind: 'cidr', cidr: target, enabled: true, note: '', pinned: false } : { id, vpnId, kind: 'domain', domain: target, enabled: true, note: '', pinned: false };
+  /^[\d./]+$/.test(target)
+    ? { id, vpnId, kind: 'cidr', cidr: target, enabled: true, note: '', pinned: false }
+    : { id, vpnId, kind: 'domain', domain: target, enabled: true, note: '', pinned: false };
 
 const CONFIGS: Record<Scenario, Config> = {
   first: { version: 1, vpns: [], routes: [], priority: [] },
   daily: {
     version: 1,
     vpns: [VPNS.a, VPNS.a2, VPNS.b, VPNS.c, VPNS.h],
-    routes: [route('r1', 'b', '10.140.0.0/16'), route('r2', 'b', 'client-b.internal'), route('r3', 'c', 'jira.client-c.example'), route('r4', 'c', '10.142.12.0/24')],
+    routes: [
+      route('r1', 'b', '10.140.0.0/16'),
+      route('r2', 'b', 'client-b.internal'),
+      route('r3', 'c', 'jira.client-c.example'),
+      route('r4', 'c', '10.142.12.0/24'),
+    ],
     priority: [],
   },
-  overlap: { version: 1, vpns: [VPNS.a, VPNS.b, VPNS.e, VPNS.c, VPNS.h], routes: [route('r1', 'b', '10.140.0.0/16'), route('r3', 'c', 'jira.client-c.example')], priority: [] },
+  overlap: {
+    version: 1,
+    vpns: [VPNS.a, VPNS.b, VPNS.e, VPNS.c, VPNS.h],
+    routes: [route('r1', 'b', '10.140.0.0/16'), route('r3', 'c', 'jira.client-c.example')],
+    priority: [],
+  },
   shared: {
     version: 1,
     vpns: [VPNS.a, VPNS.b, VPNS.c, VPNS.h],
-    routes: [route('r1', 'b', '10.140.0.0/16'), route('r5', 'b', '10.143.1.20/32'), route('r3', 'c', 'jira.client-c.example'), route('r6', 'c', '10.143.1.20/32')],
+    routes: [
+      route('r1', 'b', '10.140.0.0/16'),
+      route('r5', 'b', '10.143.1.20/32'),
+      route('r3', 'c', 'jira.client-c.example'),
+      route('r6', 'c', '10.143.1.20/32'),
+    ],
     priority: [],
   },
-  broke: { version: 1, vpns: [VPNS.a, VPNS.a2, VPNS.b, VPNS.c, VPNS.h], routes: [route('r1', 'b', '10.140.0.0/16'), route('r3', 'c', 'jira.client-c.example')], priority: [] },
+  broke: {
+    version: 1,
+    vpns: [VPNS.a, VPNS.a2, VPNS.b, VPNS.c, VPNS.h],
+    routes: [route('r1', 'b', '10.140.0.0/16'), route('r3', 'c', 'jira.client-c.example')],
+    priority: [],
+  },
 };
 
 /** Fixtures whose launcher needs the password before it starts (Fortinet SSL's does); the rest sign in without one. */
 const ASKS_FOR_PASSWORD = new Set(['c']);
 
-const CONNECTED_AT_START: Record<Scenario, string[]> = { first: [], daily: ['a', 'b'], overlap: ['b', 'e', 'h'], shared: ['a', 'b', 'c'], broke: [] };
+const CONNECTED_AT_START: Record<Scenario, string[]> = {
+  first: [],
+  daily: ['a', 'b'],
+  overlap: ['b', 'e', 'h'],
+  shared: ['a', 'b', 'c'],
+  broke: [],
+};
 
 /** Hosts each VPN's traffic goes to, for the harness's made-up traffic. */
 export const HOSTS: Record<string, string[]> = {
@@ -82,16 +165,26 @@ export function createFakeApi({
 }: { scenario?: Scenario; update?: UpdateState; pause?: (ms: number) => Promise<void> } = {}) {
   let config = structuredClone(CONFIGS[scenario]);
   // Kept in memory as main keeps them encrypted on disk; only which slots are stored ever leaves.
-  let secrets: SecretMap<string> = { b: { password: 'saved' }, a2: { password: 'saved' }, h: { profile: 'client\nremote home.example.net\n' } };
+  let secrets: SecretMap<string> = {
+    b: { password: 'saved' },
+    a2: { password: 'saved' },
+    h: { profile: 'client\nremote home.example.net\n' },
+  };
   let docker: DockerState = scenario === 'first' ? 'stopped' : 'running';
   let helper: HelperState = scenario === 'first' ? 'not-installed' : 'ready';
   let statuses: ConnectionStatuses = {};
-  for (const id of CONNECTED_AT_START[scenario]) statuses[id] = { state: 'connected', since: Date.now() - 600_000, warning: undefined, log: [] };
+  for (const id of CONNECTED_AT_START[scenario])
+    statuses[id] = { state: 'connected', since: Date.now() - 600_000, warning: undefined, log: [] };
   if (scenario === 'broke') {
     statuses.c = {
       state: 'error',
       message: 'The VPN server rejected the username or password.',
-      log: ['Preparing…', 'Starting the VPN container…', 'POST https://sslvpn.client-c.example:10443/remote/logincheck', 'Got HTTP 401'],
+      log: [
+        'Preparing…',
+        'Starting the VPN container…',
+        'POST https://sslvpn.client-c.example:10443/remote/logincheck',
+        'Got HTTP 401',
+      ],
     };
   }
 
@@ -127,7 +220,11 @@ export function createFakeApi({
   let heldLoads: (() => void)[] | undefined;
 
   /** What the store asked main to do, oldest first. */
-  const calls = { connects: [] as { vpnId: string; password: string | null }[], disconnects: [] as string[], saves: [] as { config: Config; secrets: SecretChanges }[] };
+  const calls = {
+    connects: [] as { vpnId: string; password: string | null }[],
+    disconnects: [] as string[],
+    saves: [] as { config: Config; secrets: SecretChanges }[],
+  };
 
   async function startConnect(vpnId: string, password: string | null): Promise<ConnectResult> {
     const disconnectsBefore = disconnects.get(vpnId) ?? 0;
@@ -135,7 +232,8 @@ export function createFakeApi({
     const scripted = connectResults.shift();
     if (scripted && !scripted.ok) return scripted;
     const vpn = config.vpns.find((candidate) => candidate.id === vpnId);
-    if (!scripted && ASKS_FOR_PASSWORD.has(vpnId) && !vpn?.rememberPassword && !password) return { ok: false, needsPassword: true };
+    if (!scripted && ASKS_FOR_PASSWORD.has(vpnId) && !vpn?.rememberPassword && !password)
+      return { ok: false, needsPassword: true };
     setStatus(vpnId, { state: 'connecting', step: 'Starting the VPN container…' });
     await pause(900);
     if (cancelled()) return { ok: false, error: 'Cancelled.' };
@@ -156,7 +254,12 @@ export function createFakeApi({
     loadConfig: async () => {
       if (loadError) throw new Error(loadError);
       // Read now, answer when released: like main, whose answer can arrive after newer saves have landed.
-      const answer = { path: '/home/jane/.config/multi-vpn-client/config.json', config: structuredClone(config), secretStatus: secretStatusOf(secrets), keychainProblem: undefined };
+      const answer = {
+        path: '/home/jane/.config/multi-vpn-client/config.json',
+        config: structuredClone(config),
+        secretStatus: secretStatusOf(secrets),
+        keychainProblem: undefined,
+      };
       if (heldLoads) await new Promise<void>((resolve) => heldLoads?.push(resolve));
       return answer;
     },
@@ -170,17 +273,29 @@ export function createFakeApi({
       }
       // The rules main saves by, minus the disk and the keychain.
       const parsed = Config.safeParse(structuredClone(next));
-      if (!parsed.success) return { ok: false, issues: parsed.error.issues.map((issue) => ({ path: issue.path.join('.'), message: issue.message })) };
+      if (!parsed.success)
+        return {
+          ok: false,
+          issues: parsed.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        };
       const merged = changesForSave(config.vpns, parsed.data.vpns, changes);
       const problems = validateSecretChanges(merged, parsed.data.vpns);
-      if (problems.length > 0) return { ok: false, issues: problems.map((message) => ({ path: 'secrets', message })) };
+      if (problems.length > 0)
+        return { ok: false, issues: problems.map((message) => ({ path: 'secrets', message })) };
       config = { ...parsed.data, vpns: keepServerRoutes(config.vpns, parsed.data.vpns) };
       secrets = applySecretChanges(secrets, merged, config.vpns);
       return { ok: true, config: structuredClone(config), secretStatus: secretStatusOf(secrets) };
     },
     detect: async (address) => {
       await pause(400);
-      if (/forti|sslvpn|10443/.test(address)) return { kind: 'fortinet-ssl', address: address.includes(':') ? address : `${address}:10443` };
+      if (/forti|sslvpn|10443/.test(address))
+        return {
+          kind: 'fortinet-ssl',
+          address: address.includes(':') ? address : `${address}:10443`,
+        };
       if (/remote|checkpoint/.test(address)) return { kind: 'checkpoint', address };
       if (/unknown|example\.org/.test(address)) return { kind: 'unknown' };
       return { kind: 'globalprotect', address, browserSignIn: /sso/.test(address) };
@@ -191,10 +306,20 @@ export function createFakeApi({
       if (!parsed) return { site: null };
       const live = rankVpns(config).filter((vpn) => statuses[vpn.id]?.state === 'connected');
       // What main keeps off every tunnel too: the domain-routing range and the VPNs' servers (here only those given as addresses).
-      const servers = live.flatMap((vpn) => vpnHosts(vpn).filter(isIpv4).map((host) => ({ cidr: `${host}/32`, label: `${vpn.name}'s server` })));
+      const servers = live.flatMap((vpn) =>
+        vpnHosts(vpn)
+          .filter(isIpv4)
+          .map((host) => ({ cidr: `${host}/32`, label: `${vpn.name}'s server` })),
+      );
       const reserved = [{ cidr: ROUTING_RESERVED_RANGE, label: 'Domain routing' }, ...servers];
-      const compiled = compileRoutes({ vpns: live, routes: live.flatMap((vpn) => effectiveRules(vpn, config.routes)), reserved });
-      const target = parsed.isAddress ? { addresses: [parsed.site] } : { domain: parsed.site, addresses: [PUBLIC_ADDRESS] };
+      const compiled = compileRoutes({
+        vpns: live,
+        routes: live.flatMap((vpn) => effectiveRules(vpn, config.routes)),
+        reserved,
+      });
+      const target = parsed.isAddress
+        ? { addresses: [parsed.site] }
+        : { domain: parsed.site, addresses: [PUBLIC_ADDRESS] };
       return { site: parsed.site, vpnId: routeFor(compiled, target) ?? null };
     },
     dockerState: async () => docker,
@@ -268,7 +393,8 @@ export function createFakeApi({
     setDocker: (state: DockerState) => void (docker = state),
     setHelper: (state: HelperState) => void (helper = state),
     /** Main sends live traffic. */
-    sendTraffic: (snapshot: TrafficSnapshot) => listeners.traffic.forEach((listener) => listener(snapshot)),
+    sendTraffic: (snapshot: TrafficSnapshot) =>
+      listeners.traffic.forEach((listener) => listener(snapshot)),
     /** Main saved the config itself (e.g. learned a server's routes) and says so. */
     sendConfigChanged: (next: Config) => {
       config = structuredClone(next);

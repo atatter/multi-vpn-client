@@ -1,4 +1,11 @@
-import { INSTALL_SING_BOX, installScripts, KEEP_FALLBACK_DNS, PREFIX, USE_PUSHED_DNS, vpnImage } from '@repo/vpn-sdk/container';
+import {
+  INSTALL_SING_BOX,
+  installScripts,
+  KEEP_FALLBACK_DNS,
+  PREFIX,
+  USE_PUSHED_DNS,
+  vpnImage,
+} from '@repo/vpn-sdk/container';
 
 /** OpenVPN: options after --config override the profile; --mute 0 keeps the log complete. */
 export const START_OPENVPN = `#!/bin/sh

@@ -1,4 +1,11 @@
-import { CONTAINER_NETWORKS, CONTAINER_SOCKS_PORT, containerProxyConfig, isIpv4, MAX_DNS_SERVERS, type ServerRoutes } from '@repo/core';
+import {
+  CONTAINER_NETWORKS,
+  CONTAINER_SOCKS_PORT,
+  containerProxyConfig,
+  isIpv4,
+  MAX_DNS_SERVERS,
+  type ServerRoutes,
+} from '@repo/core';
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
@@ -32,10 +39,12 @@ export const containerName = (vpnId: string) => `mvpn-${vpnId}`;
 const FALLBACK_DNS = ['1.1.1.1', '9.9.9.9'];
 
 /** The resolvers a container starts with: the VPN's configured servers, else public ones (the VPN's pushed servers replace them once connected). */
-const resolversFor = (configured: readonly string[]) => (configured.length > 0 ? configured : FALLBACK_DNS);
+const resolversFor = (configured: readonly string[]) =>
+  configured.length > 0 ? configured : FALLBACK_DNS;
 
 /** `docker run` DNS flags for one-off containers; a VPN's container gets `resolversFor` as a file instead (see ENTRY). */
-export const dnsFlags = (configured: readonly string[]) => resolversFor(configured).flatMap((server) => ['--dns', server]);
+export const dnsFlags = (configured: readonly string[]) =>
+  resolversFor(configured).flatMap((server) => ['--dns', server]);
 
 /** At most this many VPN networks at once (the helper takes at most 64 tunnels). */
 const NETWORK_SLOTS = 64;
@@ -51,11 +60,22 @@ export async function createVpnNetwork(docker: Pick<Docker, 'run'>, name: string
   const [first] = block.range;
   for (let slot = 0; slot < NETWORK_SLOTS; slot++) {
     const [subnet = ''] = rangesToCidrs([[first + slot * 16, first + slot * 16 + 15]]);
-    const created = await docker.run(['network', 'create', '--label', CONTAINER_LABEL, '--subnet', subnet, name]);
+    const created = await docker.run([
+      'network',
+      'create',
+      '--label',
+      CONTAINER_LABEL,
+      '--subnet',
+      subnet,
+      name,
+    ]);
     if (created.code === 0) return;
-    if (!/overlap/i.test(created.stderr)) throw new Error(`Docker couldn't create the VPN's network: ${created.stderr.trim()}`);
+    if (!/overlap/i.test(created.stderr))
+      throw new Error(`Docker couldn't create the VPN's network: ${created.stderr.trim()}`);
   }
-  throw new Error('Docker has no free network left for this VPN. Disconnect another VPN and try again.');
+  throw new Error(
+    'Docker has no free network left for this VPN. Disconnect another VPN and try again.',
+  );
 }
 
 export interface VpnSession {
@@ -95,7 +115,10 @@ export interface StartOptions {
  * on the host is deleted right after, and the container is removed if anything
  * fails. `onExit` is called once if the container stops after it connected.
  */
-export async function startVpnContainer(docker: Docker, options: StartOptions): Promise<VpnSession> {
+export async function startVpnContainer(
+  docker: Docker,
+  options: StartOptions,
+): Promise<VpnSession> {
   const { launch } = options;
   const name = containerName(options.vpnId);
   const proxy = { username: 'mvpn', password: randomBytes(18).toString('base64url') };
@@ -145,19 +168,31 @@ export async function startVpnContainer(docker: Docker, options: StartOptions): 
     // Checked once more before the client starts: a cancelled connect mustn't sign in (e.g. send an MFA push).
     options.signal.throwIfAborted();
     await docker.runChecked(['start', name]);
-    const published = (await docker.runChecked(['port', name, `${CONTAINER_SOCKS_PORT}/tcp`])).trim().split('\n')[0] ?? '';
+    const published =
+      (await docker.runChecked(['port', name, `${CONTAINER_SOCKS_PORT}/tcp`]))
+        .trim()
+        .split('\n')[0] ?? '';
     const port = Number(published.slice(published.lastIndexOf(':') + 1));
-    if (!Number.isInteger(port) || port <= 0) throw new Error(`Unexpected port mapping "${published}"`);
+    if (!Number.isInteger(port) || port <= 0)
+      throw new Error(`Unexpected port mapping "${published}"`);
 
     // Follow the logs: they tell us when the tunnel is up, and the stream ends when the container stops.
-    const follower = spawn(docker.bin, ['logs', '--follow', name], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const follower = spawn(docker.bin, ['logs', '--follow', name], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
     logs = follower;
     await waitForTunnel(docker, name, follower, nonce, options, () => stopped);
 
     // What the client recorded once connected: pushed DNS servers and routes, and the server it reached.
     const record = (file: string) => docker.run(['exec', name, 'cat', `/run/mvpn/${file}`]);
-    const [pushed, routesRecord, endpointRecord] = await Promise.all([record('pushed-dns'), record('pushed-routes'), record('endpoint')]);
-    const pushedDns = (pushed.code === 0 ? pushed.stdout.split(/\s+/) : []).filter(isIpv4).slice(0, MAX_DNS_SERVERS);
+    const [pushed, routesRecord, endpointRecord] = await Promise.all([
+      record('pushed-dns'),
+      record('pushed-routes'),
+      record('endpoint'),
+    ]);
+    const pushedDns = (pushed.code === 0 ? pushed.stdout.split(/\s+/) : [])
+      .filter(isIpv4)
+      .slice(0, MAX_DNS_SERVERS);
     const endpoint = endpointRecord.code === 0 ? endpointRecord.stdout.trim() : '';
 
     return {
@@ -186,7 +221,8 @@ export async function startVpnContainer(docker: Docker, options: StartOptions): 
 async function copyFiles(docker: Docker, name: string, files: Record<string, string>) {
   const staging = await mkdtemp(join(tmpdir(), 'mvpn-'));
   try {
-    for (const [file, content] of Object.entries(files)) await writeFile(join(staging, file), content, { mode: 0o600 });
+    for (const [file, content] of Object.entries(files))
+      await writeFile(join(staging, file), content, { mode: 0o600 });
     await docker.runChecked(['cp', `${staging}/.`, `${name}:/run/mvpn`]);
   } finally {
     await rm(staging, { recursive: true, force: true });

@@ -22,7 +22,9 @@ export const openvpnForm: KindForm<OpenVpn> = {
     />
   ),
   username: (vpn) => ({
-    hint: vpn.needsPassword ? 'Your profile signs in with a username and password.' : 'Leave empty if the profile only uses certificates.',
+    hint: vpn.needsPassword
+      ? 'Your profile signs in with a username and password.'
+      : 'Leave empty if the profile only uses certificates.',
   }),
   extraOptions: { hint: 'Extra OpenVPN directives, one per line.', placeholder: 'tun-mtu 1400' },
 };

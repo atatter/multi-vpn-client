@@ -22,7 +22,9 @@ export function fortinetLaunch(vpn: FortinetSslVpn, password: string): VpnLaunch
       `https://${vpn.gateway}`,
     ],
     files: { auth: `${password}\n\n` },
-    readLine: readOpenConnect(vpn.gateway, (line) => (line.includes('Invalid credentials') ? REJECTED : undefined)),
+    readLine: readOpenConnect(vpn.gateway, (line) =>
+      line.includes('Invalid credentials') ? REJECTED : undefined,
+    ),
   };
 }
 
@@ -33,7 +35,10 @@ export const detectFortinet: Detect = async ({ host, port, explicitPort }, probe
   const found = await Promise.all(
     ports.map(async (candidate) => {
       const answer = await probe({ host, port: candidate, method: 'GET', path: '/remote/login' });
-      return answer && ((answer.status === 200 && looksLikeIt(answer.body)) || looksLikeIt(answer.location)) ? { address: withPort(host, candidate) } : undefined;
+      return answer &&
+        ((answer.status === 200 && looksLikeIt(answer.body)) || looksLikeIt(answer.location))
+        ? { address: withPort(host, candidate) }
+        : undefined;
     }),
   );
   return found.find((result) => result !== undefined);

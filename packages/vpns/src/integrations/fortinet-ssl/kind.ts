@@ -13,7 +13,14 @@ export const fortinetSsl = defineKind(
     serverCertPin: z.string(),
   }),
   {
-    create: (c) => ({ ...c, kind: 'fortinet-ssl', gateway: '', realm: '', username: '', serverCertPin: '' }),
+    create: (c) => ({
+      ...c,
+      kind: 'fortinet-ssl',
+      gateway: '',
+      realm: '',
+      username: '',
+      serverCertPin: '',
+    }),
     address: (vpn) => vpn.gateway,
     withAddress: (vpn, gateway) => ({ ...vpn, gateway }),
     hosts: (vpn) => bareHosts([vpn.gateway]),

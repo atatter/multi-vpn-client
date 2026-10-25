@@ -31,9 +31,20 @@ const removeWithNode: Remove = (path) => rm(path, { recursive: true, force: true
  * against the manifest's checksum, unpacked into a temporary folder and only then renamed into place, so a version
  * folder that exists is always complete. Other versions are left alone: one of them may be running.
  */
-export async function ensureInstalled({ manifest, target, dir, platform, env, onProgress, remove = removeWithNode }: InstallOptions): Promise<string> {
+export async function ensureInstalled({
+  manifest,
+  target,
+  dir,
+  platform,
+  env,
+  onProgress,
+  remove = removeWithNode,
+}: InstallOptions): Promise<string> {
   const archive = manifest.archives[target];
-  if (!archive) throw new Error(`Multi VPN Client ${manifest.version} isn't available for ${target}. It's built for ${Object.keys(manifest.archives).join(', ')}.`);
+  if (!archive)
+    throw new Error(
+      `Multi VPN Client ${manifest.version} isn't available for ${target}. It's built for ${Object.keys(manifest.archives).join(', ')}.`,
+    );
   const versionDir = join(dir, manifest.version);
   if (existsSync(executableIn(versionDir, platform))) return executableIn(versionDir, platform);
 
@@ -41,14 +52,20 @@ export async function ensureInstalled({ manifest, target, dir, platform, env, on
   const work = await mkdtemp(join(dir, '.download-'));
   try {
     const file = join(work, archive.file);
-    const sha256 = await download(archiveUrl(manifest, archive, env), file, (received, length) => onProgress?.(received / (length ?? archive.size)));
-    if (sha256 !== archive.sha256) throw new Error(`The download of ${archive.file} doesn't match its checksum, so it wasn't opened. Try again; if it keeps happening, report it.`);
+    const sha256 = await download(archiveUrl(manifest, archive, env), file, (received, length) =>
+      onProgress?.(received / (length ?? archive.size)),
+    );
+    if (sha256 !== archive.sha256)
+      throw new Error(
+        `The download of ${archive.file} doesn't match its checksum, so it wasn't opened. Try again; if it keeps happening, report it.`,
+      );
 
     const unpacked = join(work, 'unpacked');
     await mkdir(unpacked);
     await extract(file, unpacked, platform, env);
     const root = await singleFolder(unpacked);
-    if (!existsSync(executableIn(root, platform))) throw new Error(`${archive.file} doesn't contain the app where it should be.`);
+    if (!existsSync(executableIn(root, platform)))
+      throw new Error(`${archive.file} doesn't contain the app where it should be.`);
     await rename(root, versionDir).catch((error: unknown) => {
       // Another launcher finished the same version first; theirs is just as good.
       if (!existsSync(executableIn(versionDir, platform))) throw error;
@@ -62,7 +79,9 @@ export async function ensureInstalled({ manifest, target, dir, platform, env, on
 /** The versions in `dir` that are completely unpacked, in no particular order. */
 export async function installedVersions(dir: string, platform: NodeJS.Platform): Promise<string[]> {
   const entries = await readdir(dir).catch(() => []);
-  return entries.filter((entry) => isVersion(entry) && existsSync(executableIn(join(dir, entry), platform)));
+  return entries.filter(
+    (entry) => isVersion(entry) && existsSync(executableIn(join(dir, entry), platform)),
+  );
 }
 
 /**
@@ -71,9 +90,14 @@ export async function installedVersions(dir: string, platform: NodeJS.Platform):
  * Inside Electron, `remove` must use original-fs: Electron's fs takes each version's app.asar for a folder and can't
  * delete it.
  */
-export async function removeOlderVersions(dir: string, version: string, remove: Remove): Promise<void> {
+export async function removeOlderVersions(
+  dir: string,
+  version: string,
+  remove: Remove,
+): Promise<void> {
   for (const entry of await readdir(dir).catch(() => [])) {
-    if (isVersion(entry) && compareVersions(entry, version) < 0) await remove(join(dir, entry)).catch(() => undefined);
+    if (isVersion(entry) && compareVersions(entry, version) < 0)
+      await remove(join(dir, entry)).catch(() => undefined);
   }
 }
 
@@ -94,12 +118,22 @@ function request(url: string, redirects = 5): Promise<IncomingMessage> {
         response.resume();
         reject(new Error(`Downloading ${url} failed: HTTP ${statusCode}.`));
       } else resolve(response);
-    }).on('error', (error) => reject(new Error(`Downloading ${url} failed: ${error.message}. Check the internet connection and try again.`)));
+    }).on('error', (error) =>
+      reject(
+        new Error(
+          `Downloading ${url} failed: ${error.message}. Check the internet connection and try again.`,
+        ),
+      ),
+    );
   });
 }
 
 /** Streams `url` into `file`, reporting the bytes received and the response's length, and returns its SHA-256. */
-async function download(url: string, file: string, onProgress: (received: number, length: number | undefined) => void): Promise<string> {
+async function download(
+  url: string,
+  file: string,
+  onProgress: (received: number, length: number | undefined) => void,
+): Promise<string> {
   const hash = createHash('sha256');
   const response = await request(url);
   const length = Number(response.headers['content-length']) || undefined;
@@ -123,11 +157,23 @@ async function download(url: string, file: string, onProgress: (received: number
  * Unpacks with the system's tar: GNU or BSD tar on macOS and Linux, and on Windows the bsdtar that ships in System32
  * (it reads zip too). The full path matters there: Git for Windows puts a GNU tar on PATH that can't read zip.
  */
-function extract(file: string, into: string, platform: NodeJS.Platform, env: NodeJS.ProcessEnv): Promise<void> {
-  const tar = platform === 'win32' ? join(env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe') : 'tar';
+function extract(
+  file: string,
+  into: string,
+  platform: NodeJS.Platform,
+  env: NodeJS.ProcessEnv,
+): Promise<void> {
+  const tar =
+    platform === 'win32' ? join(env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe') : 'tar';
   return new Promise((resolve, reject) =>
-    execFile(tar, ['-xf', file, '-C', into], { maxBuffer: 16 * 1024 * 1024 }, (error, _stdout, stderr) =>
-      error ? reject(new Error(`Unpacking ${file} failed: ${stderr.trim() || error.message}`)) : resolve(),
+    execFile(
+      tar,
+      ['-xf', file, '-C', into],
+      { maxBuffer: 16 * 1024 * 1024 },
+      (error, _stdout, stderr) =>
+        error
+          ? reject(new Error(`Unpacking ${file} failed: ${stderr.trim() || error.message}`))
+          : resolve(),
     ),
   );
 }
@@ -136,6 +182,12 @@ function extract(file: string, into: string, platform: NodeJS.Platform, env: Nod
 async function singleFolder(dir: string): Promise<string> {
   const entries = await readdir(dir);
   const [only] = entries;
-  if (entries.length === 1 && only && !only.endsWith('.app') && (await stat(join(dir, only))).isDirectory()) return join(dir, only);
+  if (
+    entries.length === 1 &&
+    only &&
+    !only.endsWith('.app') &&
+    (await stat(join(dir, only))).isDirectory()
+  )
+    return join(dir, only);
   return dir;
 }

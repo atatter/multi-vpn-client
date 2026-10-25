@@ -26,12 +26,20 @@ export function VersionRow() {
         <span className="min-w-0">
           Version {app.info.version}
           {/* Not `hint`: its text-muted would win over text-danger, whatever the order here. */}
-          <span className={cx('block truncate text-[12.5px]', failed ? 'text-danger' : 'text-muted')} title={line}>
+          <span
+            className={cx('block truncate text-[12.5px]', failed ? 'text-danger' : 'text-muted')}
+            title={line}
+          >
             {line}
           </span>
         </span>
         {action && (
-          <button type="button" className={cx(link, 'whitespace-nowrap')} disabled={action.disabled} onClick={run[action.run]}>
+          <button
+            type="button"
+            className={cx(link, 'whitespace-nowrap')}
+            disabled={action.disabled}
+            onClick={run[action.run]}
+          >
             {action.label}
           </button>
         )}

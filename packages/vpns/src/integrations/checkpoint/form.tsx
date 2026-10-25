@@ -11,9 +11,25 @@ export const checkpointForm: KindForm<CheckpointVpn> = {
   changed: (vpn) => (vpn.tunnel === 'ssl' ? ['SSL tunnel'] : []),
   Main: ({ vpn, onChange, errors, showAddress, runAction }) => (
     <>
-      {showAddress && <TextField label="Server" monospace value={vpn.server} placeholder="remote.example.com" error={errors.server} onChange={(server) => onChange({ ...vpn, server })} />}
+      {showAddress && (
+        <TextField
+          label="Server"
+          monospace
+          value={vpn.server}
+          placeholder="remote.example.com"
+          error={errors.server}
+          onChange={(server) => onChange({ ...vpn, server })}
+        />
+      )}
       {/* When the server is already known (the sign-in step), its login types are looked up straight away. */}
-      <LoginTypeField server={vpn.server} value={vpn.loginType} error={errors.loginType} onChange={(loginType) => onChange({ ...vpn, loginType })} autoLookup={!showAddress} runAction={runAction} />
+      <LoginTypeField
+        server={vpn.server}
+        value={vpn.loginType}
+        error={errors.loginType}
+        onChange={(loginType) => onChange({ ...vpn, loginType })}
+        autoLookup={!showAddress}
+        runAction={runAction}
+      />
     </>
   ),
   More: ({ vpn, onChange }) => (
@@ -28,5 +44,8 @@ export const checkpointForm: KindForm<CheckpointVpn> = {
     />
   ),
   username: () => ({ hint: 'Leave empty for Microsoft (Entra ID) sign-in in the browser.' }),
-  extraOptions: { hint: 'Extra snx-rs options, key=value per line.', placeholder: 'transport-type=tcpt' },
+  extraOptions: {
+    hint: 'Extra snx-rs options, key=value per line.',
+    placeholder: 'transport-type=tcpt',
+  },
 };

@@ -23,7 +23,10 @@ export function SiteRow({
       <span className={cx(mono, 'min-w-0 break-all select-text', !route.enabled && 'text-muted')}>
         {target}
         {route.pinned && (
-          <span className="ml-1.5 font-sans text-[11px] font-semibold text-go" title="Goes through this VPN whatever the order">
+          <span
+            className="ml-1.5 font-sans text-[11px] font-semibold text-go"
+            title="Goes through this VPN whatever the order"
+          >
             <PinIcon /> pinned
           </span>
         )}
@@ -48,7 +51,11 @@ export function SiteRow({
       {winner && (
         <p className="mb-1 basis-full text-[12.5px] leading-snug text-sodium">
           {winner} also covers this and is higher, so it goes through {winner}.{' '}
-          <button type="button" className={cx(link, 'text-[12.5px]')} onClick={() => onUpdate({ pinned: true })}>
+          <button
+            type="button"
+            className={cx(link, 'text-[12.5px]')}
+            onClick={() => onUpdate({ pinned: true })}
+          >
             Send it through {vpnName} anyway
           </button>
         </p>

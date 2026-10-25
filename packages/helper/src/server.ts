@@ -1,4 +1,13 @@
-import { appProofMessage, HELPER_VERSION, helperProofMessage, MAX_HELPER_LINE, NO_ROUTES, parseHelperLine, type HelperResponse, type HostRoutes } from '@repo/core';
+import {
+  appProofMessage,
+  HELPER_VERSION,
+  helperProofMessage,
+  MAX_HELPER_LINE,
+  NO_ROUTES,
+  parseHelperLine,
+  type HelperResponse,
+  type HostRoutes,
+} from '@repo/core';
 import { proofMatches, signProof } from '@repo/core/helper-crypto';
 import { randomBytes } from 'node:crypto';
 import { createServer, type Server, type Socket } from 'node:net';
@@ -9,7 +18,10 @@ export interface HostBackend {
 }
 
 /** Where a connection is in the handshake (see core/helper-protocol). */
-type Phase = { name: 'new' } | { name: 'challenged'; challenge: string } | { name: 'authenticated' };
+type Phase =
+  | { name: 'new' }
+  | { name: 'challenged'; challenge: string }
+  | { name: 'authenticated' };
 
 /**
  * Loopback server speaking the helper protocol (see core/helper-protocol).
@@ -21,7 +33,15 @@ type Phase = { name: 'new' } | { name: 'challenged'; challenge: string } | { nam
  * - Only the active session may `apply`. When it ends — the app quit or
  *   crashed, or an apply failed or was refused — all routes and DNS entries are removed.
  */
-export function createHelperServer({ key, backend, log }: { key: Buffer; backend: HostBackend; log: (line: string) => void }) {
+export function createHelperServer({
+  key,
+  backend,
+  log,
+}: {
+  key: Buffer;
+  backend: HostBackend;
+  log: (line: string) => void;
+}) {
   const sign = (message: string) => signProof(key, message);
 
   let active: Socket | undefined;
@@ -36,7 +56,9 @@ export function createHelperServer({ key, backend, log }: { key: Buffer; backend
   const endActive = (reason: string) => {
     active = undefined;
     log(`${reason}; removing routes`);
-    void exclusive(() => backend.apply(NO_ROUTES)).catch((error: unknown) => log(`teardown failed: ${String(error)}`));
+    void exclusive(() => backend.apply(NO_ROUTES)).catch((error: unknown) =>
+      log(`teardown failed: ${String(error)}`),
+    );
   };
 
   const server: Server = createServer((socket) => {
@@ -75,15 +97,26 @@ export function createHelperServer({ key, backend, log }: { key: Buffer; backend
           if (phase.name !== 'new') return refuse();
           const challenge = randomBytes(32).toString('base64url');
           phase = { name: 'challenged', challenge };
-          return reply({ ok: true, version: HELPER_VERSION, challenge, proof: sign(helperProofMessage(request.nonce)) });
+          return reply({
+            ok: true,
+            version: HELPER_VERSION,
+            challenge,
+            proof: sign(helperProofMessage(request.nonce)),
+          });
         }
 
         case 'auth': {
-          if (phase.name !== 'challenged' || !proofMatches(request.proof, sign(appProofMessage(phase.challenge)))) return refuse();
+          if (
+            phase.name !== 'challenged' ||
+            !proofMatches(request.proof, sign(appProofMessage(phase.challenge)))
+          )
+            return refuse();
           phase = { name: 'authenticated' };
           if (active && active !== socket) {
             active.destroy();
-            void exclusive(() => backend.apply(NO_ROUTES)).catch((error: unknown) => log(`teardown failed: ${String(error)}`));
+            void exclusive(() => backend.apply(NO_ROUTES)).catch((error: unknown) =>
+              log(`teardown failed: ${String(error)}`),
+            );
           }
           active = socket;
           return reply({ ok: true, version: HELPER_VERSION });

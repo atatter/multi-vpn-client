@@ -54,7 +54,9 @@ describe('systemd-resolved DNS', () => {
 
   it('waits for resolved to notice a new link', async () => {
     const system = fakeSystem({ failResolvectl: 2 });
-    await createResolvedDns({ address: '198.18.0.5', port: 53530, run: system.run }).set(['corp.example']);
+    await createResolvedDns({ address: '198.18.0.5', port: 53530, run: system.run }).set([
+      'corp.example',
+    ]);
     expect(system.calls.filter((call) => call.includes(' dns '))).toHaveLength(3);
   });
 });

@@ -31,7 +31,9 @@ export type ConnectResult =
  * What an address turned out to be, from probing it the way each vendor's own client starts (engine: detect.ts).
  * `browserSignIn`: its server signs in through the browser.
  */
-export type Detection = { kind: VpnKind; address: string; browserSignIn?: boolean } | { kind: 'unknown' };
+export type Detection =
+  | { kind: VpnKind; address: string; browserSignIn?: boolean }
+  | { kind: 'unknown' };
 
 /** Docker as the setup screens see it. */
 export type DockerState = 'running' | 'stopped' | 'missing';

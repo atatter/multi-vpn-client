@@ -41,7 +41,11 @@ export interface PlatformInstaller {
   uninstall(): Promise<void>;
 }
 
-const INSTALLERS: Partial<Record<NodeJS.Platform, PlatformInstaller>> = { darwin: darwinInstaller, linux: linuxInstaller, win32: win32Installer };
+const INSTALLERS: Partial<Record<NodeJS.Platform, PlatformInstaller>> = {
+  darwin: darwinInstaller,
+  linux: linuxInstaller,
+  win32: win32Installer,
+};
 const platformInstaller = () => INSTALLERS[process.platform];
 
 export const helperLogHint = () => platformInstaller()?.logHint ?? '';
@@ -77,13 +81,24 @@ function requireInstaller(): PlatformInstaller {
   return installer;
 }
 
-export async function installHelper({ dataDir, helperBinary, singBox }: { dataDir: string; helperBinary: string; singBox: SingBoxBinary }): Promise<void> {
+export async function installHelper({
+  dataDir,
+  helperBinary,
+  singBox,
+}: {
+  dataDir: string;
+  helperBinary: string;
+  singBox: SingBoxBinary;
+}): Promise<void> {
   const installer = requireInstaller();
   const binary = await readFile(helperBinary).catch(() => {
     throw new Error(`Helper binary not found at ${helperBinary}. Run "pnpm build:helper".`);
   });
   const token = randomBytes(32).toString('base64url');
-  const configJson = JSON.stringify({ key: helperKey(token).toString('hex'), singBoxSha256: singBox.sha256 });
+  const configJson = JSON.stringify({
+    key: helperKey(token).toString('hex'),
+    singBoxSha256: singBox.sha256,
+  });
 
   await installer.install({ helperBinary, helperSha256: sha256(binary), singBox, configJson });
 
@@ -94,7 +109,9 @@ export async function installHelper({ dataDir, helperBinary, singBox }: { dataDi
     if ((await helperVersion(HELPER_PORT)) === HELPER_VERSION) return;
     await sleep(250);
   }
-  throw new Error(`The network helper was installed but isn't responding. Its log: ${installer.logHint}`);
+  throw new Error(
+    `The network helper was installed but isn't responding. Its log: ${installer.logHint}`,
+  );
 }
 
 export async function uninstallHelper(dataDir: string): Promise<void> {

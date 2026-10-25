@@ -8,6 +8,8 @@ describe('accountName', () => {
   it('names the card a VPN signs in with, else its username', () => {
     expect(accountName(gp)).toBe('jane');
     expect(accountName({ ...gp, signIn: 'card' })).toBe('ID card');
-    expect(accountName({ ...gp, signIn: 'card', cardCertificate: 'pkcs11:id=%02;type=cert' })).toBe('Smart card');
+    expect(accountName({ ...gp, signIn: 'card', cardCertificate: 'pkcs11:id=%02;type=cert' })).toBe(
+      'Smart card',
+    );
   });
 });

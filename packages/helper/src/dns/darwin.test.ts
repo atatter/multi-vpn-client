@@ -15,9 +15,18 @@ const setup = async () => {
 describe('resolver DNS', () => {
   it('writes one marked entry per valid domain and flushes', async () => {
     const { dir, dns, flushes } = await setup();
-    await dns.set(['corp.example', 'corp.example', '../evil', '.hidden', 'with space', 'b.internal']);
+    await dns.set([
+      'corp.example',
+      'corp.example',
+      '../evil',
+      '.hidden',
+      'with space',
+      'b.internal',
+    ]);
     expect((await readdir(dir)).sort()).toEqual(['b.internal', 'corp.example']);
-    expect(await readFile(join(dir, 'corp.example'), 'utf8')).toBe(`${RESOLVER_MARK}\nnameserver 198.18.0.2\n`);
+    expect(await readFile(join(dir, 'corp.example'), 'utf8')).toBe(
+      `${RESOLVER_MARK}\nnameserver 198.18.0.2\n`,
+    );
     expect(flushes()).toBe(1);
   });
 

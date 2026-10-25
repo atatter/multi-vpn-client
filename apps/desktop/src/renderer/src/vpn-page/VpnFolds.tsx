@@ -29,12 +29,29 @@ export function VpnFolds({
 }) {
   const [folds, setFolds] = useState({ account: false, advanced: false });
   // Open while it has an error, or lacks something connecting needs (a profile, a key): the status says so above.
-  const accountOpen = folds.account || Object.keys(errors).some((key) => key !== 'sites' && !key.startsWith('dns')) || !!setupProblem(draft, slotsAfter(storedSlots, pending));
+  const accountOpen =
+    folds.account ||
+    Object.keys(errors).some((key) => key !== 'sites' && !key.startsWith('dns')) ||
+    !!setupProblem(draft, slotsAfter(storedSlots, pending));
   const advanced = advancedSummary(draft);
   return (
     <div className="mt-[18px]">
-      <Fold title="Account" summary={accountSummary(draft)} open={accountOpen} onToggle={() => setFolds({ ...folds, account: !accountOpen })}>
-        <AccountFields vpn={draft} onChange={onChange} pending={pending} onPendingChange={onPendingChange} storedSlots={storedSlots} errors={errors} keychainProblem={keychainProblem} showName />
+      <Fold
+        title="Account"
+        summary={accountSummary(draft)}
+        open={accountOpen}
+        onToggle={() => setFolds({ ...folds, account: !accountOpen })}
+      >
+        <AccountFields
+          vpn={draft}
+          onChange={onChange}
+          pending={pending}
+          onPendingChange={onPendingChange}
+          storedSlots={storedSlots}
+          errors={errors}
+          keychainProblem={keychainProblem}
+          showName
+        />
       </Fold>
       <Fold
         title="Advanced"

@@ -12,16 +12,23 @@ export const idsOn = (statuses: Record<string, ConnectionStatus>) =>
 export const namesOn = (ids: readonly string[], config: Pick<Config, 'vpns' | 'priority'>) =>
   rankVpns(config).flatMap((vpn) => (ids.includes(vpn.id) ? [vpn.name] : []));
 
-export const countHeadline = (count: number) => (count === 0 ? 'No VPNs on' : count === 1 ? '1 VPN on' : `${count} VPNs on`);
+export const countHeadline = (count: number) =>
+  count === 0 ? 'No VPNs on' : count === 1 ? '1 VPN on' : `${count} VPNs on`;
 
 /**
  * The update's one menu item; undefined whenever the window's update button is hidden too (renderer/src/domain/update-copy.ts).
  * Its wording follows that button's tooltip.
  */
-export function updateItem(update: UpdateState, actions: { download(): void; restart(): void }): MenuItemConstructorOptions | undefined {
+export function updateItem(
+  update: UpdateState,
+  actions: { download(): void; restart(): void },
+): MenuItemConstructorOptions | undefined {
   switch (update.state) {
     case 'available':
-      return { label: `Update to ${update.version}${update.size ? ` (${Math.round(update.size / 1e6)} MB)` : ''}`, click: actions.download };
+      return {
+        label: `Update to ${update.version}${update.size ? ` (${Math.round(update.size / 1e6)} MB)` : ''}`,
+        click: actions.download,
+      };
     case 'downloading':
       return { label: `Downloading ${update.version}… ${update.percent}%`, enabled: false };
     case 'download-failed':
@@ -52,13 +59,32 @@ interface MenuParts {
  * The tray's menu: the VPNs that are on, the update, opening the window, quitting. Each inner list is a section between
  * separators.
  */
-export function trayMenu({ count, names, dot, update, quitShortcut, open, quit }: MenuParts): MenuItemConstructorOptions[] {
+export function trayMenu({
+  count,
+  names,
+  dot,
+  update,
+  quitShortcut,
+  open,
+  quit,
+}: MenuParts): MenuItemConstructorOptions[] {
   const sections: MenuItemConstructorOptions[][] = [
-    [{ label: countHeadline(count), enabled: false }, ...names.map((name) => ({ label: name, icon: dot, click: open }))],
+    [
+      { label: countHeadline(count), enabled: false },
+      ...names.map((name) => ({ label: name, icon: dot, click: open })),
+    ],
     ...(update ? [[update]] : []),
     [{ label: `Open ${APP_NAME}`, click: open }],
     // Quitting turns every VPN off (main/index.ts), so the item says so.
-    [{ label: 'Quit and turn off VPNs', ...(quitShortcut ? { accelerator: quitShortcut } : {}), click: quit }],
+    [
+      {
+        label: 'Quit and turn off VPNs',
+        ...(quitShortcut ? { accelerator: quitShortcut } : {}),
+        click: quit,
+      },
+    ],
   ];
-  return sections.flatMap((section, index) => (index === 0 ? section : [{ type: 'separator' as const }, ...section]));
+  return sections.flatMap((section, index) =>
+    index === 0 ? section : [{ type: 'separator' as const }, ...section],
+  );
 }

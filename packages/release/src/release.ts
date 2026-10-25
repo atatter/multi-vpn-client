@@ -14,7 +14,11 @@ export const Manifest = z.object({
   archives: z.record(
     z.string(),
     // `size` in bytes.
-    z.object({ file: z.string().regex(/^[\w.-]+$/), sha256: z.string().regex(/^[0-9a-f]{64}$/), size: z.number().int().positive() }),
+    z.object({
+      file: z.string().regex(/^[\w.-]+$/),
+      sha256: z.string().regex(/^[0-9a-f]{64}$/),
+      size: z.number().int().positive(),
+    }),
   ),
 });
 export type Manifest = z.infer<typeof Manifest>;
@@ -32,7 +36,8 @@ export type Target = keyof typeof ARCHIVE_TYPES;
 export const isTarget = (key: string): key is Target => key in ARCHIVE_TYPES;
 
 /** electron-builder.yml's artifactName for this version and machine. */
-export const archiveFile = (version: string, target: Target) => `multi-vpn-client-${version}-${target}.${ARCHIVE_TYPES[target]}`;
+export const archiveFile = (version: string, target: Target) =>
+  `multi-vpn-client-${version}-${target}.${ARCHIVE_TYPES[target]}`;
 
 const RELEASES_URL = 'https://github.com/atatter/multi-vpn-client/releases/download';
 
@@ -44,17 +49,27 @@ export const archiveUrl = (manifest: Manifest, archive: Archive, env: NodeJS.Pro
   `${env.MVPN_RELEASE_URL || `${RELEASES_URL}/v${manifest.version}`}/${archive.file}`;
 
 /** Where unpacked versions live, one folder each: the OS's per-user cache, since a version can always be downloaded again. */
-export function versionsDir(env: NodeJS.ProcessEnv, platform: NodeJS.Platform, home: string): string {
+export function versionsDir(
+  env: NodeJS.ProcessEnv,
+  platform: NodeJS.Platform,
+  home: string,
+): string {
   // Empty or relative values are ignored, never resolved against the cwd.
   const absolute = (value: string | undefined) => (value && isAbsolute(value) ? value : undefined);
-  if (platform === 'win32') return join(absolute(env.LOCALAPPDATA) ?? join(home, 'AppData', 'Local'), 'Multi VPN Client', 'versions');
+  if (platform === 'win32')
+    return join(
+      absolute(env.LOCALAPPDATA) ?? join(home, 'AppData', 'Local'),
+      'Multi VPN Client',
+      'versions',
+    );
   if (platform === 'darwin') return join(home, 'Library', 'Caches', 'Multi VPN Client', 'versions');
   return join(absolute(env.XDG_CACHE_HOME) ?? join(home, '.cache'), 'multi-vpn-client', 'versions');
 }
 
 /** The app's executable inside an unpacked version. Must match productName and linux.executableName in electron-builder.yml. */
 export function executableIn(versionDir: string, platform: NodeJS.Platform): string {
-  if (platform === 'darwin') return join(versionDir, 'Multi VPN Client.app', 'Contents', 'MacOS', 'Multi VPN Client');
+  if (platform === 'darwin')
+    return join(versionDir, 'Multi VPN Client.app', 'Contents', 'MacOS', 'Multi VPN Client');
   if (platform === 'win32') return join(versionDir, 'Multi VPN Client.exe');
   return join(versionDir, 'multi-vpn-client');
 }

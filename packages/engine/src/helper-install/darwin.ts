@@ -53,7 +53,9 @@ killall -HUP mDNSResponder 2>/dev/null || true
  * The settings (with the handshake key) come from a private file, so the key never shows up in
  * a command line, which other processes can read.
  */
-export function macInstallScript(p: Omit<InstallPlan, 'configJson'> & { configFile: string }): string {
+export function macInstallScript(
+  p: Omit<InstallPlan, 'configJson'> & { configFile: string },
+): string {
   // umask 077: helper.json (the handshake key) must never exist with looser permissions, even briefly.
   return `set -eu
 umask 077
@@ -100,10 +102,14 @@ export const darwinInstaller: PlatformInstaller = {
     try {
       const configFile = join(staging, 'helper.json');
       await writeFile(configFile, configJson, { mode: 0o600 });
-      await runAsAdmin(macInstallScript({ ...plan, configFile }), `${APP_NAME} wants to install its network helper. You'll only be asked once.`);
+      await runAsAdmin(
+        macInstallScript({ ...plan, configFile }),
+        `${APP_NAME} wants to install its network helper. You'll only be asked once.`,
+      );
     } finally {
       await rm(staging, { recursive: true, force: true });
     }
   },
-  uninstall: () => runAsAdmin(macUninstallScript(), `${APP_NAME} wants to remove its network helper.`),
+  uninstall: () =>
+    runAsAdmin(macUninstallScript(), `${APP_NAME} wants to remove its network helper.`),
 };

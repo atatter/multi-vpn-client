@@ -25,9 +25,17 @@ vi.mock('../docker.ts', () => ({
     dockerLookups.count++;
     return '/fake/docker';
   },
-  createDocker: (bin: string) => ({ bin, run: async () => ({ code: 0, stdout: '', stderr: '' }), runChecked: async () => '', assertRunning: async () => undefined }),
+  createDocker: (bin: string) => ({
+    bin,
+    run: async () => ({ code: 0, stdout: '', stderr: '' }),
+    runChecked: async () => '',
+    assertRunning: async () => undefined,
+  }),
 }));
-vi.mock('../helper-install/index.ts', async (importOriginal) => ({ ...(await importOriginal<typeof import('../helper-install/index.ts')>()), readHelperToken: async () => 'token' }));
+vi.mock('../helper-install/index.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../helper-install/index.ts')>()),
+  readHelperToken: async () => 'token',
+}));
 /** The (fake) helper: while `failing`, applying fails and ends the session, as the real helper does. */
 const helper = vi.hoisted(() => ({ failing: false }));
 vi.mock('../helper-client.ts', () => ({
@@ -43,18 +51,38 @@ vi.mock('../helper-client.ts', () => ({
   },
 }));
 vi.mock('@repo/core/host', () => ({ hostReserved: async () => ({ reserved: [] }) }));
-vi.mock('../container/images.ts', async (importOriginal) => ({ ...(await importOriginal<typeof import('../container/images.ts')>()), ensureVpnImage: () => build }));
+vi.mock('../container/images.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../container/images.ts')>()),
+  ensureVpnImage: () => build,
+}));
 vi.mock('../container/cleanup.ts', () => ({ removeStaleContainers: async () => undefined }));
 vi.mock('../container/start.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../container/start.ts')>()),
   startVpnContainer: async (_docker: unknown, options: StartOptions) => {
     await starts.get(options.vpnId)?.(options);
-    return { port: 1080, username: 'u', password: 'p', pushedDns: [], pushedRoutes: pushed.get(options.vpnId), endpoint: endpoints.get(options.vpnId), stop: async () => undefined };
+    return {
+      port: 1080,
+      username: 'u',
+      password: 'p',
+      pushedDns: [],
+      pushedRoutes: pushed.get(options.vpnId),
+      endpoint: endpoints.get(options.vpnId),
+      stop: async () => undefined,
+    };
   },
 }));
 
-const checkpoint = (id: string) => ({ ...newVpn('checkpoint', { id, name: id }), server: 'vpn.example.com', loginType: 'vpn_x' });
-const config: Config = { version: 1, vpns: [checkpoint('a'), checkpoint('b'), checkpoint('dies')], routes: [], priority: [] };
+const checkpoint = (id: string) => ({
+  ...newVpn('checkpoint', { id, name: id }),
+  server: 'vpn.example.com',
+  loginType: 'vpn_x',
+});
+const config: Config = {
+  version: 1,
+  vpns: [checkpoint('a'), checkpoint('b'), checkpoint('dies')],
+  routes: [],
+  priority: [],
+};
 let savedConfig = config;
 
 const manager = () =>
@@ -80,7 +108,10 @@ describe('connection manager', () => {
     build = Promise.resolve();
     helper.failing = false;
     // A asks for a one-time code; B connects right away.
-    starts.set('a', async ({ onPrompt }) => void (await onPrompt('Please enter your one-time code')));
+    starts.set(
+      'a',
+      async ({ onPrompt }) => void (await onPrompt('Please enter your one-time code')),
+    );
   });
 
   it('connects and disconnects other VPNs while one waits for the user', async () => {
@@ -108,9 +139,18 @@ describe('connection manager', () => {
     await expect(a).resolves.toEqual({ ok: false, error: 'Cancelled.' });
     expect(connections.statuses().a?.state).toBe('disconnected');
 
-    starts.set('b', ({ signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason))));
+    starts.set(
+      'b',
+      ({ signal }) =>
+        new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason))),
+    );
     const b = connections.connect('b', undefined);
-    await vi.waitFor(() => expect(connections.statuses().b).toMatchObject({ state: 'connecting', step: expect.stringContaining('Signing in') }));
+    await vi.waitFor(() =>
+      expect(connections.statuses().b).toMatchObject({
+        state: 'connecting',
+        step: expect.stringContaining('Signing in'),
+      }),
+    );
     await connections.shutdown();
     await expect(b).resolves.toEqual({ ok: false, error: 'Cancelled.' });
     expect(connections.statuses().b?.state).toBe('disconnected');
@@ -121,7 +161,12 @@ describe('connection manager', () => {
     build = new Promise((_, reject) => (failBuild = reject));
     const connections = manager();
     const b = connections.connect('b', undefined);
-    await vi.waitFor(() => expect(connections.statuses().b).toMatchObject({ state: 'connecting', step: 'Starting the VPN container…' }));
+    await vi.waitFor(() =>
+      expect(connections.statuses().b).toMatchObject({
+        state: 'connecting',
+        step: 'Starting the VPN container…',
+      }),
+    );
     await connections.disconnect('b');
     await expect(b).resolves.toEqual({ ok: false, error: 'Cancelled.' });
     failBuild(new Error('Building the VPN container image failed')); // must not surface as an unhandled rejection
@@ -129,13 +174,20 @@ describe('connection manager', () => {
   });
 
   it('lets only one VPN wait for a browser sign-in on the token port', async () => {
-    const signIn = async ({ onBrowserSignIn }: StartOptions) => void (await onBrowserSignIn({ signInUrl: 'https://vpn.example.com/saml', tokenPort: 47_799 }));
+    const signIn = async ({ onBrowserSignIn }: StartOptions) =>
+      void (await onBrowserSignIn({
+        signInUrl: 'https://vpn.example.com/saml',
+        tokenPort: 47_799,
+      }));
     starts.set('a', signIn);
     starts.set('b', signIn);
     const connections = manager();
     const a = connections.connect('a', undefined);
     await vi.waitFor(() => expect(connections.statuses().a?.state).toBe('awaiting-browser'));
-    await expect(connections.connect('b', undefined)).resolves.toMatchObject({ ok: false, error: expect.stringContaining('Another VPN is waiting') });
+    await expect(connections.connect('b', undefined)).resolves.toMatchObject({
+      ok: false,
+      error: expect.stringContaining('Another VPN is waiting'),
+    });
     await connections.disconnect('a');
     await expect(a).resolves.toEqual({ ok: false, error: 'Cancelled.' });
   });
@@ -143,7 +195,10 @@ describe('connection manager', () => {
   it("doesn't report a container that stopped before it was routed to as connected", async () => {
     starts.set('dies', async ({ onExit }) => onExit(['Tunnel closed']));
     const connections = manager();
-    await expect(connections.connect('dies', undefined)).resolves.toEqual({ ok: false, error: 'The VPN connection dropped: Tunnel closed' });
+    await expect(connections.connect('dies', undefined)).resolves.toEqual({
+      ok: false,
+      error: 'The VPN connection dropped: Tunnel closed',
+    });
     expect(connections.statuses().dies?.state).toBe('error');
   });
 
@@ -166,16 +221,32 @@ describe('connection manager', () => {
     expect(await secretFor('Username')).toBe(false);
   });
 
-  it("keeps every connected VPN's \"nothing is sent through it\" warning current as others come and go", async () => {
+  it('keeps every connected VPN\'s "nothing is sent through it" warning current as others come and go', async () => {
     // B's server is the only address A routes, and a VPN's server always stays off the tunnels.
-    savedConfig = { ...config, routes: [{ id: 'r1', vpnId: 'a', kind: 'cidr', cidr: '198.51.100.7/32', enabled: true, note: '', pinned: false }] };
+    savedConfig = {
+      ...config,
+      routes: [
+        {
+          id: 'r1',
+          vpnId: 'a',
+          kind: 'cidr',
+          cidr: '198.51.100.7/32',
+          enabled: true,
+          note: '',
+          pinned: false,
+        },
+      ],
+    };
     endpoints.set('b', '198.51.100.7');
     starts.delete('a');
     const connections = manager();
     await connections.connect('a', undefined);
     expect(connections.statuses().a).toMatchObject({ state: 'connected', warning: undefined });
     await connections.connect('b', undefined);
-    expect(connections.statuses().a).toMatchObject({ state: 'connected', warning: expect.stringContaining('nothing is sent') });
+    expect(connections.statuses().a).toMatchObject({
+      state: 'connected',
+      warning: expect.stringContaining('nothing is sent'),
+    });
     await connections.disconnect('b');
     expect(connections.statuses().a).toMatchObject({ state: 'connected', warning: undefined });
   });
@@ -185,9 +256,20 @@ describe('connection manager', () => {
     const connections = manager();
     await connections.connect('b', undefined);
     helper.failing = true;
-    await expect(connections.connect('a', undefined)).resolves.toEqual({ ok: false, error: 'resolvectl failed' });
-    expect(connections.statuses().a).toMatchObject({ state: 'error', message: 'resolvectl failed' });
-    await vi.waitFor(() => expect(connections.statuses().b).toMatchObject({ state: 'error', message: expect.stringContaining("couldn't apply the routes") }));
+    await expect(connections.connect('a', undefined)).resolves.toEqual({
+      ok: false,
+      error: 'resolvectl failed',
+    });
+    expect(connections.statuses().a).toMatchObject({
+      state: 'error',
+      message: 'resolvectl failed',
+    });
+    await vi.waitFor(() =>
+      expect(connections.statuses().b).toMatchObject({
+        state: 'error',
+        message: expect.stringContaining("couldn't apply the routes"),
+      }),
+    );
   });
 
   it('shares one connect between repeated requests for the same VPN', async () => {
@@ -210,8 +292,12 @@ describe('connection manager', () => {
   it("refuses an action's malformed input, or an unknown action, before reaching Docker", async () => {
     const connections = manager();
     const before = dockerLookups.count;
-    await expect(connections.runAction('checkpoint', 'loginTypes', 'vpn.b --mode=connect')).rejects.toThrow(ZodError);
-    await expect(connections.runAction('openvpn', 'loginTypes', 'vpn.b')).rejects.toThrow('This VPN type has no such action.');
+    await expect(
+      connections.runAction('checkpoint', 'loginTypes', 'vpn.b --mode=connect'),
+    ).rejects.toThrow(ZodError);
+    await expect(connections.runAction('openvpn', 'loginTypes', 'vpn.b')).rejects.toThrow(
+      'This VPN type has no such action.',
+    );
     expect(dockerLookups.count).toBe(before);
   });
 });

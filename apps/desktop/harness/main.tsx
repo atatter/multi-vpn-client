@@ -23,7 +23,10 @@ const fake = createFakeApi({
 Object.assign(window, { fake, UPDATES });
 
 // The frame around the window (index.html) sizes it, as main sizes the real window.
-const store = createAppStore({ ...fake.api, fitWindow: async (height) => window.parent.postMessage({ fit: height }, '*') });
+const store = createAppStore({
+  ...fake.api,
+  fitWindow: async (height) => window.parent.postMessage({ fit: height }, '*'),
+});
 store.start(window);
 
 // About a second of traffic at a time for each connected VPN, to its usual hosts.
@@ -31,7 +34,9 @@ const rates: TrafficSnapshot['rates'] = {};
 const destinations = new Map<string, TrafficSnapshot['destinations'][number]>();
 function tick() {
   const now = Date.now();
-  const live = Object.entries(fake.statuses()).flatMap(([vpnId, status]) => (status.state === 'connected' ? [vpnId] : []));
+  const live = Object.entries(fake.statuses()).flatMap(([vpnId, status]) =>
+    status.state === 'connected' ? [vpnId] : [],
+  );
   for (const vpnId of Object.keys(rates)) if (!live.includes(vpnId)) delete rates[vpnId];
   for (const vpnId of live) {
     const bytes = Math.random() < 0.7 ? Math.round(500 * Math.exp(Math.random() * 4.5)) : 0;
@@ -42,7 +47,9 @@ function tick() {
     const entry = destinations.get(`${vpnId} ${host}`) ?? { host, vpnId, bytes: 0, last: now };
     destinations.set(`${vpnId} ${host}`, { ...entry, bytes: entry.bytes + bytes, last: now });
   }
-  const shown = [...destinations.values()].filter((entry) => live.includes(entry.vpnId)).sort((a, b) => b.last - a.last);
+  const shown = [...destinations.values()]
+    .filter((entry) => live.includes(entry.vpnId))
+    .sort((a, b) => b.last - a.last);
   fake.sendTraffic({ rates: { ...rates }, destinations: shown });
 }
 for (let second = 0; second < 60; second++) tick();

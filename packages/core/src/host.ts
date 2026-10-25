@@ -53,7 +53,9 @@ export async function gatewayAddresses(
     reserved: results.flatMap(({ vpn, addresses }) =>
       addresses.map((address) => ({ cidr: `${address}/32`, label: `${vpn.name} gateway` })),
     ),
-    unresolved: results.filter(({ addresses }) => addresses.length === 0).map(({ vpn, host }) => ({ vpnId: vpn.id, host })),
+    unresolved: results
+      .filter(({ addresses }) => addresses.length === 0)
+      .map(({ vpn, host }) => ({ vpnId: vpn.id, host })),
   };
 }
 

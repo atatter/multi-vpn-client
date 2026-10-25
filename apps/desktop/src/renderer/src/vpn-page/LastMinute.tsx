@@ -10,8 +10,12 @@ export function LastMinute({ vpnId, onSeeAll }: { vpnId: string; onSeeAll: () =>
     <>
       <TrafficBars rates={rates} />
       <div className="flex items-baseline gap-2.5 tabular-nums">
-        <span className="text-[15px] font-semibold whitespace-nowrap">{fmtRate(smoothRate(rates))}</span>
-        <span className="min-w-0 flex-1 truncate text-[12.5px] text-muted">{fmtBytes(rates.reduce((sum, value) => sum + value, 0))} in the last minute</span>
+        <span className="text-[15px] font-semibold whitespace-nowrap">
+          {fmtRate(smoothRate(rates))}
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[12.5px] text-muted">
+          {fmtBytes(rates.reduce((sum, value) => sum + value, 0))} in the last minute
+        </span>
         <button type="button" className={cx(link, 'whitespace-nowrap')} onClick={onSeeAll}>
           See all traffic
         </button>

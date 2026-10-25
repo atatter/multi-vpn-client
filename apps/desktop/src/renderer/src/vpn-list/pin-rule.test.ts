@@ -12,7 +12,10 @@ describe('pinning a site', () => {
   });
 
   it('turns a rule from the server into a pinned site of its own', () => {
-    const fromServer: RouteRule = { ...newRoute('10.140.0.0/16', 'b'), id: 'server:b:10.140.0.0/16' };
+    const fromServer: RouteRule = {
+      ...newRoute('10.140.0.0/16', 'b'),
+      id: 'server:b:10.140.0.0/16',
+    };
     const added = withPinnedRule(config, fromServer).routes.at(-1);
     expect(added).toMatchObject({ vpnId: 'b', kind: 'cidr', cidr: '10.140.0.0/16', pinned: true });
     expect(added?.id).not.toBe(fromServer.id);

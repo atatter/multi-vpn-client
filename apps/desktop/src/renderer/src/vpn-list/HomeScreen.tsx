@@ -21,7 +21,13 @@ export function HomeScreen() {
       {/* No title or search box, only Settings (and an update, when there is one): the list is the whole screen. */}
       <span className="flex-1" />
       <UpdateButton />
-      <button type="button" className={iconButton} aria-label="Settings" title="Settings" onClick={() => app.push({ name: 'settings' })}>
+      <button
+        type="button"
+        className={iconButton}
+        aria-label="Settings"
+        title="Settings"
+        onClick={() => app.push({ name: 'settings' })}
+      >
         <SlidersIcon />
       </button>
     </>
@@ -37,7 +43,9 @@ export function HomeScreen() {
               <TunnelIcon width={36} />
             </span>
             <h2 className="text-[22px] leading-tight font-semibold">Add your first VPN</h2>
-            <p className="mb-3 text-sm text-muted">Type the address you'd use in your company's VPN app. The app works out the rest.</p>
+            <p className="mb-3 text-sm text-muted">
+              Type the address you'd use in your company's VPN app. The app works out the rest.
+            </p>
             <AddForm />
           </div>
         </>
@@ -46,7 +54,11 @@ export function HomeScreen() {
           <SetupLine />
           <VpnList afterNotice={!!setupBlocker(app.docker, app.helper)} />
           <div className="flex items-center justify-between gap-3 px-[var(--in)] pt-2.5 pb-3">
-            <button type="button" className={cx(link, 'text-sm')} onClick={() => app.push({ name: 'add' })}>
+            <button
+              type="button"
+              className={cx(link, 'text-sm')}
+              onClick={() => app.push({ name: 'add' })}
+            >
               + Add VPN
             </button>
             <button type="button" className={link} onClick={() => app.push({ name: 'check' })}>

@@ -26,9 +26,11 @@ const api = {
   disconnect: (...args: IpcContract['vpn:disconnect']['args']) => invoke('vpn:disconnect', ...args),
   connectionStatuses: () => invoke('vpn:statuses'),
   answer: (...args: IpcContract['vpn:answer']['args']) => invoke('vpn:answer', ...args),
-  reopenSignIn: (...args: IpcContract['vpn:reopen-sign-in']['args']) => invoke('vpn:reopen-sign-in', ...args),
+  reopenSignIn: (...args: IpcContract['vpn:reopen-sign-in']['args']) =>
+    invoke('vpn:reopen-sign-in', ...args),
   runAction: (...args: IpcContract['vpn:action']['args']) => invoke('vpn:action', ...args),
-  trustCertificate: (...args: IpcContract['vpn:trust-certificate']['args']) => invoke('vpn:trust-certificate', ...args),
+  trustCertificate: (...args: IpcContract['vpn:trust-certificate']['args']) =>
+    invoke('vpn:trust-certificate', ...args),
   helperState: () => invoke('helper:state'),
   installHelper: () => invoke('helper:install'),
   uninstallHelper: () => invoke('helper:uninstall'),
@@ -39,10 +41,14 @@ const api = {
   checkForUpdate: () => invoke('update:check'),
   downloadUpdate: () => invoke('update:download'),
   restartToUpdate: () => invoke('update:restart'),
-  onConnectionStatus: (listener: (statuses: IpcEvents['vpn:status']) => void) => on('vpn:status', listener),
-  onTraffic: (listener: (snapshot: IpcEvents['traffic:update']) => void) => on('traffic:update', listener),
-  onConfigChanged: (listener: (config: IpcEvents['config:changed']) => void) => on('config:changed', listener),
-  onUpdate: (listener: (state: IpcEvents['update:changed']) => void) => on('update:changed', listener),
+  onConnectionStatus: (listener: (statuses: IpcEvents['vpn:status']) => void) =>
+    on('vpn:status', listener),
+  onTraffic: (listener: (snapshot: IpcEvents['traffic:update']) => void) =>
+    on('traffic:update', listener),
+  onConfigChanged: (listener: (config: IpcEvents['config:changed']) => void) =>
+    on('config:changed', listener),
+  onUpdate: (listener: (state: IpcEvents['update:changed']) => void) =>
+    on('update:changed', listener),
 };
 
 export type MainApi = typeof api;

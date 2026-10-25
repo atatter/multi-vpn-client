@@ -10,5 +10,9 @@ const here = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 export default defineConfig({
   root: here('.'),
   plugins: [react(), tailwindcss()],
-  build: { outDir: here('../out/harness'), emptyOutDir: true, rollupOptions: { input: [here('index.html'), here('app.html')] } },
+  build: {
+    outDir: here('../out/harness'),
+    emptyOutDir: true,
+    rollupOptions: { input: [here('index.html'), here('app.html')] },
+  },
 });

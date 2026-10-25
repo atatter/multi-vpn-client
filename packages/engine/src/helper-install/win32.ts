@@ -13,14 +13,23 @@ import type { InstallPlan, PlatformInstaller } from './index.ts';
  */
 
 const TASK = 'multi-vpn-client-helper';
-const INSTALL_DIR = join(process.env.ProgramFiles ?? 'C:\\Program Files', 'multi-vpn-client', 'helper');
+const INSTALL_DIR = join(
+  process.env.ProgramFiles ?? 'C:\\Program Files',
+  'multi-vpn-client',
+  'helper',
+);
 const SYSTEM_ROOT = process.env.SystemRoot ?? 'C:\\Windows';
 const POWERSHELL = join(SYSTEM_ROOT, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
 
 /** Quotes a value as a PowerShell single-quoted string. */
 const psQuote = (value: string) => `'${value.replaceAll("'", "''")}'`;
 
-const xmlEscape = (value: string) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+const xmlEscape = (value: string) =>
+  value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
 
 /** Runs at boot as SYSTEM, forever, restarted (every minute, up to 255 times) if it fails. */
 export function taskXml(): string {
@@ -70,7 +79,9 @@ exit 0
  * users (so the app can show the log), private\\ and work\\ by SYSTEM and administrators only.
  * The settings come from a file in the user's temp folder, so the key never shows up in a command line.
  */
-export function windowsInstallScript(p: Omit<InstallPlan, 'configJson'> & { configFile: string }): string {
+export function windowsInstallScript(
+  p: Omit<InstallPlan, 'configJson'> & { configFile: string },
+): string {
   const SY = '*S-1-5-18';
   const BA = '*S-1-5-32-544';
   const BU = '*S-1-5-32-545';
@@ -119,7 +130,11 @@ async function runAsAdmin(script: string): Promise<void> {
     // Declining the UAC prompt makes Start-Process fail with "canceled by the user".
     if (/cancel/i.test(result.stderr)) throw new Error('Administrator access was cancelled.');
     const reported = await readFile(errorFile, 'utf8').catch(() => '');
-    throw new Error(reported.trim() || result.stderr.trim() || `The administrator script failed (exit ${result.code}).`);
+    throw new Error(
+      reported.trim() ||
+        result.stderr.trim() ||
+        `The administrator script failed (exit ${result.code}).`,
+    );
   } finally {
     await rm(staging, { recursive: true, force: true });
   }

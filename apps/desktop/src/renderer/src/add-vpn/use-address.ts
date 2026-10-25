@@ -45,7 +45,13 @@ export function useAddress() {
   const detection = found?.address === typed ? found.detection : undefined;
   const next =
     detection && detection.kind !== 'unknown'
-      ? () => app.push({ name: 'signin', draft: draftFor(detection, app.config.vpns), secrets: {}, source: { from: 'address', browserSignIn: !!detection.browserSignIn } })
+      ? () =>
+          app.push({
+            name: 'signin',
+            draft: draftFor(detection, app.config.vpns),
+            secrets: {},
+            source: { from: 'address', browserSignIn: !!detection.browserSignIn },
+          })
       : undefined;
   return { address, setAddress, typed, checking, detection, manual, setManual, next };
 }

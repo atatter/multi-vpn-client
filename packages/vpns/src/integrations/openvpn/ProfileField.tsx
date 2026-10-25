@@ -43,7 +43,9 @@ export function ProfileField({
       ) : hasProfile ? (
         <span className={hint}>Servers and certificates come from this file.</span>
       ) : (
-        <span className={cx(hint, 'text-sodium')}>Needed to connect: servers and certificates come from this file.</span>
+        <span className={cx(hint, 'text-sodium')}>
+          Needed to connect: servers and certificates come from this file.
+        </span>
       )}
       <input
         ref={picker}

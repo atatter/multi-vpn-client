@@ -27,10 +27,23 @@ interface AccountProps {
 }
 
 /** What a VPN signs in with: its address, the sign-in method, username and password (or key). */
-export function AccountFields({ vpn, onChange, pending, onPendingChange, storedSlots, errors, keychainProblem, showAddress = true, showName = false }: AccountProps) {
+export function AccountFields({
+  vpn,
+  onChange,
+  pending,
+  onPendingChange,
+  storedSlots,
+  errors,
+  keychainProblem,
+  showAddress = true,
+  showName = false,
+}: AccountProps) {
   const { api } = useApp();
   // The kind's form shows a failed action's message as is, so it gets main's message without Electron's prefix.
-  const runAction: RunAction = (name, input) => api.runAction(vpn.kind, name, input).catch((error: unknown) => Promise.reject(new Error(messageOf(error))));
+  const runAction: RunAction = (name, input) =>
+    api
+      .runAction(vpn.kind, name, input)
+      .catch((error: unknown) => Promise.reject(new Error(messageOf(error))));
   const setSecret = (key: string, value: string | null | undefined) => {
     const { [key]: _previous, ...rest } = pending;
     onPendingChange(value === undefined ? rest : { ...rest, [key]: value });
@@ -44,14 +57,37 @@ export function AccountFields({ vpn, onChange, pending, onPendingChange, storedS
   const setRemember = (rememberPassword: boolean) => {
     onChange({ ...vpn, rememberPassword });
     // A password typed while remembering mustn't be saved once it's off; a stored one goes too.
-    if (!rememberPassword) setSecret(passwordKey, storedSlots.includes(passwordKey) ? null : undefined);
+    if (!rememberPassword)
+      setSecret(passwordKey, storedSlots.includes(passwordKey) ? null : undefined);
   };
 
   return (
     <>
-      {showName && <TextField label="Name" value={vpn.name} placeholder="Client or network name" error={errors.name} onChange={(name) => onChange({ ...vpn, name })} />}
-      <KindMainFields kind={vpn.kind} vpn={vpn} onChange={onChange} errors={errors} pending={pending} storedSlots={storedSlots} setSecret={setSecret} showAddress={showAddress} runAction={runAction} />
-      {keychainProblem && <p className={cx(note, 'mb-3 bg-chip text-sodium')}>{keychainProblem} Passwords and keys can't be saved on this computer.</p>}
+      {showName && (
+        <TextField
+          label="Name"
+          value={vpn.name}
+          placeholder="Client or network name"
+          error={errors.name}
+          onChange={(name) => onChange({ ...vpn, name })}
+        />
+      )}
+      <KindMainFields
+        kind={vpn.kind}
+        vpn={vpn}
+        onChange={onChange}
+        errors={errors}
+        pending={pending}
+        storedSlots={storedSlots}
+        setSecret={setSecret}
+        showAddress={showAddress}
+        runAction={runAction}
+      />
+      {keychainProblem && (
+        <p className={cx(note, 'mb-3 bg-chip text-sodium')}>
+          {keychainProblem} Passwords and keys can't be saved on this computer.
+        </p>
+      )}
       {'username' in vpn && (
         <TextField
           label="Username"
@@ -66,7 +102,13 @@ export function AccountFields({ vpn, onChange, pending, onPendingChange, storedS
         <>
           <ToggleRow
             label="Remember password"
-            hint={keychainProblem ? 'Not available on this computer.' : vpn.rememberPassword ? 'Saved in your system keychain.' : "You'll be asked each time you connect."}
+            hint={
+              keychainProblem
+                ? 'Not available on this computer.'
+                : vpn.rememberPassword
+                  ? 'Saved in your system keychain.'
+                  : "You'll be asked each time you connect."
+            }
             checked={vpn.rememberPassword}
             disabled={!!keychainProblem}
             onChange={setRemember}

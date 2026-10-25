@@ -5,7 +5,9 @@ import { addEntries } from './sites-input.ts';
 describe('typing sites', () => {
   it('adds several sites and ranges at once, separated by spaces or commas', () => {
     const result = addEntries('jira.example.com, 10.20.0.0/16 wiki.example.com', [], 'b');
-    expect(result.routes.map((route) => (route.kind === 'cidr' ? route.cidr : route.domain))).toEqual(['jira.example.com', '10.20.0.0/16', 'wiki.example.com']);
+    expect(
+      result.routes.map((route) => (route.kind === 'cidr' ? route.cidr : route.domain)),
+    ).toEqual(['jira.example.com', '10.20.0.0/16', 'wiki.example.com']);
     expect(result).toMatchObject({ text: '', problem: undefined });
   });
 
@@ -18,6 +20,9 @@ describe('typing sites', () => {
 
   it("doesn't add a site twice", () => {
     const existing = [newRoute('10.20.0.0/16', 'b')];
-    expect(addEntries('10.20.0.0/16', existing, 'b')).toMatchObject({ routes: existing, problem: '10.20.0.0/16 is already in the list.' });
+    expect(addEntries('10.20.0.0/16', existing, 'b')).toMatchObject({
+      routes: existing,
+      problem: '10.20.0.0/16 is already in the list.',
+    });
   });
 });

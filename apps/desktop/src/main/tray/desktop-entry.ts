@@ -6,10 +6,21 @@ import { dirname } from 'node:path';
 // Desktop Entry spec: Exec quotes each argument and escapes ", `, $ and \ inside the quotes, and a literal % is %%.
 // Every value then escapes \ and line breaks again.
 const quoteArgument = (argument: string) => `"${argument.replaceAll(/["`$\\]/g, String.raw`\$&`)}"`;
-const escapeValue = (value: string) => value.replaceAll('\\', '\\\\').replaceAll('\n', String.raw`\n`).replaceAll('\t', String.raw`\t`).replaceAll('\r', String.raw`\r`);
+const escapeValue = (value: string) =>
+  value
+    .replaceAll('\\', '\\\\')
+    .replaceAll('\n', String.raw`\n`)
+    .replaceAll('\t', String.raw`\t`)
+    .replaceAll('\r', String.raw`\r`);
 
 /** The entry that starts `command` (the executable, then its arguments) and names the app's window and icon. */
-export function desktopEntry({ command, icon }: { command: readonly [string, ...string[]]; icon: string }) {
+export function desktopEntry({
+  command,
+  icon,
+}: {
+  command: readonly [string, ...string[]];
+  icon: string;
+}) {
   const exec = command.map(quoteArgument).join(' ').replaceAll('%', '%%');
   return [
     '[Desktop Entry]',

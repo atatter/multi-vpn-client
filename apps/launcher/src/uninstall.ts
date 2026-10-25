@@ -1,6 +1,14 @@
 import { APP_NAME } from '@repo/core';
 import { appDir, desktopEntryFiles } from '@repo/core/store';
-import { createDocker, findDocker, helperInstalled, listVpnImages, removeStaleContainers, uninstallHelper, type Docker } from '@repo/engine/uninstall';
+import {
+  createDocker,
+  findDocker,
+  helperInstalled,
+  listVpnImages,
+  removeStaleContainers,
+  uninstallHelper,
+  type Docker,
+} from '@repo/engine/uninstall';
 import { execFile } from 'node:child_process';
 import { closeSync, existsSync, openSync, readlinkSync } from 'node:fs';
 import { lstat, readdir, readFile, rm } from 'node:fs/promises';
@@ -12,7 +20,8 @@ import { versionsDir } from '@repo/release';
 
 /** The macOS Keychain item where Electron keeps the key that encrypts saved passwords, named after the app. */
 const KEYCHAIN_SERVICE = `${APP_NAME} Safe Storage`;
-const keychain = (command: 'find-generic-password' | 'delete-generic-password') => promisify(execFile)('/usr/bin/security', [command, '-s', KEYCHAIN_SERVICE]);
+const keychain = (command: 'find-generic-password' | 'delete-generic-password') =>
+  promisify(execFile)('/usr/bin/security', [command, '-s', KEYCHAIN_SERVICE]);
 
 /** What `uninstall` found on this machine. */
 export interface Found {
@@ -23,7 +32,10 @@ export interface Found {
   /** The launcher's cache folder: unpacked versions, and the source triage clones. */
   cache: { dir: string; versions: number; bytes: number } | undefined;
   /** VPN container images, or why Docker couldn't list them. Undefined when Docker isn't installed. */
-  docker: { docker: Docker; images: Awaited<ReturnType<typeof listVpnImages>> } | { problem: string } | undefined;
+  docker:
+    | { docker: Docker; images: Awaited<ReturnType<typeof listVpnImages>> }
+    | { problem: string }
+    | undefined;
   /** The app's folder: VPNs, saved passwords, the helper's token, sing-box and Electron's own data. */
   appFolder: string;
   /**
@@ -39,7 +51,10 @@ export interface Found {
  * One thing uninstall removes, or, with a `reason` instead of `run`, one it can't and the user has to. `what` is shown
  * before anything is removed, and `manual` says how to remove it by hand when it's left behind.
  */
-export type Step = { what: string; manual: string } & ({ run: () => Promise<void> } | { reason: string });
+export type Step = { what: string; manual: string } & (
+  | { run: () => Promise<void> }
+  | { reason: string }
+);
 
 /**
  * What keeps the VPNs and their saved passwords usable when they stay: the config, the encrypted secrets, and
@@ -81,7 +96,11 @@ export function heldLock(appFolder: string, platform: NodeJS.Platform): string |
 }
 
 /** A lock from another machine (a shared home folder) counts as held: there's no telling whether that app is still running. */
-export function singletonLockHeld(target: string, host: string, alive: (pid: number) => boolean): boolean {
+export function singletonLockHeld(
+  target: string,
+  host: string,
+  alive: (pid: number) => boolean,
+): boolean {
   const split = target.lastIndexOf('-');
   const pid = Number(target.slice(split + 1));
   if (split <= 0 || !Number.isInteger(pid) || pid <= 0) return false;
@@ -89,26 +108,44 @@ export function singletonLockHeld(target: string, host: string, alive: (pid: num
 }
 
 /** Looks for everything the app and this launcher put on the machine. Finding never changes anything. */
-export async function survey(env: NodeJS.ProcessEnv, platform: NodeJS.Platform, home: string): Promise<Found> {
+export async function survey(
+  env: NodeJS.ProcessEnv,
+  platform: NodeJS.Platform,
+  home: string,
+): Promise<Found> {
   const versions = versionsDir(env, platform, home);
   const cacheDir = dirname(versions);
   const appFolder = appDir(env, platform);
   const data = existsSync(appFolder)
-    ? { vpns: await countVpns(join(appFolder, 'config.json')), others: (await readdir(appFolder)).filter((entry) => !KEPT_WITH_VPNS.has(entry)) }
+    ? {
+        vpns: await countVpns(join(appFolder, 'config.json')),
+        others: (await readdir(appFolder)).filter((entry) => !KEPT_WITH_VPNS.has(entry)),
+      }
     : undefined;
   return {
     platform,
     helper: helperInstalled(),
     desktopEntry: Object.values(desktopEntryFiles(env, home)).filter((path) => existsSync(path)),
     cache: existsSync(cacheDir)
-      ? { dir: cacheDir, versions: (await readdir(versions).catch(() => [])).filter((entry) => !entry.startsWith('.')).length, bytes: await folderBytes(cacheDir) }
+      ? {
+          dir: cacheDir,
+          versions: (await readdir(versions).catch(() => [])).filter(
+            (entry) => !entry.startsWith('.'),
+          ).length,
+          bytes: await folderBytes(cacheDir),
+        }
       : undefined,
     docker: await dockerImages(),
     appFolder,
     data,
     // Linux has no one place to look (see keychainStep); a key with no VPNs behind it encrypted nothing.
     keychainKey:
-      platform === 'darwin' ? await keychain('find-generic-password').then(() => true, () => false) : platform === 'linux' && data !== undefined && data.vpns !== 0,
+      platform === 'darwin'
+        ? await keychain('find-generic-password').then(
+            () => true,
+            () => false,
+          )
+        : platform === 'linux' && data !== undefined && data.vpns !== 0,
   };
 }
 
@@ -127,7 +164,8 @@ async function dockerImages(): Promise<Found['docker']> {
 async function folderBytes(dir: string): Promise<number> {
   let total = 0;
   for (const entry of await readdir(dir, { recursive: true, withFileTypes: true })) {
-    if (entry.isFile()) total += (await lstat(join(entry.parentPath, entry.name)).catch(() => ({ size: 0 }))).size;
+    if (entry.isFile())
+      total += (await lstat(join(entry.parentPath, entry.name)).catch(() => ({ size: 0 }))).size;
   }
   return total;
 }
@@ -135,14 +173,17 @@ async function folderBytes(dir: string): Promise<number> {
 /** How many VPNs the config holds; undefined if it can't be read, e.g. one written by a much older or newer version. */
 async function countVpns(configFile: string): Promise<number | undefined> {
   try {
-    return z.object({ vpns: z.array(z.unknown()) }).parse(JSON.parse(await readFile(configFile, 'utf8'))).vpns.length;
+    return z
+      .object({ vpns: z.array(z.unknown()) })
+      .parse(JSON.parse(await readFile(configFile, 'utf8'))).vpns.length;
   } catch {
     return existsSync(configFile) ? undefined : 0;
   }
 }
 
 /** "360 MB", "1.1 GB": decimal units, as Docker reports sizes. */
-export const formatBytes = (bytes: number) => (bytes >= 1e9 ? `${(bytes / 1e9).toFixed(1)} GB` : `${Math.max(1, Math.round(bytes / 1e6))} MB`);
+export const formatBytes = (bytes: number) =>
+  bytes >= 1e9 ? `${(bytes / 1e9).toFixed(1)} GB` : `${Math.max(1, Math.round(bytes / 1e6))} MB`;
 
 const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 
@@ -164,12 +205,23 @@ export function uninstallSteps(found: Found, deleteVpns: boolean): Step[] {
   const again = 'Run npx multi-vpn-client uninstall again.';
   const { appFolder, data } = found;
   if (found.helper) {
-    steps.push({ what: 'the network helper (asks for your password)', run: () => uninstallHelper(appFolder), manual: `${again} It asks for your password.` });
+    steps.push({
+      what: 'the network helper (asks for your password)',
+      run: () => uninstallHelper(appFolder),
+      manual: `${again} It asks for your password.`,
+    });
   }
   if (found.cache) {
     const { dir, versions, bytes } = found.cache;
-    const what = versions > 0 ? `${plural(versions, 'downloaded version')}, ${formatBytes(bytes)}` : `the launcher's downloads, ${formatBytes(bytes)}`;
-    steps.push({ what, run: () => rm(dir, { recursive: true, force: true }), manual: `Delete the folder ${dir}` });
+    const what =
+      versions > 0
+        ? `${plural(versions, 'downloaded version')}, ${formatBytes(bytes)}`
+        : `the launcher's downloads, ${formatBytes(bytes)}`;
+    steps.push({
+      what,
+      run: () => rm(dir, { recursive: true, force: true }),
+      manual: `Delete the folder ${dir}`,
+    });
   }
   if (found.desktopEntry.length > 0) {
     steps.push({
@@ -182,7 +234,11 @@ export function uninstallSteps(found: Found, deleteVpns: boolean): Step[] {
   }
   const docker = found.docker;
   if (docker && 'problem' in docker) {
-    steps.push({ what: 'any VPN container images', reason: docker.problem, manual: `Start Docker, then ${again.toLowerCase()}` });
+    steps.push({
+      what: 'any VPN container images',
+      reason: docker.problem,
+      manual: `Start Docker, then ${again.toLowerCase()}`,
+    });
   } else if (docker && docker.images.length > 0) {
     const refs = docker.images.map((image) => image.ref);
     steps.push({
@@ -208,7 +264,11 @@ export function uninstallSteps(found: Found, deleteVpns: boolean): Step[] {
     });
   } else if (data && !keepVpns) {
     const what = data.vpns === 0 ? "the app's settings" : 'your VPNs and their saved passwords';
-    steps.push({ what, run: () => rm(appFolder, { recursive: true, force: true }), manual: `Delete the folder ${appFolder}` });
+    steps.push({
+      what,
+      run: () => rm(appFolder, { recursive: true, force: true }),
+      manual: `Delete the folder ${appFolder}`,
+    });
   }
   // Also when the app's folder is already gone: the key is no use without the passwords it encrypted.
   if (found.keychainKey && !keepVpns) steps.push(keychainStep(found.platform));

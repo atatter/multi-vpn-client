@@ -16,7 +16,8 @@ export async function launchFor(
 ): Promise<VpnLaunch | 'needs-password'> {
   return entryOf(vpn.kind).launch(vpn, {
     read: (key) => readSecret(vpn.id, key),
-    loginPassword: async () => password ?? (vpn.rememberPassword ? await readSecret(vpn.id, PASSWORD_SLOT.key) : undefined),
+    loginPassword: async () =>
+      password ?? (vpn.rememberPassword ? await readSecret(vpn.id, PASSWORD_SLOT.key) : undefined),
   });
 }
 

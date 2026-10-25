@@ -9,7 +9,8 @@ export function BrowserSignInPrompt({ vpn }: { vpn: Vpn }) {
   return (
     <div role="group" aria-label={`Signing in to ${vpnLabel(vpn)} in the browser`}>
       <p className="text-[13px] text-muted">
-        Finish signing in in the browser window that opened, including any approval on your phone. The VPN connects by itself afterwards.
+        Finish signing in in the browser window that opened, including any approval on your phone.
+        The VPN connects by itself afterwards.
       </p>
       <div className="mt-2.5 flex items-center justify-end gap-4">
         <button type="button" className={link} onClick={() => app.answer(vpn.id, null)}>

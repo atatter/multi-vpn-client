@@ -23,7 +23,6 @@ const DESTINATION_WINDOW_MS = 5 * 60_000;
 const MAX_DESTINATIONS = 300;
 const POLL_MS = 1000;
 
-
 /**
  * Folds successive /connections results into rates and destinations. It keeps its own history but does no
  * I/O, so it can be tested without a routing engine: feed it each poll's connections, the connected VPNs and the time.
@@ -33,10 +32,17 @@ export function createTrafficTally() {
   const seen = new Map<string, number>();
   const rates = new Map<string, number[]>();
   /** Per host and VPN, the bytes seen at each poll within the window, so totals cover only the last five minutes. */
-  const destinations = new Map<string, { host: string; vpnId: string; samples: { at: number; bytes: number }[] }>();
+  const destinations = new Map<
+    string,
+    { host: string; vpnId: string; samples: { at: number; bytes: number }[] }
+  >();
 
   return {
-    add(connections: readonly ClashConnection[], vpnIds: readonly string[], now: number): TrafficSnapshot {
+    add(
+      connections: readonly ClashConnection[],
+      vpnIds: readonly string[],
+      now: number,
+    ): TrafficSnapshot {
       const second = new Map<string, number>();
       const open = new Set<string>();
       for (const connection of connections) {
@@ -59,7 +65,11 @@ export function createTrafficTally() {
 
       // Every connected VPN gets a value each second, so a quiet one shows as quiet rather than missing.
       for (const id of rates.keys()) if (!vpnIds.includes(id)) rates.delete(id);
-      for (const vpnId of vpnIds) rates.set(vpnId, [...(rates.get(vpnId) ?? []), second.get(vpnId) ?? 0].slice(-HISTORY_SECONDS));
+      for (const vpnId of vpnIds)
+        rates.set(
+          vpnId,
+          [...(rates.get(vpnId) ?? []), second.get(vpnId) ?? 0].slice(-HISTORY_SECONDS),
+        );
       for (const [key, entry] of destinations) {
         entry.samples = entry.samples.filter((sample) => now - sample.at <= DESTINATION_WINDOW_MS);
         if (entry.samples.length === 0 || !vpnIds.includes(entry.vpnId)) destinations.delete(key);
@@ -71,7 +81,10 @@ export function createTrafficTally() {
         bytes: samples.reduce((sum, sample) => sum + sample.bytes, 0),
         last: samples.at(-1)?.at ?? now,
       }));
-      return { rates: Object.fromEntries(rates), destinations: rows.sort((a, b) => b.last - a.last).slice(0, MAX_DESTINATIONS) };
+      return {
+        rates: Object.fromEntries(rates),
+        destinations: rows.sort((a, b) => b.last - a.last).slice(0, MAX_DESTINATIONS),
+      };
     },
   };
 }
@@ -104,7 +117,8 @@ export function createTrafficMonitor({
       });
       if (!response.ok) return;
       const body = ClashConnections.safeParse(await response.json());
-      if (body.success && mine === generation) onUpdate(tally.add(body.data.connections ?? [], vpnIds, Date.now()));
+      if (body.success && mine === generation)
+        onUpdate(tally.add(body.data.connections ?? [], vpnIds, Date.now()));
     } catch {
       // Skipped; the next poll retries.
     }

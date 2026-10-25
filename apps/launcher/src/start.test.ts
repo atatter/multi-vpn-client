@@ -7,11 +7,17 @@ describe('the version a launcher starts', () => {
   });
 
   it("starts its own version when it's already there, without downloading", () => {
-    expect(versionToStart('0.2.0', ['0.1.0', '0.2.0'])).toEqual({ version: '0.2.0', download: false });
+    expect(versionToStart('0.2.0', ['0.1.0', '0.2.0'])).toEqual({
+      version: '0.2.0',
+      download: false,
+    });
   });
 
   it('starts a newer version the app updated itself to, even when the launcher is pinned or cached', () => {
-    expect(versionToStart('0.1.0', ['0.1.0', '0.10.0', '0.9.0'])).toEqual({ version: '0.10.0', download: false });
+    expect(versionToStart('0.1.0', ['0.1.0', '0.10.0', '0.9.0'])).toEqual({
+      version: '0.10.0',
+      download: false,
+    });
   });
 
   it('downloads its own version rather than fall back to an older one', () => {

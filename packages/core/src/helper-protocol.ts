@@ -38,7 +38,12 @@ export const RESOLVER_MARK = '# multi-vpn-client';
 export const MAX_HELPER_LINE = 256 * 1024;
 
 /** What the app shows about the installed helper. */
-export type HelperState = 'ready' | 'not-installed' | 'needs-update' | 'not-responding' | 'unsupported';
+export type HelperState =
+  | 'ready'
+  | 'not-installed'
+  | 'needs-update'
+  | 'not-responding'
+  | 'unsupported';
 
 /** Messages each side signs, distinct so a proof from one direction can't be replayed in the other. */
 export const helperProofMessage = (nonce: string) => `mvpn-helper:${nonce}`;
@@ -65,7 +70,10 @@ export const VpnTunnelInput = z.strictObject({
   /** Compiled, disjoint CIDRs for this VPN. */
   cidrs: z.array(Canonical).max(4096),
   /** First server is used for `domains`; nothing is routed when there is no server. */
-  dns: z.strictObject({ servers: z.array(Ipv4).max(MAX_DNS_SERVERS), domains: z.array(Domain).max(MAX_DNS_DOMAINS) }),
+  dns: z.strictObject({
+    servers: z.array(Ipv4).max(MAX_DNS_SERVERS),
+    domains: z.array(Domain).max(MAX_DNS_DOMAINS),
+  }),
 });
 /** One connected VPN, as the host routing engine sees it. */
 export type VpnTunnel = z.infer<typeof VpnTunnelInput>;
@@ -77,7 +85,10 @@ export const DomainRouteInput = z.strictObject({ vpnId: VpnId, domain: Domain })
  * Where the routing engine reports live connections (its Clash API), for the app's traffic views:
  * loopback only, behind a per-session secret.
  */
-export const StatsEndpointInput = z.strictObject({ port: z.number().int().min(1024).max(65535), secret: Token });
+export const StatsEndpointInput = z.strictObject({
+  port: z.number().int().min(1024).max(65535),
+  secret: Token,
+});
 export type StatsEndpoint = z.infer<typeof StatsEndpointInput>;
 
 /**
@@ -91,10 +102,16 @@ export const HostRoutes = z
     blockIpv6: z.boolean(),
     stats: StatsEndpointInput.optional(),
   })
-  .refine((routes) => routes.domains.every((route) => routes.tunnels.some((tunnel) => tunnel.vpnId === route.vpnId)), {
-    message: "Domain route for a VPN that isn't connected",
-    path: ['domains'],
-  });
+  .refine(
+    (routes) =>
+      routes.domains.every((route) =>
+        routes.tunnels.some((tunnel) => tunnel.vpnId === route.vpnId),
+      ),
+    {
+      message: "Domain route for a VPN that isn't connected",
+      path: ['domains'],
+    },
+  );
 export type HostRoutes = z.infer<typeof HostRoutes>;
 
 /** Nothing routed: what the helper applies when a session ends. */
@@ -110,16 +127,28 @@ export const HelperRequest = z.discriminatedUnion('command', [
 export type HelperRequest = z.infer<typeof HelperRequest>;
 
 export const HelperResponse = z.discriminatedUnion('ok', [
-  z.object({ ok: z.literal(true), version: z.number().int(), challenge: Token.optional(), proof: Hex64.optional() }),
+  z.object({
+    ok: z.literal(true),
+    version: z.number().int(),
+    challenge: Token.optional(),
+    proof: Hex64.optional(),
+  }),
   z.object({ ok: z.literal(false), error: z.string() }),
 ]);
 export type HelperResponse = z.infer<typeof HelperResponse>;
 
 /** The helper's answer to `hello`: its challenge for the app, and proof that it holds the key. */
-export const HelloReply = z.object({ ok: z.literal(true), version: z.number().int(), challenge: Token, proof: Hex64 });
+export const HelloReply = z.object({
+  ok: z.literal(true),
+  version: z.number().int(),
+  challenge: Token,
+  proof: Hex64,
+});
 
 /** Parses one line as a request; never throws. */
-export function parseHelperLine(line: string): { ok: true; request: HelperRequest } | { ok: false; error: string } {
+export function parseHelperLine(
+  line: string,
+): { ok: true; request: HelperRequest } | { ok: false; error: string } {
   let json: unknown;
   try {
     json = JSON.parse(line);
@@ -129,7 +158,10 @@ export function parseHelperLine(line: string): { ok: true; request: HelperReques
   const parsed = HelperRequest.safeParse(json);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
-    return { ok: false, error: `${issue?.path.join('.') || 'request'}: ${issue?.message ?? 'invalid'}` };
+    return {
+      ok: false,
+      error: `${issue?.path.join('.') || 'request'}: ${issue?.message ?? 'invalid'}`,
+    };
   }
   return { ok: true, request: parsed.data };
 }

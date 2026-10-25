@@ -23,7 +23,11 @@ describe('createVpnNetwork', () => {
       },
     };
   };
-  const overlap = { code: 1, stderr: 'Error response from daemon: invalid pool request: Pool overlaps with other one on this address space' };
+  const overlap = {
+    code: 1,
+    stderr:
+      'Error response from daemon: invalid pool request: Pool overlaps with other one on this address space',
+  };
 
   it('gives each VPN a small network of its own in the reserved block, skipping ranges another network holds', async () => {
     const fake = docker(overlap, overlap);
@@ -32,7 +36,9 @@ describe('createVpnNetwork', () => {
   });
 
   it('gives up on any other error, and when every range is taken', async () => {
-    await expect(createVpnNetwork(docker({ code: 1, stderr: 'permission denied' }), 'mvpn-a')).rejects.toThrow('permission denied');
+    await expect(
+      createVpnNetwork(docker({ code: 1, stderr: 'permission denied' }), 'mvpn-a'),
+    ).rejects.toThrow('permission denied');
     const full = docker(...Array.from({ length: 64 }, () => overlap));
     await expect(createVpnNetwork(full, 'mvpn-a')).rejects.toThrow('no free network');
     expect(full.subnets.at(-1)).toBe('198.18.131.240/28');

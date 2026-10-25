@@ -10,7 +10,13 @@ const vpnIdOf = (value: unknown) => {
 };
 
 /** Finding out what a VPN is, connecting it, answering what it asks, and where a site goes. */
-export function registerVpnHandlers({ configPath, connections }: { configPath: string; connections: ConnectionManager }) {
+export function registerVpnHandlers({
+  configPath,
+  connections,
+}: {
+  configPath: string;
+  connections: ConnectionManager;
+}) {
   handle('vpn:detect', async (address) => {
     const parsed = HostPort.safeParse(address);
     return parsed.success ? detectVpn(parsed.data) : { kind: 'unknown' as const };
@@ -23,11 +29,14 @@ export function registerVpnHandlers({ configPath, connections }: { configPath: s
     return { site: parsed.site, vpnId: (await connections.routeFor(parsed)) ?? null };
   });
 
-  handle('vpn:connect', async (vpnId, password) => connections.connect(vpnIdOf(vpnId), typeof password === 'string' ? password : undefined));
+  handle('vpn:connect', async (vpnId, password) =>
+    connections.connect(vpnIdOf(vpnId), typeof password === 'string' ? password : undefined),
+  );
   handle('vpn:disconnect', async (vpnId) => connections.disconnect(vpnIdOf(vpnId)));
   handle('vpn:statuses', async () => connections.statuses());
   handle('vpn:answer', async (vpnId, reply) => {
-    if (reply !== null && (typeof reply !== 'string' || reply.length > 256)) throw new Error('Invalid answer');
+    if (reply !== null && (typeof reply !== 'string' || reply.length > 256))
+      throw new Error('Invalid answer');
     connections.answer(vpnIdOf(vpnId), reply);
   });
   handle('vpn:reopen-sign-in', async (vpnId) => connections.reopenSignIn(vpnIdOf(vpnId)));
@@ -44,7 +53,9 @@ export function registerVpnHandlers({ configPath, connections }: { configPath: s
     if (!pin) throw new Error("There's no certificate to trust for this VPN. Connect first.");
     return writingConfig(async () => {
       const config = await loadConfig(configPath);
-      const vpns = config.vpns.map((vpn) => (vpn.id === vpnId && isPinnable(vpn) ? { ...vpn, serverCertPin: pin } : vpn));
+      const vpns = config.vpns.map((vpn) =>
+        vpn.id === vpnId && isPinnable(vpn) ? { ...vpn, serverCertPin: pin } : vpn,
+      );
       return saveConfig({ ...config, vpns }, configPath);
     });
   });

@@ -7,6 +7,8 @@ import { join } from 'node:path';
  */
 export const bundledBinary = (name: 'helper' | 'card-bridge') =>
   join(
-    app.isPackaged ? join(process.resourcesPath, name) : join(app.getAppPath(), '..', '..', 'packages', name, 'dist'),
+    app.isPackaged
+      ? join(process.resourcesPath, name)
+      : join(app.getAppPath(), '..', '..', 'packages', name, 'dist'),
     `mvpn-${name}-${process.platform}-${process.arch}${process.platform === 'win32' ? '.exe' : ''}`,
   );

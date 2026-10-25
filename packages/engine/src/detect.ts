@@ -15,7 +15,15 @@ const MAX_BODY = 64 * 1024;
 const httpsProbe: Probe = ({ host, port, method, path, body, headers }) =>
   new Promise((resolve) => {
     const req = request(
-      { host, port, method, path, headers: { ...headers, ...(body ? { 'Content-Length': Buffer.byteLength(body) } : {}) }, rejectUnauthorized: false, timeout: TIMEOUT_MS },
+      {
+        host,
+        port,
+        method,
+        path,
+        headers: { ...headers, ...(body ? { 'Content-Length': Buffer.byteLength(body) } : {}) },
+        rejectUnauthorized: false,
+        timeout: TIMEOUT_MS,
+      },
       (response) => {
         let text = '';
         response.setEncoding('utf8');
@@ -23,7 +31,12 @@ const httpsProbe: Probe = ({ host, port, method, path, body, headers }) =>
           text += chunk;
           if (text.length >= MAX_BODY) response.destroy();
         });
-        const done = () => resolve({ status: response.statusCode ?? 0, location: String(response.headers.location ?? ''), body: text.slice(0, MAX_BODY) });
+        const done = () =>
+          resolve({
+            status: response.statusCode ?? 0,
+            location: String(response.headers.location ?? ''),
+            body: text.slice(0, MAX_BODY),
+          });
         response.on('end', done);
         response.on('close', done);
       },
@@ -40,7 +53,9 @@ const httpsProbe: Probe = ({ host, port, method, path, body, headers }) =>
 export function splitAddress(address: string): Target {
   const match = /^(.+?)(?::(\d{1,5}))?$/.exec(address.trim());
   const host = match?.[1] ?? address.trim();
-  return match?.[2] ? { host, port: Number(match[2]), explicitPort: true } : { host, port: 443, explicitPort: false };
+  return match?.[2]
+    ? { host, port: Number(match[2]), explicitPort: true }
+    : { host, port: 443, explicitPort: false };
 }
 
 /** Probes the address for every kind at once; when several recognise it, the first in VPN_KINDS order wins. */

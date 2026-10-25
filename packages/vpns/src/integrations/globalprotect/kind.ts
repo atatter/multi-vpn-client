@@ -25,7 +25,10 @@ export const globalprotect = defineKind(
     cardCertificate: z
       .string()
       .trim()
-      .regex(/^(pkcs11:\S+)?$/, 'Expected a PKCS#11 URI, e.g. pkcs11:object=Isikutuvastus;type=cert')
+      .regex(
+        /^(pkcs11:\S+)?$/,
+        'Expected a PKCS#11 URI, e.g. pkcs11:object=Isikutuvastus;type=cert',
+      )
       .default(''),
   }),
   {

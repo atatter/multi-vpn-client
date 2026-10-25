@@ -4,12 +4,25 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { latestRelease } from './latest.ts';
 import type { Manifest } from './release.ts';
 
-const release: Manifest = { version: '1.2.3', archives: { 'linux-x64': { file: 'multi-vpn-client-1.2.3-linux-x64.tar.gz', sha256: 'a'.repeat(64), size: 180_000_000 } } };
+const release: Manifest = {
+  version: '1.2.3',
+  archives: {
+    'linux-x64': {
+      file: 'multi-vpn-client-1.2.3-linux-x64.tar.gz',
+      sha256: 'a'.repeat(64),
+      size: 180_000_000,
+    },
+  },
+};
 
 /** npm's registry, answering for /latest (a package with a release), /old (one without) and /down (an error). */
 const server = createServer((request, response) => {
-  if (request.url === '/latest') return void response.end(JSON.stringify({ name: 'multi-vpn-client', version: '1.2.3', release }));
-  if (request.url === '/old') return void response.end(JSON.stringify({ name: 'multi-vpn-client', version: '0.1.0' }));
+  if (request.url === '/latest')
+    return void response.end(
+      JSON.stringify({ name: 'multi-vpn-client', version: '1.2.3', release }),
+    );
+  if (request.url === '/old')
+    return void response.end(JSON.stringify({ name: 'multi-vpn-client', version: '0.1.0' }));
   response.writeHead(503).end();
 });
 await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));

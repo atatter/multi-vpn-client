@@ -24,18 +24,31 @@ describe('parseOpenVpnProfile', () => {
   });
 
   it('rejects a profile without remotes', () => {
-    expect(parseOpenVpnProfile('client\ndev tun\n')).toEqual({ ok: false, error: 'The profile has no remote server' });
+    expect(parseOpenVpnProfile('client\ndev tun\n')).toEqual({
+      ok: false,
+      error: 'The profile has no remote server',
+    });
   });
 });
 
 describe('an imported profile', () => {
-  const draft = openvpn.create({ id: 'a', name: 'Client A', dns: { servers: [], domains: [] }, rememberPassword: false, advanced: '', traffic: 'official', serverRoutes: null });
+  const draft = openvpn.create({
+    id: 'a',
+    name: 'Client A',
+    dns: { servers: [], domains: [] },
+    rememberPassword: false,
+    advanced: '',
+    traffic: 'official',
+    serverRoutes: null,
+  });
   const imported = (profile: string) => {
     const read = OPENVPN_FILE.read(profile, draft);
     if (!read.ok) throw new Error(read.error);
     return read.vpn;
   };
-  const usernameError = (vpn: ReturnType<typeof imported>) => openvpn.schema.safeParse(vpn).error?.issues.find((issue) => issue.path.join('.') === 'username')?.message;
+  const usernameError = (vpn: ReturnType<typeof imported>) =>
+    openvpn.schema.safeParse(vpn).error?.issues.find((issue) => issue.path.join('.') === 'username')
+      ?.message;
 
   it('needs a username when it signs in with a password', () => {
     const vpn = imported('remote vpn.client-a.example\nauth-user-pass\n');

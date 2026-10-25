@@ -1,15 +1,39 @@
 import { newRoute, newVpn, type Config, type RouteRule } from '@repo/core';
 import { describe, expect, it } from 'vitest';
-import { changedFields, configAfterRemove, configAfterSave, isDirty, savingReconnects, siteWarnings } from './vpn-edit.ts';
+import {
+  changedFields,
+  configAfterRemove,
+  configAfterSave,
+  isDirty,
+  savingReconnects,
+  siteWarnings,
+} from './vpn-edit.ts';
 
-const gp = { ...newVpn('globalprotect', { id: 'a', name: 'Client A' }), portal: 'vpn.client-a.example', username: 'jane' };
-const sites = (id: string, name: string) => ({ ...newVpn('fortinet-ssl', { id, name }), traffic: 'sites' as const, gateway: `${id}.example.com` });
-const route = (vpnId: string, cidr: string): RouteRule => ({ ...newRoute(cidr, vpnId), id: `${vpnId}-${cidr}` });
-const config = (vpns: Config['vpns'], routes: RouteRule[] = [], priority: string[] = []): Config => ({ version: 1, vpns, routes, priority });
+const gp = {
+  ...newVpn('globalprotect', { id: 'a', name: 'Client A' }),
+  portal: 'vpn.client-a.example',
+  username: 'jane',
+};
+const sites = (id: string, name: string) => ({
+  ...newVpn('fortinet-ssl', { id, name }),
+  traffic: 'sites' as const,
+  gateway: `${id}.example.com`,
+});
+const route = (vpnId: string, cidr: string): RouteRule => ({
+  ...newRoute(cidr, vpnId),
+  id: `${vpnId}-${cidr}`,
+});
+const config = (
+  vpns: Config['vpns'],
+  routes: RouteRule[] = [],
+  priority: string[] = [],
+): Config => ({ version: 1, vpns, routes, priority });
 
 describe('what the user changed', () => {
   it('holds only the fields that differ from the saved VPN', () => {
-    expect(changedFields(gp, { ...gp, name: 'Client A (work)' })).toEqual({ name: 'Client A (work)' });
+    expect(changedFields(gp, { ...gp, name: 'Client A (work)' })).toEqual({
+      name: 'Client A (work)',
+    });
     expect(changedFields(gp, { ...gp })).toEqual({});
   });
 
@@ -23,7 +47,14 @@ describe('what the user changed', () => {
 
 describe('whether saving reconnects', () => {
   it("doesn't reconnect for a new name, traffic choice or remembered password", () => {
-    expect(savingReconnects(gp, { ...gp, name: 'Other', traffic: 'all', rememberPassword: true }, { password: 'hunter2' }, true)).toBe(false);
+    expect(
+      savingReconnects(
+        gp,
+        { ...gp, name: 'Other', traffic: 'all', rememberPassword: true },
+        { password: 'hunter2' },
+        true,
+      ),
+    ).toBe(false);
   });
 
   it('reconnects a connected VPN whose connection settings or profile change', () => {
@@ -49,12 +80,18 @@ describe('the config after saving or removing', () => {
   it('moves a VPN switched to all traffic to where all-traffic VPNs start', () => {
     const b = sites('b', 'Client B');
     const before = config([gp, b], [], ['b', 'a']);
-    expect(configAfterSave(before, b, { ...b, traffic: 'all' }, []).priority).not.toEqual(['b', 'a']);
+    expect(configAfterSave(before, b, { ...b, traffic: 'all' }, []).priority).not.toEqual([
+      'b',
+      'a',
+    ]);
   });
 
   it('removes the VPN and its sites', () => {
     const b = sites('b', 'Client B');
-    const after = configAfterRemove(config([gp, b], [route('a', '10.1.0.0/16'), route('b', '10.2.0.0/16')]), 'b');
+    const after = configAfterRemove(
+      config([gp, b], [route('a', '10.1.0.0/16'), route('b', '10.2.0.0/16')]),
+      'b',
+    );
     expect(after.vpns.map((vpn) => vpn.id)).toEqual(['a']);
     expect(after.routes.map((rule) => rule.vpnId)).toEqual(['a']);
   });
@@ -65,7 +102,9 @@ describe('site warnings', () => {
     const a = sites('a', 'Client A');
     const b = sites('b', 'Client B');
     const own = route('b', '10.140.1.0/24');
-    const warnings = siteWarnings(config([a, b], [route('a', '10.140.0.0/16')], ['a', 'b']), b, [own]);
+    const warnings = siteWarnings(config([a, b], [route('a', '10.140.0.0/16')], ['a', 'b']), b, [
+      own,
+    ]);
     expect(warnings.get(own.id)).toEqual({ winner: 'Client A' });
   });
 
@@ -73,6 +112,8 @@ describe('site warnings', () => {
     const a = sites('a', 'Client A');
     const b = sites('b', 'Client B');
     const own = { ...route('b', '10.140.1.0/24'), pinned: true };
-    expect(siteWarnings(config([a, b], [route('a', '10.140.0.0/16')], ['a', 'b']), b, [own]).size).toBe(0);
+    expect(
+      siteWarnings(config([a, b], [route('a', '10.140.0.0/16')], ['a', 'b']), b, [own]).size,
+    ).toBe(0);
   });
 });

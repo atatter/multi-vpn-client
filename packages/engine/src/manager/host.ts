@@ -14,7 +14,11 @@ const freePort = () =>
     server.once('error', reject);
     server.listen(0, '127.0.0.1', () => {
       const address = server.address();
-      server.close(() => (address && typeof address === 'object' ? resolve(address.port) : reject(new Error('No free port'))));
+      server.close(() =>
+        address && typeof address === 'object'
+          ? resolve(address.port)
+          : reject(new Error('No free port')),
+      );
     });
   });
 
@@ -36,7 +40,8 @@ export function createHost(deps: {
   let helper: HelperSession | undefined;
   /** The routing engine's stats endpoint: one port and secret, kept until applying fails (the port may have been taken). */
   let stats: StatsEndpoint | undefined;
-  const statsEndpoint = async () => (stats ??= { port: await freePort(), secret: randomBytes(24).toString('base64url') });
+  const statsEndpoint = async () =>
+    (stats ??= { port: await freePort(), secret: randomBytes(24).toString('base64url') });
   let traffic: ReturnType<typeof createTrafficMonitor> | undefined;
 
   /** The helper session, opened on first use. If it ends unexpectedly, the helper has removed our routes. */
@@ -78,7 +83,11 @@ export function createHost(deps: {
       traffic = undefined;
       throw error;
     }
-    traffic ??= createTrafficMonitor({ endpoint, connectedVpns: deps.connectedVpns, onUpdate: deps.onTraffic });
+    traffic ??= createTrafficMonitor({
+      endpoint,
+      connectedVpns: deps.connectedVpns,
+      onUpdate: deps.onTraffic,
+    });
     traffic.start();
   }
 

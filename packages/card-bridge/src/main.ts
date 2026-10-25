@@ -1,4 +1,13 @@
-import { openPcsc, PcscError, SCARD_E_NO_SERVICE, SCARD_E_SERVICE_STOPPED, SCARD_W_REMOVED_CARD, SCARD_W_RESET_CARD, type Card, type Pcsc } from './pcsc.ts';
+import {
+  openPcsc,
+  PcscError,
+  SCARD_E_NO_SERVICE,
+  SCARD_E_SERVICE_STOPPED,
+  SCARD_W_REMOVED_CARD,
+  SCARD_W_RESET_CARD,
+  type Card,
+  type Pcsc,
+} from './pcsc.ts';
 import { createFramer, frame, ID_CARD_GUARDED_PINS, refusal, VPCD_CTRL_ATR } from './vpcd.ts';
 
 /**
@@ -40,10 +49,14 @@ function findCard(pcsc: Pcsc): Card | undefined {
       if (!(error instanceof PcscError)) throw error;
     }
   }
-  const chosen = cards.find((card) => ID_CARD_GUARDED_PINS.has(hex(card.atr))) ?? (idCardOnly ? undefined : cards[0]);
+  const chosen =
+    cards.find((card) => ID_CARD_GUARDED_PINS.has(hex(card.atr))) ??
+    (idCardOnly ? undefined : cards[0]);
   if (!chosen && cards.length > 0 && !reportedOtherCards) {
     reportedOtherCards = true;
-    status(`Not an Estonian ID card the app knows, so it isn't used: the card in ${cards.map((card) => card.reader).join(', ')}.`);
+    status(
+      `Not an Estonian ID card the app knows, so it isn't used: the card in ${cards.map((card) => card.reader).join(', ')}.`,
+    );
   }
   for (const card of cards) if (card !== chosen) card.disconnect();
   return chosen;
@@ -54,7 +67,11 @@ function openPcscIfRunning(): Pcsc | undefined {
   try {
     return openPcsc();
   } catch (error) {
-    if (error instanceof PcscError && (error.code === SCARD_E_NO_SERVICE || error.code === SCARD_E_SERVICE_STOPPED)) return undefined;
+    if (
+      error instanceof PcscError &&
+      (error.code === SCARD_E_NO_SERVICE || error.code === SCARD_E_SERVICE_STOPPED)
+    )
+      return undefined;
     throw error;
   }
 }
@@ -125,7 +142,9 @@ function relay(card: Card) {
       process.stdout.write(frame(refusal(message, guarded) ?? transmit(message)));
     } catch (error) {
       const removed = error instanceof PcscError && error.code === SCARD_W_REMOVED_CARD;
-      status(`MVPN-ERROR: ${removed ? 'The card was removed from the reader.' : `The card reader stopped working: ${String(error)}`}`);
+      status(
+        `MVPN-ERROR: ${removed ? 'The card was removed from the reader.' : `The card reader stopped working: ${String(error)}`}`,
+      );
       process.exit(1);
     }
   };

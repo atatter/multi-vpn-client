@@ -56,9 +56,14 @@ export interface VpnLaunch {
 // never trust it (connecting still checks the certificate).
 
 /** One HTTPS request's outcome: status, Location header and the start of the body; undefined if it failed. */
-export type Probe = (options: { host: string; port: number; method: 'GET' | 'POST'; path: string; body?: string; headers?: Record<string, string> }) => Promise<
-  { status: number; location: string; body: string } | undefined
->;
+export type Probe = (options: {
+  host: string;
+  port: number;
+  method: 'GET' | 'POST';
+  path: string;
+  body?: string;
+  headers?: Record<string, string>;
+}) => Promise<{ status: number; location: string; body: string } | undefined>;
 
 /** The typed address: its host, its port (443 when none was typed), and whether a port was typed. */
 export interface Target {
@@ -68,7 +73,10 @@ export interface Target {
 }
 
 /** Recognises one kind from its server's answers, or undefined. `address` is what to save: with the port, unless it's 443. */
-export type Detect = (target: Target, probe: Probe) => Promise<{ address: string; browserSignIn?: boolean } | undefined>;
+export type Detect = (
+  target: Target,
+  probe: Probe,
+) => Promise<{ address: string; browserSignIn?: boolean } | undefined>;
 
 export const withPort = (host: string, port: number) => (port === 443 ? host : `${host}:${port}`);
 
@@ -81,19 +89,28 @@ export interface OneOffRun {
 
 /** What an action may do on the host: run a one-off container of a VPN image (built first if needed), removed afterwards. */
 export interface ActionContext {
-  runInImage(image: VpnImage, run: OneOffRun): Promise<{ code: number; stdout: string; stderr: string }>;
+  runInImage(
+    image: VpnImage,
+    run: OneOffRun,
+  ): Promise<{ code: number; stdout: string; stderr: string }>;
 }
 
 /** An action as the engine calls it: input from IPC, unparsed; output as the implementation returns it, for the form to parse (callAction). */
 export type ErasedAction = (input: unknown, context: ActionContext) => Promise<unknown>;
 
 type Implementations<A extends { [N in keyof A]: Action }> = {
-  [N in keyof A]: (input: z.output<A[N]['input']>, context: ActionContext) => Promise<z.input<A[N]['output']>>;
+  [N in keyof A]: (
+    input: z.output<A[N]['input']>,
+    context: ActionContext,
+  ) => Promise<z.input<A[N]['output']>>;
 };
 
 /** One action, implemented: parses its input before running. Its output is parsed once, by the form, so a transforming schema still works. */
 const erase =
-  <I extends z.ZodType, O extends z.ZodType>(action: { input: I; output: O }, run: (input: z.output<I>, context: ActionContext) => Promise<z.input<O>>): ErasedAction =>
+  <I extends z.ZodType, O extends z.ZodType>(
+    action: { input: I; output: O },
+    run: (input: z.output<I>, context: ActionContext) => Promise<z.input<O>>,
+  ): ErasedAction =>
   async (raw, context) =>
     run(action.input.parse(raw), context);
 
@@ -101,10 +118,17 @@ const erase =
  * A kind's actions (its kind file's `…_ACTIONS`), implemented. Each parses its input before running, so a call
  * from the window can't reach an implementation with something it didn't declare.
  */
-export function implement<A extends { [N in keyof A]: Action }>(declared: A, implementations: Implementations<A>): Readonly<Record<string, ErasedAction>> {
+export function implement<A extends { [N in keyof A]: Action }>(
+  declared: A,
+  implementations: Implementations<A>,
+): Readonly<Record<string, ErasedAction>> {
   const erased: Record<string, ErasedAction> = {};
   // Explicit type arguments: inferred from declared[name], TypeScript would settle for Action's own schema types.
-  for (const name in declared) erased[name] = erase<A[typeof name]['input'], A[typeof name]['output']>(declared[name], implementations[name]);
+  for (const name in declared)
+    erased[name] = erase<A[typeof name]['input'], A[typeof name]['output']>(
+      declared[name],
+      implementations[name],
+    );
   return erased;
 }
 

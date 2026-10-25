@@ -8,7 +8,9 @@ const MB = 1e6;
 export function progressText(share: number, size: number): string {
   const total = Math.round(size / MB);
   const downloaded = Math.min(total, Math.floor((share * size) / MB));
-  return share >= 1 ? `${total} MB downloaded, unpacking…` : `${downloaded} MB downloaded, ${total - downloaded} MB left`;
+  return share >= 1
+    ? `${total} MB downloaded, unpacking…`
+    : `${downloaded} MB downloaded, ${total - downloaded} MB left`;
 }
 
 /**

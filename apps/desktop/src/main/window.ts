@@ -16,27 +16,38 @@ export const APP_ICON = join(__dirname, '../../resources/icon.png');
 
 /** Title bar colors, matching the renderer's --bg and --ink tokens. */
 const titleBarColors = () =>
-  nativeTheme.shouldUseDarkColors ? { color: '#171B1E', symbolColor: '#E6EAEB' } : { color: '#E4E7E6', symbolColor: '#262B2F' };
+  nativeTheme.shouldUseDarkColors
+    ? { color: '#171B1E', symbolColor: '#E6EAEB' }
+    : { color: '#E4E7E6', symbolColor: '#262B2F' };
 
 // The OS draws the window buttons (traffic lights on macOS, on the right elsewhere) in a 44px bar; the overlay
 // tells the renderer where they are through env(titlebar-area-*), so it never guesses their size.
 // Built when the window is created: nativeTheme is only reliable once the app is ready.
-const titleBarOptions = () => ({ titleBarStyle: 'hidden', titleBarOverlay: { ...titleBarColors(), height: TITLE_BAR_HEIGHT } }) as const;
+const titleBarOptions = () =>
+  ({
+    titleBarStyle: 'hidden',
+    titleBarOverlay: { ...titleBarColors(), height: TITLE_BAR_HEIGHT },
+  }) as const;
 
 /** Keeps the title bar's colors in step with the OS theme. */
 export function followTheme() {
   nativeTheme.on('updated', () => {
-    if (process.platform !== 'darwin') mainWindow?.setTitleBarOverlay({ ...titleBarColors(), height: TITLE_BAR_HEIGHT });
+    if (process.platform !== 'darwin')
+      mainWindow?.setTitleBarOverlay({ ...titleBarColors(), height: TITLE_BAR_HEIGHT });
   });
 }
 
-export const platform = (): AppInfo['platform'] => (process.platform === 'darwin' || process.platform === 'win32' ? process.platform : 'linux');
+export const platform = (): AppInfo['platform'] =>
+  process.platform === 'darwin' || process.platform === 'win32' ? process.platform : 'linux';
 
 /** Sizes the window to the renderer's content: never taller than 760px or the screen it's on; the renderer scrolls what doesn't fit. */
 export function fitWindow(height: unknown) {
   if (!mainWindow || typeof height !== 'number' || !Number.isFinite(height)) return;
   const { workArea } = screen.getDisplayMatching(mainWindow.getBounds());
-  mainWindow.setContentSize(WINDOW_WIDTH, Math.round(Math.min(Math.max(height, 120), 760, workArea.height - 40)));
+  mainWindow.setContentSize(
+    WINDOW_WIDTH,
+    Math.round(Math.min(Math.max(height, 120), 760, workArea.height - 40)),
+  );
 }
 
 export function createWindow() {
@@ -54,7 +65,12 @@ export function createWindow() {
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#1E2327' : '#F6F7F6',
     ...titleBarOptions(),
     // The renderer is sandboxed and isolated, and reaches main only through the preload. Pinned by window.test.ts.
-    webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true, contextIsolation: true, nodeIntegration: false },
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
   });
   mainWindow = window;
   window.on('closed', () => {
@@ -77,11 +93,14 @@ export function hideWindow() {
   window.hide();
   // A little over the second Electron needs between Dock changes, so this hide isn't the one it drops.
   clearTimeout(dockHide);
-  dockHide = setTimeout(() => {
-    if (window.isVisible() || !app.dock) return;
-    app.dock.hide();
-    dockChangedAt = Date.now();
-  }, Math.max(0, dockChangedAt + 1100 - Date.now()));
+  dockHide = setTimeout(
+    () => {
+      if (window.isVisible() || !app.dock) return;
+      app.dock.hide();
+      dockChangedAt = Date.now();
+    },
+    Math.max(0, dockChangedAt + 1100 - Date.now()),
+  );
 }
 
 /** Brings the window back from the tray, or forward, e.g. when the app is started a second time. */

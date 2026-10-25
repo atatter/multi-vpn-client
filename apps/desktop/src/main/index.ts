@@ -1,7 +1,15 @@
 import { createSecretStore, defaultSecretsPath } from '@repo/core/secret-store';
 import { defaultConfigPath, loadConfig, moveAppDir } from '@repo/core/store';
 import { createConnectionManager } from '@repo/engine';
-import { ensureInstalled, executableIn, latestRelease, type Remove, removeOlderVersions, targetOf, versionsDir } from '@repo/release';
+import {
+  ensureInstalled,
+  executableIn,
+  latestRelease,
+  type Remove,
+  removeOlderVersions,
+  targetOf,
+  versionsDir,
+} from '@repo/release';
 import { app, shell } from 'electron';
 import { mkdirSync } from 'node:fs';
 import { promises as originalFs } from 'node:original-fs';
@@ -68,7 +76,16 @@ const updater = createUpdater({
   packaged: app.isPackaged,
   target,
   latest: latestRelease,
-  download: (release, onProgress) => ensureInstalled({ manifest: release, target, dir: versions, platform, env: process.env, onProgress, remove }),
+  download: (release, onProgress) =>
+    ensureInstalled({
+      manifest: release,
+      target,
+      dir: versions,
+      platform,
+      env: process.env,
+      onProgress,
+      remove,
+    }),
   onChange: (state) => {
     broadcast('update:changed', state);
     tray?.update();
@@ -81,11 +98,19 @@ function restartToUpdate() {
   const version = updater.markRestarting();
   if (!version) return;
   // Given an execPath, Electron passes only `args`: hand this run's own on (the launcher's --no-sandbox, for one).
-  app.relaunch({ execPath: executableIn(join(versions, version), platform), args: process.argv.slice(1) });
+  app.relaunch({
+    execPath: executableIn(join(versions, version), platform),
+    args: process.argv.slice(1),
+  });
   app.quit();
 }
 
-registerConfigHandlers({ configPath, secrets, connections, onSaved: (config) => tray?.setConfig(config) });
+registerConfigHandlers({
+  configPath,
+  secrets,
+  connections,
+  onSaved: (config) => tray?.setConfig(config),
+});
 registerVpnHandlers({ configPath, connections });
 registerSetupHandlers({ connections });
 registerAppHandlers({ configPath });

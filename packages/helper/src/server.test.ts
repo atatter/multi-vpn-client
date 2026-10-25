@@ -1,4 +1,11 @@
-import { appProofMessage, HELPER_VERSION, helperProofMessage, NO_ROUTES, type HostRoutes, type VpnTunnel } from '@repo/core';
+import {
+  appProofMessage,
+  HELPER_VERSION,
+  helperProofMessage,
+  NO_ROUTES,
+  type HostRoutes,
+  type VpnTunnel,
+} from '@repo/core';
 import { helperKey, signProof } from '@repo/core/helper-crypto';
 import { connect, type Socket } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -7,8 +14,19 @@ import { createHelperServer } from './server.ts';
 const TOKEN = 'app-secret-token';
 const KEY = helperKey(TOKEN);
 const sign = signProof;
-const tunnel: VpnTunnel = { vpnId: 'a', port: 41000, username: 'u', password: 'p', cidrs: ['10.20.0.0/16'], dns: { servers: [], domains: [] } };
-const routes: HostRoutes = { blockIpv6: false, tunnels: [tunnel], domains: [{ vpnId: 'a', domain: 'argo.lab.example' }] };
+const tunnel: VpnTunnel = {
+  vpnId: 'a',
+  port: 41000,
+  username: 'u',
+  password: 'p',
+  cidrs: ['10.20.0.0/16'],
+  dns: { servers: [], domains: [] },
+};
+const routes: HostRoutes = {
+  blockIpv6: false,
+  tunnels: [tunnel],
+  domains: [{ vpnId: 'a', domain: 'argo.lab.example' }],
+};
 
 type Reply = { ok: boolean; version?: number; challenge?: string; proof?: string; error?: string };
 
@@ -40,7 +58,10 @@ async function client(port: number) {
   const authenticate = async (key = KEY) => {
     const nonce = 'client-nonce';
     const hello = await send({ command: 'hello', nonce });
-    const auth = await send({ command: 'auth', proof: sign(key, appProofMessage(hello?.challenge ?? '')) });
+    const auth = await send({
+      command: 'auth',
+      proof: sign(key, appProofMessage(hello?.challenge ?? '')),
+    });
     return { hello, auth, nonce };
   };
   return { socket, closed, send, authenticate };
@@ -83,7 +104,10 @@ describe('helper server', () => {
   it('refuses apply before the handshake, and a wrong key, and disconnects', async () => {
     const { port, applied } = await start();
     const anonymous = await client(port);
-    expect(await anonymous.send({ command: 'apply', routes })).toEqual({ ok: false, error: 'Unauthorized' });
+    expect(await anonymous.send({ command: 'apply', routes })).toEqual({
+      ok: false,
+      error: 'Unauthorized',
+    });
     await anonymous.closed;
 
     const wrong = await client(port);
@@ -92,7 +116,10 @@ describe('helper server', () => {
     await wrong.closed;
 
     const skipped = await client(port);
-    expect(await skipped.send({ command: 'auth', proof: 'a'.repeat(64) })).toEqual({ ok: false, error: 'Unauthorized' });
+    expect(await skipped.send({ command: 'auth', proof: 'a'.repeat(64) })).toEqual({
+      ok: false,
+      error: 'Unauthorized',
+    });
     await skipped.closed;
     expect(applied).toEqual([]);
   });
@@ -101,7 +128,10 @@ describe('helper server', () => {
     const { port, applied } = await start();
     const c = await client(port);
     expect((await c.authenticate()).auth).toEqual({ ok: true, version: HELPER_VERSION });
-    expect(await c.send({ command: 'apply', routes })).toEqual({ ok: true, version: HELPER_VERSION });
+    expect(await c.send({ command: 'apply', routes })).toEqual({
+      ok: true,
+      version: HELPER_VERSION,
+    });
     c.socket.destroy();
     await settle();
     expect(applied).toEqual([routes, NO_ROUTES]);
@@ -111,7 +141,10 @@ describe('helper server', () => {
     const { port, applied } = await start({ failing: true });
     const c = await client(port);
     await c.authenticate();
-    expect(await c.send({ command: 'apply', routes })).toEqual({ ok: false, error: 'resolvectl failed' });
+    expect(await c.send({ command: 'apply', routes })).toEqual({
+      ok: false,
+      error: 'resolvectl failed',
+    });
     await c.closed;
     await settle();
     expect(applied).toEqual([routes, NO_ROUTES]);
@@ -131,7 +164,16 @@ describe('helper server', () => {
     const c = await client(port);
     await c.authenticate();
     await c.send({ command: 'apply', routes });
-    expect(await c.send({ command: 'apply', routes: { tunnels: [{ ...tunnel, cidrs: ['10.20.1.0/16'] }], domains: [], blockIpv6: false } })).toMatchObject({ ok: false });
+    expect(
+      await c.send({
+        command: 'apply',
+        routes: {
+          tunnels: [{ ...tunnel, cidrs: ['10.20.1.0/16'] }],
+          domains: [],
+          blockIpv6: false,
+        },
+      }),
+    ).toMatchObject({ ok: false });
     await c.closed;
     await settle();
     expect(applied).toEqual([routes, NO_ROUTES]);

@@ -26,7 +26,9 @@ export function AddScreen() {
     >
       <div className="px-[var(--in)] pt-3.5 pb-[18px]">
         <h2 className="text-lg font-semibold">Where do you sign in?</h2>
-        <p className="mb-3 text-[13.5px] text-muted">The address you'd type into your company's VPN app.</p>
+        <p className="mb-3 text-[13.5px] text-muted">
+          The address you'd type into your company's VPN app.
+        </p>
         <AddressFields state={state} autoFocus />
       </div>
     </Frame>

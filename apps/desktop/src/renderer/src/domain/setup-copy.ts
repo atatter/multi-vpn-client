@@ -61,7 +61,10 @@ export const HELPER_SETUP: Record<Exclude<HelperState, 'ready'>, SetupCopy> = {
 };
 
 /** What each fix shows while it runs. */
-export const SETUP_BUSY = { docker: 'Starting Docker…', helper: 'Approve the password prompt…' } as const;
+export const SETUP_BUSY = {
+  docker: 'Starting Docker…',
+  helper: 'Approve the password prompt…',
+} as const;
 
 /** The setup problems still open, Docker first; undefined for each one that's fine or not known yet. */
 export function setupProblems(docker: DockerState | undefined, helper: HelperState | undefined) {
@@ -72,7 +75,10 @@ export function setupProblems(docker: DockerState | undefined, helper: HelperSta
 }
 
 /** What still keeps every VPN from connecting, if anything: Docker first, then the network helper. */
-export function setupBlocker(docker: DockerState | undefined, helper: HelperInfo | undefined): string | undefined {
+export function setupBlocker(
+  docker: DockerState | undefined,
+  helper: HelperInfo | undefined,
+): string | undefined {
   const problems = setupProblems(docker, helper?.state);
   return (problems.docker ?? problems.helper)?.wait;
 }

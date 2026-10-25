@@ -10,7 +10,12 @@ export interface RunResult {
  * Runs a command to completion (no shell), optionally feeding stdin. Never throws on a non-zero exit; a
  * command still running after `timeoutMs` is killed and reads as failed.
  */
-export function run(command: string, args: readonly string[], input?: string | Buffer, timeoutMs?: number): Promise<RunResult> {
+export function run(
+  command: string,
+  args: readonly string[],
+  input?: string | Buffer,
+  timeoutMs?: number,
+): Promise<RunResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'], timeout: timeoutMs });
     const stdout: Buffer[] = [];
@@ -23,16 +28,27 @@ export function run(command: string, args: readonly string[], input?: string | B
       if (signal) [child.stdout, child.stderr].forEach((stream) => stream.destroy());
     });
     child.on('close', (code) =>
-      resolve({ code: code ?? 1, stdout: Buffer.concat(stdout).toString('utf8'), stderr: Buffer.concat(stderr).toString('utf8') }),
+      resolve({
+        code: code ?? 1,
+        stdout: Buffer.concat(stdout).toString('utf8'),
+        stderr: Buffer.concat(stderr).toString('utf8'),
+      }),
     );
     child.stdin.end(input);
   });
 }
 
 /** Like `run`, but throws with stderr when the command fails. Returns stdout. */
-export async function runChecked(command: string, args: readonly string[], input?: string | Buffer): Promise<string> {
+export async function runChecked(
+  command: string,
+  args: readonly string[],
+  input?: string | Buffer,
+): Promise<string> {
   const result = await run(command, args, input);
-  if (result.code !== 0) throw new Error((result.stderr || result.stdout).trim() || `${command} exited with ${result.code}`);
+  if (result.code !== 0)
+    throw new Error(
+      (result.stderr || result.stdout).trim() || `${command} exited with ${result.code}`,
+    );
   return result.stdout;
 }
 

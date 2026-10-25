@@ -2,7 +2,17 @@ import { useState } from 'react';
 import { cx, danger, dangerLink, link, note } from '@repo/ui/tokens.ts';
 
 /** Remove VPN, with a confirmation that says what goes with it. */
-export function RemoveVpn({ name, hasSecrets, on, onRemove }: { name: string; hasSecrets: boolean; on: boolean; onRemove: () => void }) {
+export function RemoveVpn({
+  name,
+  hasSecrets,
+  on,
+  onRemove,
+}: {
+  name: string;
+  hasSecrets: boolean;
+  on: boolean;
+  onRemove: () => void;
+}) {
   const [confirming, setConfirming] = useState(false);
   if (!confirming) {
     return (

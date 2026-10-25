@@ -25,7 +25,8 @@ const gp = { ...newVpn('globalprotect', { id: 'g', name: 'G' }), rememberPasswor
 const tempStore = async (cipher = fakeCipher) => {
   const path = join(await mkdtemp(join(tmpdir(), 'mvpn-secrets-')), 'secrets.json');
   const store = createSecretStore(path, cipher);
-  const apply = async (changes: SecretChanges, vpns: Vpn[]) => (await store.prepare(changes, vpns)).commit();
+  const apply = async (changes: SecretChanges, vpns: Vpn[]) =>
+    (await store.prepare(changes, vpns)).commit();
   return { path, store, apply };
 };
 
@@ -37,7 +38,10 @@ describe('secret store', () => {
 
   it('stores encrypted values and reports only which slots are set', async () => {
     const { path, store, apply } = await tempStore();
-    const status = await apply({ o: { profile: PROFILE }, g: { password: 'hunter2' } }, [openvpn, gp]);
+    const status = await apply({ o: { profile: PROFILE }, g: { password: 'hunter2' } }, [
+      openvpn,
+      gp,
+    ]);
 
     expect(status).toEqual({ o: ['profile'], g: ['password'] });
     const onDisk = await readFile(path, 'utf8');
@@ -63,20 +67,27 @@ describe('secret store', () => {
   it('refuses invalid changes before writing anything', async () => {
     const { store, apply } = await tempStore();
     await apply({ g: { password: 'hunter2' } }, [openvpn, gp]);
-    await expect(store.prepare({ o: { profile: '' } }, [openvpn, gp])).rejects.toThrow('.ovpn profile');
+    await expect(store.prepare({ o: { profile: '' } }, [openvpn, gp])).rejects.toThrow(
+      '.ovpn profile',
+    );
     expect(await store.status()).toEqual({ g: ['password'] });
   });
 
   it('writes nothing when the cipher refuses (no keychain)', async () => {
     const { path, store } = await tempStore(noKeychain);
-    await expect(store.prepare({ g: { password: 'hunter2' } }, [openvpn, gp])).rejects.toThrow('No secret service');
+    await expect(store.prepare({ g: { password: 'hunter2' } }, [openvpn, gp])).rejects.toThrow(
+      'No secret service',
+    );
     await expect(stat(path)).rejects.toThrow(/ENOENT/);
   });
 
   it('treats a value the key can no longer decrypt as missing', async () => {
     const { path, apply } = await tempStore();
     await apply({ g: { password: 'hunter2' } }, [gp]);
-    const otherKey = createSecretStore(path, { ...fakeCipher, decrypt: async () => Promise.reject(new Error('Error while decrypting the ciphertext')) });
+    const otherKey = createSecretStore(path, {
+      ...fakeCipher,
+      decrypt: async () => Promise.reject(new Error('Error while decrypting the ciphertext')),
+    });
     expect(await otherKey.read('g', 'password')).toBeUndefined();
     expect(await otherKey.status()).toEqual({});
   });

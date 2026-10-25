@@ -6,7 +6,9 @@ import { describe, expect, it } from 'vitest';
 // secrets. Changing it makes every saved secret unreadable, so it's pinned to the visible name.
 describe("the app's name", () => {
   it('is the product name users see, which also keys the saved secrets', () => {
-    const pkg: unknown = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
+    const pkg: unknown = JSON.parse(
+      readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
+    );
     expect(pkg).toMatchObject({ productName: APP_NAME });
   });
 });

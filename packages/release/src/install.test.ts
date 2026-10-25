@@ -13,7 +13,10 @@ import { executableIn, type Manifest } from './release.ts';
 
 const platform = process.platform;
 const target = `${platform}-${process.arch}`;
-const tar = platform === 'win32' ? join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe') : 'tar';
+const tar =
+  platform === 'win32'
+    ? join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe')
+    : 'tar';
 
 /** A release archive shaped like Linux's: the app inside one folder named after the archive. */
 async function fakeArchive() {
@@ -23,8 +26,16 @@ async function fakeArchive() {
   await mkdir(join(exe, '..'), { recursive: true });
   await writeFile(exe, 'app');
   const file = 'multi-vpn-client-1.2.3.tar.gz';
-  await promisify(execFile)(tar, ['-czf', join(dir, file), '-C', join(dir, 'src'), 'multi-vpn-client-1.2.3']);
-  const sha256 = createHash('sha256').update(await readFile(join(dir, file))).digest('hex');
+  await promisify(execFile)(tar, [
+    '-czf',
+    join(dir, file),
+    '-C',
+    join(dir, 'src'),
+    'multi-vpn-client-1.2.3',
+  ]);
+  const sha256 = createHash('sha256')
+    .update(await readFile(join(dir, file)))
+    .digest('hex');
   return { dir, file, sha256 };
 }
 
@@ -36,7 +47,8 @@ async function serve(dir: string) {
   const requests: string[] = [];
   const server = createServer((request, response) => {
     requests.push(request.url ?? '');
-    if (request.url?.startsWith('/moved/')) return void response.writeHead(302, { location: request.url.slice('/moved'.length) }).end();
+    if (request.url?.startsWith('/moved/'))
+      return void response.writeHead(302, { location: request.url.slice('/moved'.length) }).end();
     readFile(join(dir, (request.url ?? '').slice(1))).then(
       (body) => response.end(body),
       () => response.writeHead(404).end(),
@@ -47,7 +59,10 @@ async function serve(dir: string) {
   return { url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, requests };
 }
 
-const manifestFor = (file: string, sha256: string): Manifest => ({ version: '1.2.3', archives: { [target]: { file, sha256, size: 1 } } });
+const manifestFor = (file: string, sha256: string): Manifest => ({
+  version: '1.2.3',
+  archives: { [target]: { file, sha256, size: 1 } },
+});
 
 /** A complete unpacked version, as ensureInstalled leaves it. */
 async function unpacked(versions: string, version: string) {
@@ -63,7 +78,14 @@ describe('installing a version', () => {
     const versions = join(dir, 'versions');
     await mkdir(join(versions, '1.0.0'), { recursive: true });
     const progress: number[] = [];
-    const options = { manifest: manifestFor(file, sha256), target, dir: versions, platform, env: { MVPN_RELEASE_URL: url }, onProgress: (share: number) => void progress.push(share) };
+    const options = {
+      manifest: manifestFor(file, sha256),
+      target,
+      dir: versions,
+      platform,
+      env: { MVPN_RELEASE_URL: url },
+      onProgress: (share: number) => void progress.push(share),
+    };
 
     const exe = await ensureInstalled(options);
     expect(exe).toBe(executableIn(join(versions, '1.2.3'), platform));
@@ -80,7 +102,13 @@ describe('installing a version', () => {
     const { dir, file } = await fakeArchive();
     const { url } = await serve(dir);
     const versions = join(dir, 'versions');
-    const options = { manifest: manifestFor(file, '0'.repeat(64)), target, dir: versions, platform, env: { MVPN_RELEASE_URL: url } };
+    const options = {
+      manifest: manifestFor(file, '0'.repeat(64)),
+      target,
+      dir: versions,
+      platform,
+      env: { MVPN_RELEASE_URL: url },
+    };
 
     await expect(ensureInstalled(options)).rejects.toThrow("doesn't match its checksum");
     expect(existsSync(join(versions, '1.2.3'))).toBe(false);
@@ -90,14 +118,28 @@ describe('installing a version', () => {
   it('follows a redirect to where the archive is', async () => {
     const { dir, file, sha256 } = await fakeArchive();
     const { url, requests } = await serve(dir);
-    const options = { manifest: manifestFor(file, sha256), target, dir: join(dir, 'versions'), platform, env: { MVPN_RELEASE_URL: `${url}/moved` } };
+    const options = {
+      manifest: manifestFor(file, sha256),
+      target,
+      dir: join(dir, 'versions'),
+      platform,
+      env: { MVPN_RELEASE_URL: `${url}/moved` },
+    };
     expect(await readFile(await ensureInstalled(options), 'utf8')).toBe('app');
     expect(requests).toEqual([`/moved/${file}`, `/${file}`]);
   });
 
   it("says which machines a release supports when this one isn't among them", async () => {
-    const options = { manifest: manifestFor('x.tar.gz', '0'.repeat(64)), target: 'aix-ppc64', dir: tmpdir(), platform, env: {} };
-    await expect(ensureInstalled(options)).rejects.toThrow(`isn't available for aix-ppc64. It's built for ${target}.`);
+    const options = {
+      manifest: manifestFor('x.tar.gz', '0'.repeat(64)),
+      target: 'aix-ppc64',
+      dir: tmpdir(),
+      platform,
+      env: {},
+    };
+    await expect(ensureInstalled(options)).rejects.toThrow(
+      `isn't available for aix-ppc64. It's built for ${target}.`,
+    );
   });
 });
 
@@ -116,7 +158,9 @@ describe('the versions on disk', () => {
     const versions = await mkdtemp(join(tmpdir(), 'mvpn-versions-'));
     for (const version of ['0.1.0', '0.9.0', '0.10.0', '0.11.0']) await unpacked(versions, version);
     await mkdir(join(versions, '.download-x'));
-    await removeOlderVersions(versions, '0.10.0', (path) => rm(path, { recursive: true, force: true }));
+    await removeOlderVersions(versions, '0.10.0', (path) =>
+      rm(path, { recursive: true, force: true }),
+    );
     expect((await readdir(versions)).toSorted()).toEqual(['.download-x', '0.10.0', '0.11.0']);
   });
 });

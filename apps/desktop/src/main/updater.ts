@@ -28,7 +28,8 @@ export function createUpdater(deps: {
   now?: () => number;
   wait?: (ms: number) => Promise<void>;
 }) {
-  const { now = Date.now, wait = (ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)) } = deps;
+  const { now = Date.now, wait = (ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)) } =
+    deps;
   let state: UpdateState = deps.packaged ? { state: 'idle' } : { state: 'off' };
   let release: Manifest | undefined;
   let askedAt = Number.NEGATIVE_INFINITY;
@@ -46,15 +47,21 @@ export function createUpdater(deps: {
   /** What npm's newest means: an offer when it's newer than this version and than one already offered. */
   function found(latest: Manifest) {
     if (compareVersions(latest.version, deps.version) > 0) {
-      if (state.state === 'available' && compareVersions(latest.version, state.version) <= 0) return;
+      if (state.state === 'available' && compareVersions(latest.version, state.version) <= 0)
+        return;
       release = latest;
-      set({ state: 'available', version: latest.version, size: latest.archives[deps.target]?.size });
+      set({
+        state: 'available',
+        version: latest.version,
+        size: latest.archives[deps.target]?.size,
+      });
     } else if (state.state !== 'available') set({ state: 'current', checkedAt: now() });
   }
 
   /** The Check button: says it's checking, then what npm said. Not while a newer version is known or on its way. */
   async function check() {
-    if (!(state.state === 'idle' || state.state === 'current' || state.state === 'check-failed')) return;
+    if (!(state.state === 'idle' || state.state === 'current' || state.state === 'check-failed'))
+      return;
     set({ state: 'checking' });
     const answer = ask();
     await Promise.allSettled([answer, wait(CHECKING_AT_LEAST_MS)]);
@@ -90,7 +97,8 @@ export function createUpdater(deps: {
       await deps.download(release, (share) => {
         // 100% only once it's unpacked too, which is "ready".
         const percent = Math.min(99, Math.floor(share * 100));
-        if (state.state === 'downloading' && percent > state.percent) set({ state: 'downloading', version, percent });
+        if (state.state === 'downloading' && percent > state.percent)
+          set({ state: 'downloading', version, percent });
       });
       set({ state: 'ready', version });
     } catch (error) {

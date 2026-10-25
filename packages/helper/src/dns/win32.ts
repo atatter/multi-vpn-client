@@ -3,7 +3,8 @@ import { runPowerShell, type RunPowerShell } from '../powershell.ts';
 import type { DnsAdapter } from './index.ts';
 
 /** Group Policy NRPT rules make Windows ignore local ones, silently. */
-const GROUP_POLICY_NRPT = 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient\\DnsPolicyConfig';
+const GROUP_POLICY_NRPT =
+  'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient\\DnsPolicyConfig';
 
 const removeOurs = `Get-DnsClientNrptRule | Where-Object Comment -eq '${RESOLVER_MARK}' | Remove-DnsClientNrptRule -Force`;
 
@@ -21,7 +22,10 @@ export function nrptScript(domains: readonly string[], server: string): string {
           '  exit 3',
           '}',
           // ".corp.example" covers subdomains; the bare name is listed too, to be sure it's covered.
-          ...valid.map((domain) => `Add-DnsClientNrptRule -Namespace '.${domain}','${domain}' -NameServers '${server}' -Comment '${RESOLVER_MARK}' | Out-Null`),
+          ...valid.map(
+            (domain) =>
+              `Add-DnsClientNrptRule -Namespace '.${domain}','${domain}' -NameServers '${server}' -Comment '${RESOLVER_MARK}' | Out-Null`,
+          ),
         ]
       : []),
     'Clear-DnsClientCache',
@@ -33,7 +37,13 @@ export function nrptScript(domains: readonly string[], server: string): string {
  * a comment so only ours are ever removed. NRPT can't name a port, so the rules point at an
  * address inside the TUN where sing-box answers on port 53 (core/singbox: TUN_DNS_ADDRESS).
  */
-export function createNrptDns({ server, run = runPowerShell }: { server: string; run?: RunPowerShell }): DnsAdapter {
+export function createNrptDns({
+  server,
+  run = runPowerShell,
+}: {
+  server: string;
+  run?: RunPowerShell;
+}): DnsAdapter {
   return {
     set: (domains) => run(nrptScript(domains, server)),
     clear: () => run(nrptScript([], server)),

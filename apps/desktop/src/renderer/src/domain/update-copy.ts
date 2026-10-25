@@ -7,7 +7,10 @@ import { isOn } from './connection.ts';
 export type UpdateRun = 'check' | 'download' | 'restart';
 
 /** Settings → About's Version row: one short status line and at most one one-word action, in every state. */
-export function versionRow(update: UpdateState, now: number): { line: string; failed?: true; action?: { label: string; run: UpdateRun; disabled?: true } } {
+export function versionRow(
+  update: UpdateState,
+  now: number,
+): { line: string; failed?: true; action?: { label: string; run: UpdateRun; disabled?: true } } {
   const check = { label: 'Check', run: 'check' } as const;
   switch (update.state) {
     case 'off':
@@ -19,11 +22,17 @@ export function versionRow(update: UpdateState, now: number): { line: string; fa
     case 'current':
       return { line: `Up to date, checked ${ago(now - update.checkedAt)}`, action: check };
     case 'available':
-      return { line: `${update.version} is available${update.size ? `, ${Math.round(update.size / 1e6)} MB` : ''}`, action: { label: 'Update', run: 'download' } };
+      return {
+        line: `${update.version} is available${update.size ? `, ${Math.round(update.size / 1e6)} MB` : ''}`,
+        action: { label: 'Update', run: 'download' },
+      };
     case 'downloading':
       return { line: `Downloading ${update.version}… ${update.percent}%` };
     case 'ready':
-      return { line: `${update.version} is ready. Restart turns VPNs off.`, action: { label: 'Restart', run: 'restart' } };
+      return {
+        line: `${update.version} is ready. Restart turns VPNs off.`,
+        action: { label: 'Restart', run: 'restart' },
+      };
     case 'restarting':
       return { line: `Restarting to ${update.version}…` };
     case 'check-failed':
@@ -52,13 +61,19 @@ export function updateTooltip(update: UpdateState): string | undefined {
 }
 
 /** What the error strip says when a download failed; nothing for other states. */
-export const updateNotice = (update: UpdateState) => (update.state === 'download-failed' ? `Couldn't download ${update.version}: ${update.error}` : undefined);
+export const updateNotice = (update: UpdateState) =>
+  update.state === 'download-failed'
+    ? `Couldn't download ${update.version}: ${update.error}`
+    : undefined;
 
 /** The question before restarting into a downloaded version, given how many VPNs are on. */
 export function restartQuestion(version: string, on: number) {
   return {
     title: `Restart to update to ${version}?`,
-    body: on === 0 ? 'No VPNs are on.' : `This turns off the ${on === 1 ? "VPN that's" : `${on} VPNs that are`} on. Turn ${on === 1 ? 'it' : 'them'} back on after.`,
+    body:
+      on === 0
+        ? 'No VPNs are on.'
+        : `This turns off the ${on === 1 ? "VPN that's" : `${on} VPNs that are`} on. Turn ${on === 1 ? 'it' : 'them'} back on after.`,
   };
 }
 
@@ -67,15 +82,24 @@ export function restartQuestion(version: string, on: number) {
  * the new version starting. Main turns them off one at a time, in an order the window doesn't know, so every VPN still
  * on shows as turning off. A failed VPN runs nothing, so main has nothing to turn off and it stays "error": it's off.
  */
-export function restartProgress(version: string, vpns: { name: string; status: ConnectionStatus | undefined }[]) {
+export function restartProgress(
+  version: string,
+  vpns: { name: string; status: ConnectionStatus | undefined }[],
+) {
   const off = (status: ConnectionStatus | undefined) => !isOn(status) || status?.state === 'error';
   const allOff = vpns.every((vpn) => off(vpn.status));
   return {
     title: `Restarting to update to ${version}`,
     body: 'The window closes and opens again by itself.',
     steps: [
-      ...vpns.map(({ name, status }) => (off(status) ? { label: `${name} is off`, state: 'done' as const } : { label: `Turning off ${name}…`, state: 'active' as const })),
-      allOff ? { label: `Starting ${version}…`, state: 'active' as const } : { label: `Start ${version}`, state: 'todo' as const },
+      ...vpns.map(({ name, status }) =>
+        off(status)
+          ? { label: `${name} is off`, state: 'done' as const }
+          : { label: `Turning off ${name}…`, state: 'active' as const },
+      ),
+      allOff
+        ? { label: `Starting ${version}…`, state: 'active' as const }
+        : { label: `Start ${version}`, state: 'todo' as const },
     ],
   };
 }

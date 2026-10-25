@@ -23,7 +23,17 @@ const exec: Exec = (command, args) =>
  * Needs CAP_NET_ADMIN for the interface, and polkit permission for the resolved calls
  * (granted to the helper's user, for this interface only, by the installer).
  */
-export function createResolvedDns({ address, port, link = 'mvpn-dns', run = exec }: { address: string; port: number; link?: string; run?: Exec }): DnsAdapter {
+export function createResolvedDns({
+  address,
+  port,
+  link = 'mvpn-dns',
+  run = exec,
+}: {
+  address: string;
+  port: number;
+  link?: string;
+  run?: Exec;
+}): DnsAdapter {
   const resolvectl = (...args: string[]) => run('resolvectl', ['--no-ask-password', ...args]);
 
   async function removeLink() {
@@ -35,7 +45,10 @@ export function createResolvedDns({ address, port, link = 'mvpn-dns', run = exec
       const valid = [...new Set(domains)].filter((domain) => Domain.safeParse(domain).success);
       if (valid.length === 0) return removeLink();
 
-      const exists = await run('ip', ['link', 'show', link]).then(() => true, () => false);
+      const exists = await run('ip', ['link', 'show', link]).then(
+        () => true,
+        () => false,
+      );
       if (!exists) {
         await run('ip', ['link', 'add', link, 'type', 'dummy']);
         await run('ip', ['address', 'add', `${address}/32`, 'dev', link]);
@@ -48,7 +61,10 @@ export function createResolvedDns({ address, port, link = 'mvpn-dns', run = exec
           await resolvectl('dns', link, `${address}:${port}`);
           break;
         } catch (error) {
-          if (attempt === 20) throw new Error(`Domain routes need systemd-resolved: ${error instanceof Error ? error.message : String(error)}`);
+          if (attempt === 20)
+            throw new Error(
+              `Domain routes need systemd-resolved: ${error instanceof Error ? error.message : String(error)}`,
+            );
           await sleep(100);
         }
       }

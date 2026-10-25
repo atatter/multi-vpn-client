@@ -13,10 +13,20 @@ export type Screen =
   | { name: 'settings' };
 
 /** How a new VPN's draft was made: from its address (what was detected), a provider file, or a picked type. */
-export type SignInSource = { from: 'address'; browserSignIn: boolean } | { from: 'file'; fileName: string } | { from: 'type' };
+export type SignInSource =
+  | { from: 'address'; browserSignIn: boolean }
+  | { from: 'file'; fileName: string }
+  | { from: 'type' };
 
 /** Asked inside a VPN's row while connecting. */
 export type Prompt =
   | { kind: 'password'; vpnId: string }
   /** `password` is the one typed for this attempt, reused after trusting. */
-  | { kind: 'certificate'; vpnId: string; pin: string; server: string; changed: boolean; password: string | undefined };
+  | {
+      kind: 'certificate';
+      vpnId: string;
+      pin: string;
+      server: string;
+      changed: boolean;
+      password: string | undefined;
+    };

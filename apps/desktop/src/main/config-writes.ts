@@ -17,6 +17,12 @@ export function writingConfig<T>(write: () => Promise<T>): Promise<T> {
 export const saveServerRoutes = (configPath: string, vpnId: string, serverRoutes: ServerRoutes) =>
   writingConfig(async () => {
     const config = await loadConfig(configPath);
-    const saved = await saveConfig({ ...config, vpns: config.vpns.map((vpn) => (vpn.id === vpnId ? { ...vpn, serverRoutes } : vpn)) }, configPath);
+    const saved = await saveConfig(
+      {
+        ...config,
+        vpns: config.vpns.map((vpn) => (vpn.id === vpnId ? { ...vpn, serverRoutes } : vpn)),
+      },
+      configPath,
+    );
     broadcast('config:changed', saved);
   });

@@ -17,8 +17,15 @@ export const linuxTray: TrayPlatform = {
     app.setDesktopName(`${DESKTOP_ID}.desktop`);
     // Only a packaged build: a development one would point the user's app grid at a checkout.
     if (!app.isPackaged) return;
-    const command: [string, ...string[]] = [process.execPath, ...(app.commandLine.hasSwitch('no-sandbox') ? ['--no-sandbox'] : [])];
-    syncDesktopEntry({ files: desktopEntryFiles(process.env, homedir()), command, iconSource: APP_ICON }).catch((error: unknown) => {
+    const command: [string, ...string[]] = [
+      process.execPath,
+      ...(app.commandLine.hasSwitch('no-sandbox') ? ['--no-sandbox'] : []),
+    ];
+    syncDesktopEntry({
+      files: desktopEntryFiles(process.env, homedir()),
+      command,
+      iconSource: APP_ICON,
+    }).catch((error: unknown) => {
       console.error("Couldn't write the desktop entry, so the dock shows no count:", error);
     });
   },

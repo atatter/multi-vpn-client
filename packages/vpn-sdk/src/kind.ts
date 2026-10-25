@@ -46,7 +46,10 @@ export interface FromFile<V> {
   /** Lower-case, with the dot; the first is what the window names. */
   extensions: readonly string[];
   /** The new VPN `draft` with what the file says, and the secrets it holds; or why the file isn't one of this kind's. */
-  read: (text: string, draft: V) => { ok: true; vpn: V; secrets: Record<string, string> } | { ok: false; error: string };
+  read: (
+    text: string,
+    draft: V,
+  ) => { ok: true; vpn: V; secrets: Record<string, string> } | { ok: false; error: string };
 }
 
 export interface KindSpec<V> {
@@ -78,4 +81,7 @@ export interface KindSpec<V> {
  * One kind: its schema (the shared settings spread in, plus a `kind` literal), and its spec, typed from the
  * schema so every callback gets exactly this kind's VPN.
  */
-export const defineKind = <S extends z.ZodObject>(schema: S, spec: NoInfer<KindSpec<z.output<S>>>) => ({ schema, ...spec });
+export const defineKind = <S extends z.ZodObject>(
+  schema: S,
+  spec: NoInfer<KindSpec<z.output<S>>>,
+) => ({ schema, ...spec });

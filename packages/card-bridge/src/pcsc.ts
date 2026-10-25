@@ -22,9 +22,30 @@ interface Abi {
 }
 
 const ABIS: Partial<Record<NodeJS.Platform, Abi>> = {
-  win32: { library: 'winscard.dll', suffix: 'A', names: 'latin1', dword: 'u32', handle: 'u64', result: 'i32' },
-  darwin: { library: '/System/Library/Frameworks/PCSC.framework/PCSC', suffix: '', names: 'utf8', dword: 'u32', handle: 'i32', result: 'i32' },
-  linux: { library: 'libpcsclite.so.1', suffix: '', names: 'utf8', dword: 'u64', handle: 'i64', result: 'i64' },
+  win32: {
+    library: 'winscard.dll',
+    suffix: 'A',
+    names: 'latin1',
+    dword: 'u32',
+    handle: 'u64',
+    result: 'i32',
+  },
+  darwin: {
+    library: '/System/Library/Frameworks/PCSC.framework/PCSC',
+    suffix: '',
+    names: 'utf8',
+    dword: 'u32',
+    handle: 'i32',
+    result: 'i32',
+  },
+  linux: {
+    library: 'libpcsclite.so.1',
+    suffix: '',
+    names: 'utf8',
+    dword: 'u64',
+    handle: 'i64',
+    result: 'i64',
+  },
 };
 
 // Result codes (the same everywhere, as unsigned 32-bit values).
@@ -81,10 +102,16 @@ export function openPcsc(): Pcsc {
     SCardEstablishContext: { args: [dword, 'ptr', 'ptr', 'ptr'], returns: result },
     SCardReleaseContext: { args: [handle], returns: result },
     [`SCardListReaders${suffix}`]: { args: [handle, 'ptr', 'ptr', 'ptr'], returns: result },
-    [`SCardConnect${suffix}`]: { args: [handle, 'ptr', dword, dword, 'ptr', 'ptr'], returns: result },
+    [`SCardConnect${suffix}`]: {
+      args: [handle, 'ptr', dword, dword, 'ptr', 'ptr'],
+      returns: result,
+    },
     SCardReconnect: { args: [handle, dword, dword, dword, 'ptr'], returns: result },
     SCardDisconnect: { args: [handle, dword], returns: result },
-    [`SCardStatus${suffix}`]: { args: [handle, 'ptr', 'ptr', 'ptr', 'ptr', 'ptr', 'ptr'], returns: result },
+    [`SCardStatus${suffix}`]: {
+      args: [handle, 'ptr', 'ptr', 'ptr', 'ptr', 'ptr', 'ptr'],
+      returns: result,
+    },
     SCardBeginTransaction: { args: [handle], returns: result },
     SCardEndTransaction: { args: [handle, dword], returns: result },
     SCardTransmit: { args: [handle, 'ptr', 'ptr', dword, 'ptr', 'ptr', 'ptr'], returns: result },
@@ -115,7 +142,10 @@ export function openPcsc(): Pcsc {
   };
 
   const contextCell = new Uint8Array(8);
-  check('SCardEstablishContext', fn('SCardEstablishContext')(word(SCARD_SCOPE_USER), null, null, contextCell));
+  check(
+    'SCardEstablishContext',
+    fn('SCardEstablishContext')(word(SCARD_SCOPE_USER), null, null, contextCell),
+  );
   const context = readHandle(contextCell);
 
   return {
@@ -123,10 +153,16 @@ export function openPcsc(): Pcsc {
       const length = out(dwordBytes, 16 * 1024);
       const names = new Uint8Array(16 * 1024);
       try {
-        check('SCardListReaders', fn(`SCardListReaders${suffix}`)(context, null, names, length.cell));
+        check(
+          'SCardListReaders',
+          fn(`SCardListReaders${suffix}`)(context, null, names, length.cell),
+        );
       } catch (error) {
         const code = error instanceof PcscError ? error.code : 0;
-        if ([SCARD_E_NO_READERS_AVAILABLE, SCARD_E_NO_SERVICE, SCARD_E_SERVICE_STOPPED].includes(code)) return [];
+        if (
+          [SCARD_E_NO_READERS_AVAILABLE, SCARD_E_NO_SERVICE, SCARD_E_SERVICE_STOPPED].includes(code)
+        )
+          return [];
         throw error;
       }
       return splitMultiString(names.subarray(0, length.read()), encoding);
@@ -138,7 +174,10 @@ export function openPcsc(): Pcsc {
       const name = Buffer.from(`${reader}\0`, encoding);
       const share = word(SCARD_SHARE_SHARED);
       const protocols = word(SCARD_PROTOCOL_T0 | SCARD_PROTOCOL_T1);
-      check('SCardConnect', fn(`SCardConnect${suffix}`)(context, name, share, protocols, cardCell, protocol.cell));
+      check(
+        'SCardConnect',
+        fn(`SCardConnect${suffix}`)(context, name, share, protocols, cardCell, protocol.cell),
+      );
       const card = readHandle(cardCell);
       let active = protocol.read();
 
@@ -149,7 +188,18 @@ export function openPcsc(): Pcsc {
       const state = out(dwordBytes);
       const statusProtocol = out(dwordBytes);
       try {
-        check('SCardStatus', fn(`SCardStatus${suffix}`)(card, readerName, readerLength.cell, state.cell, statusProtocol.cell, atr, atrLength.cell));
+        check(
+          'SCardStatus',
+          fn(`SCardStatus${suffix}`)(
+            card,
+            readerName,
+            readerLength.cell,
+            state.cell,
+            statusProtocol.cell,
+            atr,
+            atrLength.cell,
+          ),
+        );
       } catch (error) {
         fn('SCardDisconnect')(card, word(SCARD_LEAVE_CARD));
         throw error;
@@ -165,14 +215,21 @@ export function openPcsc(): Pcsc {
           writeUnsigned(pci, 0, dwordBytes, active);
           writeUnsigned(pci, dwordBytes, dwordBytes, pci.length);
           const length = out(dwordBytes, response.length);
-          check('SCardTransmit', fn('SCardTransmit')(card, pci, apdu, word(apdu.length), null, response, length.cell));
+          check(
+            'SCardTransmit',
+            fn('SCardTransmit')(card, pci, apdu, word(apdu.length), null, response, length.cell),
+          );
           return response.slice(0, length.read());
         },
         beginTransaction: () => check('SCardBeginTransaction', fn('SCardBeginTransaction')(card)),
-        endTransaction: () => check('SCardEndTransaction', fn('SCardEndTransaction')(card, word(SCARD_LEAVE_CARD))),
+        endTransaction: () =>
+          check('SCardEndTransaction', fn('SCardEndTransaction')(card, word(SCARD_LEAVE_CARD))),
         reconnect() {
           const reconnected = out(dwordBytes);
-          check('SCardReconnect', fn('SCardReconnect')(card, share, protocols, word(SCARD_LEAVE_CARD), reconnected.cell));
+          check(
+            'SCardReconnect',
+            fn('SCardReconnect')(card, share, protocols, word(SCARD_LEAVE_CARD), reconnected.cell),
+          );
           active = reconnected.read();
         },
         disconnect: () => void fn('SCardDisconnect')(card, word(SCARD_LEAVE_CARD)),

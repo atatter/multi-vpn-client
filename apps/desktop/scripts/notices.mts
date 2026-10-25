@@ -16,7 +16,10 @@ const read = (...path: string[]) => readFileSync(join(...path), 'utf8');
  * entry and licenses/bun-<version>-LICENSE.md, or this script stops the release.
  */
 const BUN_SOURCES: Record<string, { webkit: string; tinycc: string }> = {
-  '1.4.4': { webkit: 'd6375c72affe0f70222cdcb45012b10f0bf3a9d5', tinycc: '05f0fafaa3be31e31d7b4b5c17dc60f62c991171' },
+  '1.4.4': {
+    webkit: 'd6375c72affe0f70222cdcb45012b10f0bf3a9d5',
+    tinycc: '05f0fafaa3be31e31d7b4b5c17dc60f62c991171',
+  },
 };
 
 const PackageJson = z.object({
@@ -30,12 +33,21 @@ const PackageJson = z.object({
 const packageJson = (dir: string) => PackageJson.parse(JSON.parse(read(dir, 'package.json')));
 
 // The helper and card bridge are compiled with Bun; both must use the same one.
-const bunVersions = new Set(['helper', 'card-bridge'].map((name) => packageJson(join(root, 'packages', name)).devDependencies?.bun));
+const bunVersions = new Set(
+  ['helper', 'card-bridge'].map(
+    (name) => packageJson(join(root, 'packages', name)).devDependencies?.bun,
+  ),
+);
 const [bun] = bunVersions;
-if (bunVersions.size !== 1 || !bun) throw new Error(`The helper and card bridge must build with the same Bun; they use ${[...bunVersions].join(', ')}.`);
+if (bunVersions.size !== 1 || !bun)
+  throw new Error(
+    `The helper and card bridge must build with the same Bun; they use ${[...bunVersions].join(', ')}.`,
+  );
 const bunSources = BUN_SOURCES[bun];
 if (!bunSources || !existsSync(join(desktop, 'licenses', `bun-${bun}-LICENSE.md`))) {
-  throw new Error(`Bun ${bun} has no notice yet: add its WebKit and tinycc commits to BUN_SOURCES and licenses/bun-${bun}-LICENSE.md.`);
+  throw new Error(
+    `Bun ${bun} has no notice yet: add its WebKit and tinycc commits to BUN_SOURCES and licenses/bun-${bun}-LICENSE.md.`,
+  );
 }
 
 /** The folders of every npm package whose code ships: what the bundles pulled in, plus what Bun compiles into the binaries. */
@@ -43,7 +55,8 @@ function shippedPackages(): string[] {
   const recorded = readdirSync(join(desktop, 'build'))
     .filter((file) => /^packages-.+\.json$/.test(file))
     .flatMap((file) => z.array(z.string()).parse(JSON.parse(read(desktop, 'build', file))));
-  if (recorded.length === 0) throw new Error('No recorded packages: run electron-vite build first.');
+  if (recorded.length === 0)
+    throw new Error('No recorded packages: run electron-vite build first.');
   const compiled = ['helper', 'card-bridge'].flatMap((name) => {
     const dir = join(root, 'packages', name);
     return Object.keys(packageJson(dir).dependencies ?? {})
@@ -58,11 +71,23 @@ function shippedPackages(): string[] {
 function packageNotice(dir: string): { id: string; text: string } {
   const { name, version = '', license } = packageJson(dir);
   const file = readdirSync(dir).find((entry) => /^(licen[cs]e|copying)(\.[a-z]+)?$/i.test(entry));
-  if (!file) throw new Error(`${name}@${version} ships no license file, so its notice can't be included. Check its license (${license ?? 'none given'}) by hand.`);
-  return { id: `${name}@${version}`, text: `${name} ${version} (${license ?? 'see below'})\n\n${read(dir, file).trim()}` };
+  if (!file)
+    throw new Error(
+      `${name}@${version} ships no license file, so its notice can't be included. Check its license (${license ?? 'none given'}) by hand.`,
+    );
+  return {
+    id: `${name}@${version}`,
+    text: `${name} ${version} (${license ?? 'see below'})\n\n${read(dir, file).trim()}`,
+  };
 }
 
-const notices = [...new Map(shippedPackages().map(packageNotice).map((notice) => [notice.id, notice.text])).entries()]
+const notices = [
+  ...new Map(
+    shippedPackages()
+      .map(packageNotice)
+      .map((notice) => [notice.id, notice.text]),
+  ).entries(),
+]
   .sort(([a], [b]) => a.localeCompare(b))
   .map(([, text]) => text);
 const rule = (title: string) => `\n\n${'='.repeat(79)}\n${title}\n${'='.repeat(79)}\n\n`;

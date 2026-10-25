@@ -7,8 +7,19 @@ import { createHelperServer } from '../../helper/src/server.ts';
 import { helperVersion, openHelperSession } from './helper-client.ts';
 
 const TOKEN = 'app-secret-token';
-const tunnel: VpnTunnel = { vpnId: 'a', port: 41000, username: 'u', password: 'p', cidrs: ['10.20.0.0/16'], dns: { servers: [], domains: [] } };
-const routes: HostRoutes = { blockIpv6: false, tunnels: [tunnel], domains: [{ vpnId: 'a', domain: 'argo.lab.example' }] };
+const tunnel: VpnTunnel = {
+  vpnId: 'a',
+  port: 41000,
+  username: 'u',
+  password: 'p',
+  cidrs: ['10.20.0.0/16'],
+  dns: { servers: [], domains: [] },
+};
+const routes: HostRoutes = {
+  blockIpv6: false,
+  tunnels: [tunnel],
+  domains: [{ vpnId: 'a', domain: 'argo.lab.example' }],
+};
 
 let cleanup: (() => Promise<void>) | undefined;
 afterEach(async () => cleanup?.());
@@ -43,7 +54,12 @@ async function impostor() {
           request.command === 'status'
             ? { ok: true, version: HELPER_VERSION }
             : request.command === 'hello'
-              ? { ok: true, version: HELPER_VERSION, challenge: 'c'.repeat(43), proof: '0'.repeat(64) }
+              ? {
+                  ok: true,
+                  version: HELPER_VERSION,
+                  challenge: 'c'.repeat(43),
+                  proof: '0'.repeat(64),
+                }
               : { ok: true, version: HELPER_VERSION };
         socket.write(`${JSON.stringify(reply)}\n`);
       }
@@ -84,7 +100,10 @@ describe('helper client ⇄ helper server', () => {
   it('never sends the token, an auth proof, or routes to an impostor', async () => {
     const { port, received } = await impostor();
     await expect(openHelperSession({ port, token: TOKEN })).rejects.toThrow("couldn't prove");
-    expect(received.map((line) => (JSON.parse(line) as { command: string }).command)).toEqual(['status', 'hello']);
+    expect(received.map((line) => (JSON.parse(line) as { command: string }).command)).toEqual([
+      'status',
+      'hello',
+    ]);
     expect(received.join('\n')).not.toContain(TOKEN);
   });
 
@@ -101,7 +120,13 @@ describe('helper client ⇄ helper server', () => {
   it('surfaces validation errors from the helper', async () => {
     const { port } = await helper();
     const session = await openHelperSession({ port, token: TOKEN });
-    await expect(session.apply({ blockIpv6: false, tunnels: [{ ...tunnel, cidrs: ['10.20.1.0/16'] }], domains: [] })).rejects.toThrow('refused the routes');
+    await expect(
+      session.apply({
+        blockIpv6: false,
+        tunnels: [{ ...tunnel, cidrs: ['10.20.1.0/16'] }],
+        domains: [],
+      }),
+    ).rejects.toThrow('refused the routes');
     session.close();
   });
 });

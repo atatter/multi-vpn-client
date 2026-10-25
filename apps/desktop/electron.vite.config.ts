@@ -22,15 +22,24 @@ function recordPackages(name: string): Plugin {
       const dirs = new Set<string>();
       const sources = [
         ...this.getModuleIds(),
-        ...Object.values(bundle).flatMap((output) => (output.type === 'asset' ? output.originalFileNames.map((file) => resolve(root, file)) : [])),
+        ...Object.values(bundle).flatMap((output) =>
+          output.type === 'asset'
+            ? output.originalFileNames.map((file) => resolve(root, file))
+            : [],
+        ),
       ];
       for (const source of sources) {
         // The last node_modules segment is the package itself, also under pnpm's .pnpm/<name>@<version>/node_modules.
-        const dir = /^\0?(.*[\\/]node_modules[\\/](?:@[^\\/]+[\\/])?[^\\/]+)[\\/]/.exec(source)?.[1];
+        const dir = /^\0?(.*[\\/]node_modules[\\/](?:@[^\\/]+[\\/])?[^\\/]+)[\\/]/.exec(
+          source,
+        )?.[1];
         if (dir) dirs.add(dir);
       }
       mkdirSync(join(import.meta.dirname, 'build'), { recursive: true });
-      writeFileSync(join(import.meta.dirname, 'build', `packages-${name}.json`), `${JSON.stringify([...dirs].sort(), null, 2)}\n`);
+      writeFileSync(
+        join(import.meta.dirname, 'build', `packages-${name}.json`),
+        `${JSON.stringify([...dirs].sort(), null, 2)}\n`,
+      );
     },
   };
 }

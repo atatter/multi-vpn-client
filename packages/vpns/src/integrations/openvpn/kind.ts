@@ -1,7 +1,16 @@
-import { bareHosts, commonFields, defineKind, type FromFile, HostPort, PASSWORD_SLOT } from '@repo/vpn-sdk';
+import {
+  bareHosts,
+  commonFields,
+  defineKind,
+  type FromFile,
+  HostPort,
+  PASSWORD_SLOT,
+} from '@repo/vpn-sdk';
 import { z } from 'zod';
 
-export type OpenVpnImport = { ok: true; remotes: string[]; needsPassword: boolean } | { ok: false; error: string };
+export type OpenVpnImport =
+  | { ok: true; remotes: string[]; needsPassword: boolean }
+  | { ok: false; error: string };
 
 /** Reads what we need from an .ovpn profile. The profile itself is kept whole, as a secret. */
 export function parseOpenVpnProfile(text: string): OpenVpnImport {
@@ -28,7 +37,10 @@ const schema = z
     /** The imported profile has `auth-user-pass`: it signs in with a username and password. */
     needsPassword: z.boolean().default(false),
   })
-  .refine((vpn) => !vpn.needsPassword || vpn.username !== '', { path: ['username'], message: 'This profile signs in with a username.' });
+  .refine((vpn) => !vpn.needsPassword || vpn.username !== '', {
+    path: ['username'],
+    message: 'This profile signs in with a username.',
+  });
 
 /** A saved OpenVPN VPN. */
 export type OpenVpn = z.output<typeof schema>;
@@ -38,7 +50,13 @@ export const OPENVPN_FILE: FromFile<OpenVpn> = {
   extensions: ['.ovpn', '.conf'],
   read: (text, draft) => {
     const parsed = parseOpenVpnProfile(text);
-    return parsed.ok ? { ok: true, vpn: { ...draft, remotes: parsed.remotes, needsPassword: parsed.needsPassword }, secrets: { profile: text } } : parsed;
+    return parsed.ok
+      ? {
+          ok: true,
+          vpn: { ...draft, remotes: parsed.remotes, needsPassword: parsed.needsPassword },
+          secrets: { profile: text },
+        }
+      : parsed;
   },
 };
 
@@ -50,7 +68,15 @@ export const openvpn = defineKind(schema, {
   // Every remote: OpenVPN may fall back to any of them.
   hosts: (vpn) => bareHosts(vpn.remotes),
   secrets: [
-    { key: 'profile', label: '.ovpn profile', storage: 'always', required: true, importOnly: true, fills: ['remotes'], schema: z.string().min(1) },
+    {
+      key: 'profile',
+      label: '.ovpn profile',
+      storage: 'always',
+      required: true,
+      importOnly: true,
+      fills: ['remotes'],
+      schema: z.string().min(1),
+    },
     PASSWORD_SLOT,
   ],
   fromFile: OPENVPN_FILE,

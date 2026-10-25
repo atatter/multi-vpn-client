@@ -5,7 +5,13 @@ import { createUpdater } from './updater.ts';
 
 const release = (version: string): Manifest => ({
   version,
-  archives: { 'linux-x64': { file: `multi-vpn-client-${version}-linux-x64.tar.gz`, sha256: 'a'.repeat(64), size: 180_000_000 } },
+  archives: {
+    'linux-x64': {
+      file: `multi-vpn-client-${version}-linux-x64.tar.gz`,
+      sha256: 'a'.repeat(64),
+      size: 180_000_000,
+    },
+  },
 });
 
 /** An updater for 0.1.0 over a fake npm and download: `npm` is what npm answers next. */
@@ -16,14 +22,26 @@ function setup({
   now = (): number => 1000,
 } = {}) {
   const states: UpdateState[] = [];
-  const downloads: { version: string; finish: () => void; fail: (error: Error) => void; progress: (done: number) => void }[] = [];
+  const downloads: {
+    version: string;
+    finish: () => void;
+    fail: (error: Error) => void;
+    progress: (done: number) => void;
+  }[] = [];
   const updater = createUpdater({
     version: '0.1.0',
     packaged,
     target: 'linux-x64',
     latest: () => npm(),
     download: (manifest, progress) =>
-      new Promise((resolve, reject) => downloads.push({ version: manifest.version, finish: () => resolve(undefined), fail: reject, progress })),
+      new Promise((resolve, reject) =>
+        downloads.push({
+          version: manifest.version,
+          finish: () => resolve(undefined),
+          fail: reject,
+          progress,
+        }),
+      ),
     onChange: (state) => states.push(state),
     now,
     wait,
@@ -36,7 +54,10 @@ const settle = () => new Promise((resolve) => setTimeout(resolve));
 describe('checking for a newer version', () => {
   it('never happens in a development build', async () => {
     let asked = 0;
-    const { updater, states } = setup({ packaged: false, npm: () => (asked++, Promise.resolve(release('0.2.0'))) });
+    const { updater, states } = setup({
+      packaged: false,
+      npm: () => (asked++, Promise.resolve(release('0.2.0'))),
+    });
     updater.start();
     updater.windowFocused();
     await updater.check();
@@ -48,7 +69,10 @@ describe('checking for a newer version', () => {
   it('offers a newer version on npm, with its size, and downloads nothing yet', async () => {
     const { updater, states, downloads } = setup();
     await updater.check();
-    expect(states).toEqual([{ state: 'checking' }, { state: 'available', version: '0.2.0', size: 180_000_000 }]);
+    expect(states).toEqual([
+      { state: 'checking' },
+      { state: 'available', version: '0.2.0', size: 180_000_000 },
+    ]);
     expect(downloads).toEqual([]);
   });
 
@@ -61,20 +85,30 @@ describe('checking for a newer version', () => {
   });
 
   it('says why it failed, and can be tried again', async () => {
-    let answer = (): Promise<Manifest> => Promise.reject(new Error("Couldn't reach npm. Check the internet connection."));
+    let answer = (): Promise<Manifest> =>
+      Promise.reject(new Error("Couldn't reach npm. Check the internet connection."));
     const { updater } = setup({ npm: () => answer() });
     await updater.check();
-    expect(updater.state()).toEqual({ state: 'check-failed', error: "Couldn't reach npm. Check the internet connection." });
+    expect(updater.state()).toEqual({
+      state: 'check-failed',
+      error: "Couldn't reach npm. Check the internet connection.",
+    });
     answer = () => Promise.resolve(release('0.2.0'));
     await updater.check();
     expect(updater.state()).toMatchObject({ state: 'available' });
   });
 
   it("keeps saying it's checking for a second, even when npm answers at once", async () => {
-    for (const npm of [() => Promise.resolve(release('0.2.0')), () => Promise.reject(new Error('offline'))]) {
+    for (const npm of [
+      () => Promise.resolve(release('0.2.0')),
+      () => Promise.reject(new Error('offline')),
+    ]) {
       let done = () => {};
       const waits: number[] = [];
-      const { updater } = setup({ npm, wait: (ms) => (waits.push(ms), new Promise<void>((resolve) => (done = resolve))) });
+      const { updater } = setup({
+        npm,
+        wait: (ms) => (waits.push(ms), new Promise<void>((resolve) => (done = resolve))),
+      });
       const checked = updater.check();
       await settle();
       expect(updater.state()).toEqual({ state: 'checking' });
@@ -107,7 +141,8 @@ describe('checking by itself', () => {
 
   it("shows why the first check failed, but leaves what's shown when a later one fails", async () => {
     let clock = 0;
-    let answer = (): Promise<Manifest> => Promise.reject(new Error("Couldn't reach npm. Check the internet connection."));
+    let answer = (): Promise<Manifest> =>
+      Promise.reject(new Error("Couldn't reach npm. Check the internet connection."));
     const { updater } = setup({ npm: () => answer(), now: () => clock });
     updater.start();
     await settle();
@@ -127,7 +162,10 @@ describe('checking by itself', () => {
   it('asks when the window comes to the front, unless npm was asked in the last 15 minutes', async () => {
     let clock = 0;
     let asked = 0;
-    const { updater } = setup({ npm: () => (asked++, Promise.resolve(release('0.1.0'))), now: () => clock });
+    const { updater } = setup({
+      npm: () => (asked++, Promise.resolve(release('0.1.0'))),
+      now: () => clock,
+    });
     updater.start();
     await settle();
     clock = minutes(14);
@@ -158,7 +196,10 @@ describe('checking by itself', () => {
   it('offers an even newer version, and downloads that one', async () => {
     let clock = 0;
     let newest = '0.2.0';
-    const { updater, downloads } = setup({ npm: () => Promise.resolve(release(newest)), now: () => clock });
+    const { updater, downloads } = setup({
+      npm: () => Promise.resolve(release(newest)),
+      now: () => clock,
+    });
     updater.start();
     await settle();
     newest = '0.2.1';
@@ -174,7 +215,10 @@ describe('checking by itself', () => {
     let clock = 0;
     let answer: (manifest: Manifest) => void = () => {};
     let asked = 0;
-    const npm = () => (asked++ === 0 ? Promise.resolve(release('0.2.0')) : new Promise<Manifest>((resolve) => (answer = resolve)));
+    const npm = () =>
+      asked++ === 0
+        ? Promise.resolve(release('0.2.0'))
+        : new Promise<Manifest>((resolve) => (answer = resolve));
     const { updater } = setup({ npm, now: () => clock });
     updater.start();
     await settle();
@@ -230,7 +274,11 @@ describe('downloading it', () => {
     void updater.download();
     downloads[0]?.fail(new Error("The download doesn't match its checksum."));
     await settle();
-    expect(updater.state()).toEqual({ state: 'download-failed', version: '0.2.0', error: "The download doesn't match its checksum." });
+    expect(updater.state()).toEqual({
+      state: 'download-failed',
+      version: '0.2.0',
+      error: "The download doesn't match its checksum.",
+    });
     void updater.download();
     expect(downloads).toHaveLength(2);
   });

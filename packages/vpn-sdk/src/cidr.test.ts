@@ -35,12 +35,18 @@ describe('parseCidr', () => {
     });
   });
 
-  it.each(['', '10.0.0', '10.0.0.256/8', '10.0.0.0/33', '10.0.0.0/', '01.0.0.0/8', 'a.b.c.d/8', '::1/128'])(
-    'rejects %j',
-    (input) => {
-      expect(parseCidr(input).ok).toBe(false);
-    },
-  );
+  it.each([
+    '',
+    '10.0.0',
+    '10.0.0.256/8',
+    '10.0.0.0/33',
+    '10.0.0.0/',
+    '01.0.0.0/8',
+    'a.b.c.d/8',
+    '::1/128',
+  ])('rejects %j', (input) => {
+    expect(parseCidr(input).ok).toBe(false);
+  });
 });
 
 describe('range set operations', () => {
@@ -103,9 +109,12 @@ describe('networkOf', () => {
     expect(networkOf('10.0.0.1/0')).toBe('0.0.0.0/0');
   });
 
-  it.each(['fe80::1/64', '10.0.0.1/40', '10.8.0.2/', '10.8.0.2/1e1', '10.8.0.2/0x10', '10.8.0.2'])('returns undefined for %j', (input) => {
-    expect(networkOf(input)).toBeUndefined();
-  });
+  it.each(['fe80::1/64', '10.0.0.1/40', '10.8.0.2/', '10.8.0.2/1e1', '10.8.0.2/0x10', '10.8.0.2'])(
+    'returns undefined for %j',
+    (input) => {
+      expect(networkOf(input)).toBeUndefined();
+    },
+  );
 });
 
 describe('isIpv4', () => {

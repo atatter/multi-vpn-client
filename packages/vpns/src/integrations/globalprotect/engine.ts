@@ -1,4 +1,12 @@
-import { CARD_NAME, type Detect, type Failure, type LauncherEntry, type ReadLine, type VpnLaunch, withPort } from '@repo/vpn-sdk/engine';
+import {
+  CARD_NAME,
+  type Detect,
+  type Failure,
+  type LauncherEntry,
+  type ReadLine,
+  type VpnLaunch,
+  withPort,
+} from '@repo/vpn-sdk/engine';
 import { OPENCONNECT_CARD_IMAGE, OPENCONNECT_IMAGE } from '../../shared/openconnect/container.ts';
 import { extraArguments, readOpenConnect, REJECTED } from '../../shared/openconnect/engine.ts';
 import { type GlobalProtectVpn, ID_CARD_CERTIFICATE } from './kind.ts';
@@ -9,7 +17,13 @@ const GP_OS = { win: 'win', mac: 'mac-intel', linux: 'linux-64' } as const;
 /** GlobalProtect with a password, which goes in on stdin. */
 export function globalProtectLaunch(vpn: GlobalProtectVpn, password: string): VpnLaunch {
   const { options, readLine } = globalProtect(vpn, false);
-  return { client: 'OpenConnect', image: OPENCONNECT_IMAGE, command: ['openconnect', ...options], files: { auth: `${password}\n` }, readLine };
+  return {
+    client: 'OpenConnect',
+    image: OPENCONNECT_IMAGE,
+    command: ['openconnect', ...options],
+    files: { auth: `${password}\n` },
+    readLine,
+  };
 }
 
 /** GlobalProtect with the certificate on the smart card in the computer's reader; the PIN is asked for while connecting. */
@@ -41,7 +55,10 @@ export function globalProtectCardLaunch(vpn: GlobalProtectVpn): VpnLaunch {
  * given as a form entry so that nothing on stdin can answer the card's PIN prompt instead.
  * OpenConnect asks for the PIN, and the container relays that prompt to the app.
  */
-function globalProtect(vpn: GlobalProtectVpn, card: boolean): { options: string[]; readLine: ReadLine } {
+function globalProtect(
+  vpn: GlobalProtectVpn,
+  card: boolean,
+): { options: string[]; readLine: ReadLine } {
   const direct = vpn.gateway !== '';
   const server = direct ? vpn.gateway : vpn.portal;
   /** Gateways the portal listed, as OpenConnect prints them: "  <label> (<address>)". */
@@ -57,7 +74,9 @@ function globalProtect(vpn: GlobalProtectVpn, card: boolean): { options: string[
     ...extraArguments(vpn.advanced),
     `https://${server}`,
   ];
-  const rejected: Failure = card ? { failed: "The VPN server didn't accept the card's certificate." } : REJECTED;
+  const rejected: Failure = card
+    ? { failed: "The VPN server didn't accept the card's certificate." }
+    : REJECTED;
   return {
     options,
     readLine: readOpenConnect(server, (line) => {
@@ -65,10 +84,18 @@ function globalProtect(vpn: GlobalProtectVpn, card: boolean): { options: string[
       if (listed?.[1] && listed[2]) offered.set(listed[1], listed[2]);
       const choices = /GATEWAY: \[([^\]]*)\]:/.exec(line)?.[1];
       if (choices) {
-        const gateways = choices.split('|').map((label) => (offered.has(label) ? `${label} (${offered.get(label)})` : label));
-        return { failed: `The portal offers several gateways: ${gateways.join(', ')}. Put the address of the one to use in the Gateway field.` };
+        const gateways = choices
+          .split('|')
+          .map((label) => (offered.has(label) ? `${label} (${offered.get(label)})` : label));
+        return {
+          failed: `The portal offers several gateways: ${gateways.join(', ')}. Put the address of the one to use in the Gateway field.`,
+        };
       }
-      if (line.includes('Unexpected 512 result') || /invalid (username|user name) or password/i.test(line)) return rejected;
+      if (
+        line.includes('Unexpected 512 result') ||
+        /invalid (username|user name) or password/i.test(line)
+      )
+        return rejected;
       // The server didn't get a certificate it takes. Portals often only take passwords, while their gateways take the card.
       if (line.includes('Valid client certificate is required')) {
         return {
@@ -86,8 +113,18 @@ function globalProtect(vpn: GlobalProtectVpn, card: boolean): { options: string[
 /** A GlobalProtect portal answers its prelogin page; a gateway-only address only the gateway's. */
 export const detectGlobalProtect: Detect = async ({ host, port }, probe) => {
   for (const path of ['/global-protect/prelogin.esp', '/ssl-vpn/prelogin.esp']) {
-    const answer = await probe({ host, port, method: 'POST', path: `${path}?tmp=tmp&clientVer=4100&clientos=Windows`, headers: { 'User-Agent': 'PAN GlobalProtect' } });
-    if (answer && /<prelogin-response\b/.test(answer.body)) return { address: withPort(host, port), browserSignIn: /<saml-auth-method>/.test(answer.body) };
+    const answer = await probe({
+      host,
+      port,
+      method: 'POST',
+      path: `${path}?tmp=tmp&clientVer=4100&clientos=Windows`,
+      headers: { 'User-Agent': 'PAN GlobalProtect' },
+    });
+    if (answer && /<prelogin-response\b/.test(answer.body))
+      return {
+        address: withPort(host, port),
+        browserSignIn: /<saml-auth-method>/.test(answer.body),
+      };
   }
   return undefined;
 };

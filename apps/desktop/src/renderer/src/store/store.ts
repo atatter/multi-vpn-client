@@ -1,4 +1,10 @@
-import { type Config, keepServerRoutes, PASSWORD_SLOT, type SecretChanges, type TrafficSnapshot } from '@repo/core';
+import {
+  type Config,
+  keepServerRoutes,
+  PASSWORD_SLOT,
+  type SecretChanges,
+  type TrafficSnapshot,
+} from '@repo/core';
 import type { MainApi } from '../../../preload/index.ts';
 import type { AppInfo, Loaded } from '../../../shared/ipc-contract.ts';
 import { isOn } from '../domain/connection.ts';
@@ -11,12 +17,18 @@ import { messageOf } from './errors.ts';
 export type Navigation = Pick<AppModel, 'push' | 'back' | 'home'>;
 
 /** What the window shows: still loading, settings that couldn't load, or the app. Replaced on every change, never mutated. */
-export type AppView = { phase: 'loading' } | { phase: 'failed'; error: string } | ({ phase: 'ready' } & Omit<AppModel, keyof Navigation>);
+export type AppView =
+  | { phase: 'loading' }
+  | { phase: 'failed'; error: string }
+  | ({ phase: 'ready' } & Omit<AppModel, keyof Navigation>);
 
 export type AppStore = ReturnType<typeof createAppStore>;
 
 /** The store's own state; the view adds the commands to it. */
-interface State extends Pick<AppModel, 'connections' | 'helper' | 'docker' | 'dockerStart' | 'update' | 'waiting' | 'prompt' | 'notice'> {
+interface State extends Pick<
+  AppModel,
+  'connections' | 'helper' | 'docker' | 'dockerStart' | 'update' | 'waiting' | 'prompt' | 'notice'
+> {
   loaded: (Loaded & { info: AppInfo }) | undefined;
   loadError: string | undefined;
 }
@@ -62,7 +74,9 @@ export function createAppStore(api: MainApi) {
   };
   /** Changes the loaded settings; before they've loaded there's nothing to change. */
   const updateLoaded = (change: (loaded: NonNullable<State['loaded']>) => Partial<Loaded>) =>
-    update((current) => (current.loaded ? { loaded: { ...current.loaded, ...change(current.loaded) } } : {}));
+    update((current) =>
+      current.loaded ? { loaded: { ...current.loaded, ...change(current.loaded) } } : {},
+    );
   const showNotice = (notice: string) => update({ notice });
 
   // Traffic changes every second, so it has its own subscribers instead of re-rendering everything.
@@ -112,8 +126,13 @@ export function createAppStore(api: MainApi) {
     dockerCheckedAt = Date.now();
     setSetup({ docker });
     // A failed start's error is stale once Docker runs, however it was started.
-    if (docker === 'running' && state.dockerStart.error) update({ dockerStart: { starting: false, error: undefined } });
-    if (watchingDocker) dockerTimer = setTimeout(() => void refreshDocker(), docker === 'running' ? DOCKER_RECHECK_MS.running : DOCKER_RECHECK_MS.other);
+    if (docker === 'running' && state.dockerStart.error)
+      update({ dockerStart: { starting: false, error: undefined } });
+    if (watchingDocker)
+      dockerTimer = setTimeout(
+        () => void refreshDocker(),
+        docker === 'running' ? DOCKER_RECHECK_MS.running : DOCKER_RECHECK_MS.other,
+      );
   }
   /** The user is looking: check Docker, unless a check is running or has just answered. */
   const checkDockerIfStale = () => {
@@ -137,7 +156,10 @@ export function createAppStore(api: MainApi) {
       const result = await run;
       if (result.ok) {
         // A newer change made while this one saved stays on screen; it's queued behind.
-        updateLoaded((loaded) => ({ config: isLatest() ? result.config : loaded.config, secretStatus: result.secretStatus }));
+        updateLoaded((loaded) => ({
+          config: isLatest() ? result.config : loaded.config,
+          secretStatus: result.secretStatus,
+        }));
         return true;
       }
       showNotice(result.issues.map((issue) => issue.message).join('\n'));
@@ -160,20 +182,27 @@ export function createAppStore(api: MainApi) {
       const result = await api.connect(vpnId, password ?? null);
       if (result.ok) return;
       if ('needsPassword' in result) update({ prompt: { kind: 'password', vpnId } });
-      else if ('untrustedCertificate' in result) update({ prompt: { kind: 'certificate', vpnId, ...result.untrustedCertificate, password } });
+      else if ('untrustedCertificate' in result)
+        update({
+          prompt: { kind: 'certificate', vpnId, ...result.untrustedCertificate, password },
+        });
       // Other failures arrive as the VPN's error status.
     } catch (error) {
       showNotice(messageOf(error));
     }
   }
 
-  const withoutWaiting = (vpnId: string) => update((current) => ({ waiting: new Set([...current.waiting].filter((id) => id !== vpnId)) }));
+  const withoutWaiting = (vpnId: string) =>
+    update((current) => ({ waiting: new Set([...current.waiting].filter((id) => id !== vpnId)) }));
 
   /**
    * Runs a setup fix; resolves to its error, if any, and checks the state again either way. It resolves only
    * after the check, so the fix's button doesn't flash back between "busy" and the new state.
    */
-  const runFix = async (fix: () => Promise<{ ok: true } | { ok: false; error: string }>, recheck: () => Promise<unknown>) => {
+  const runFix = async (
+    fix: () => Promise<{ ok: true } | { ok: false; error: string }>,
+    recheck: () => Promise<unknown>,
+  ) => {
     const problem = await fix().then((result) => (result.ok ? undefined : result.error), messageOf);
     await recheck().catch(() => undefined);
     return problem;
@@ -187,7 +216,9 @@ export function createAppStore(api: MainApi) {
       const error = await runFix(api.startDocker, refreshDocker);
       dockerStarting = undefined;
       // A start that timed out just as Docker came up has nothing left to report.
-      update({ dockerStart: { starting: false, error: state.docker === 'running' ? undefined : error } });
+      update({
+        dockerStart: { starting: false, error: state.docker === 'running' ? undefined : error },
+      });
     })());
 
   // Created once: the view hands out the same functions on every change.
@@ -201,7 +232,8 @@ export function createAppStore(api: MainApi) {
       if (state.prompt?.vpnId === vpnId) return update({ prompt: undefined });
       if (state.waiting.has(vpnId)) return withoutWaiting(vpnId);
       // On means "keep trying": a failed VPN switches off (clearing its error) rather than retrying.
-      if (isOn(state.connections[vpnId])) void api.disconnect(vpnId).catch((error: unknown) => showNotice(messageOf(error)));
+      if (isOn(state.connections[vpnId]))
+        void api.disconnect(vpnId).catch((error: unknown) => showNotice(messageOf(error)));
       else void connect(vpnId);
     },
     turnOff: async (vpnId) => {
@@ -221,14 +253,18 @@ export function createAppStore(api: MainApi) {
       update({ prompt: undefined });
       void (async () => {
         if (remember) {
-          const vpns = loaded.config.vpns.map((vpn) => (vpn.id === vpnId ? { ...vpn, rememberPassword: true } : vpn));
+          const vpns = loaded.config.vpns.map((vpn) =>
+            vpn.id === vpnId ? { ...vpn, rememberPassword: true } : vpn,
+          );
           await save({ ...loaded.config, vpns }, { [vpnId]: { [PASSWORD_SLOT.key]: password } });
         }
         await connect(vpnId, password);
       })();
     },
-    answer: (vpnId, reply) => void api.answer(vpnId, reply).catch((error: unknown) => showNotice(messageOf(error))),
-    reopenSignIn: (vpnId) => void api.reopenSignIn(vpnId).catch((error: unknown) => showNotice(messageOf(error))),
+    answer: (vpnId, reply) =>
+      void api.answer(vpnId, reply).catch((error: unknown) => showNotice(messageOf(error))),
+    reopenSignIn: (vpnId) =>
+      void api.reopenSignIn(vpnId).catch((error: unknown) => showNotice(messageOf(error))),
     // Main saves the pin the gateway actually presented, never one from here.
     trustCertificate: () => {
       const { prompt } = state;
@@ -244,7 +280,8 @@ export function createAppStore(api: MainApi) {
       );
     },
     cancelPrompt: () => update({ prompt: undefined }),
-    runHelper: (action) => runFix(action === 'install' ? api.installHelper : api.uninstallHelper, refreshHelper),
+    runHelper: (action) =>
+      runFix(action === 'install' ? api.installHelper : api.uninstallHelper, refreshHelper),
     startDocker,
   } satisfies Omit<AppModel, keyof State | keyof Loaded | keyof Navigation | 'configPath' | 'info'>;
 
@@ -253,7 +290,16 @@ export function createAppStore(api: MainApi) {
     const { loaded, loadError: _loadError, ...rest } = current;
     if (!loaded) return { phase: 'loading' };
     const { path, info, config, secretStatus, keychainProblem } = loaded;
-    return { phase: 'ready', ...rest, config, secretStatus, keychainProblem, configPath: path, info, ...commands };
+    return {
+      phase: 'ready',
+      ...rest,
+      config,
+      secretStatus,
+      keychainProblem,
+      configPath: path,
+      info,
+      ...commands,
+    };
   }
 
   let stop: (() => void) | undefined;
@@ -291,20 +337,31 @@ export function createAppStore(api: MainApi) {
           trafficListeners.forEach((listener) => listener());
         }),
         // The app learned what a server sends: take only that, so a save still on its way isn't undone on screen.
-        api.onConfigChanged((saved) => updateLoaded((loaded) => ({ config: { ...loaded.config, vpns: keepServerRoutes(saved.vpns, loaded.config.vpns) } }))),
+        api.onConfigChanged((saved) =>
+          updateLoaded((loaded) => ({
+            config: { ...loaded.config, vpns: keepServerRoutes(saved.vpns, loaded.config.vpns) },
+          })),
+        ),
         // A failed download shows in the error strip too; it goes again once the update moves on, as it's no longer true.
         api.onUpdate((next) => {
           heardUpdate = true;
           update((current) => {
-            const stale = current.notice !== undefined && current.notice === updateNotice(current.update);
-            return { update: next, notice: updateNotice(next) ?? (stale ? undefined : current.notice) };
+            const stale =
+              current.notice !== undefined && current.notice === updateNotice(current.update);
+            return {
+              update: next,
+              notice: updateNotice(next) ?? (stale ? undefined : current.notice),
+            };
           });
         }),
       ];
 
       // A helper that isn't responding may just be starting, so it's checked again until it answers.
       void refreshHelper();
-      const helperTimer = setInterval(() => state.helper?.state === 'not-responding' && void refreshHelper(), HELPER_RECHECK_MS);
+      const helperTimer = setInterval(
+        () => state.helper?.state === 'not-responding' && void refreshHelper(),
+        HELPER_RECHECK_MS,
+      );
 
       watchingDocker = true;
       void refreshDocker();
@@ -312,7 +369,10 @@ export function createAppStore(api: MainApi) {
       // check. Focus isn't captured, or every field focused inside would count; clicks are, so no handler stops them.
       const listening = new AbortController();
       activity?.addEventListener('focus', checkDockerIfStale, { signal: listening.signal });
-      activity?.addEventListener('pointerdown', checkDockerIfStale, { capture: true, signal: listening.signal });
+      activity?.addEventListener('pointerdown', checkDockerIfStale, {
+        capture: true,
+        signal: listening.signal,
+      });
 
       stop = () => {
         watchingDocker = false;

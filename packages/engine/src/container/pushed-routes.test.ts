@@ -3,7 +3,9 @@ import { parsePushedRoutes } from './pushed-routes.ts';
 
 describe('parsePushedRoutes', () => {
   it('reads one network per line, clearing host bits and dropping duplicates and junk', () => {
-    expect(parsePushedRoutes('10.140.0.0/16\n172.24.0.5/14\n10.140.0.0/16\nnot-a-route\n')).toEqual({ all: false, cidrs: ['10.140.0.0/16', '172.24.0.0/14'] });
+    expect(parsePushedRoutes('10.140.0.0/16\n172.24.0.5/14\n10.140.0.0/16\nnot-a-route\n')).toEqual(
+      { all: false, cidrs: ['10.140.0.0/16', '172.24.0.0/14'] },
+    );
   });
 
   it('knows when the server sends everything, also in pieces', () => {

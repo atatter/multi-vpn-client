@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createTrafficTally } from './traffic.ts';
 
-const connection = (id: string, chain: string, bytes: number, host = '', destinationIP = '10.0.0.1') => ({
+const connection = (
+  id: string,
+  chain: string,
+  bytes: number,
+  host = '',
+  destinationIP = '10.0.0.1',
+) => ({
   id,
   upload: bytes / 2,
   download: bytes / 2,
@@ -13,15 +19,25 @@ describe('createTrafficTally', () => {
   it('counts only what each connection sent since the last poll, per VPN, and leaves direct traffic out', () => {
     const tally = createTrafficTally();
     tally.add([connection('1', 'vpn-a', 1000, 'jira.corp')], ['a', 'b'], 0);
-    const snapshot = tally.add([connection('1', 'vpn-a', 1600, 'jira.corp'), connection('2', 'direct', 9000, 'github.com')], ['a', 'b'], 1000);
+    const snapshot = tally.add(
+      [connection('1', 'vpn-a', 1600, 'jira.corp'), connection('2', 'direct', 9000, 'github.com')],
+      ['a', 'b'],
+      1000,
+    );
     expect(snapshot.rates).toEqual({ a: [1000, 600], b: [0, 0] });
-    expect(snapshot.destinations).toEqual([{ host: 'jira.corp', vpnId: 'a', bytes: 1600, last: 1000 }]);
+    expect(snapshot.destinations).toEqual([
+      { host: 'jira.corp', vpnId: 'a', bytes: 1600, last: 1000 },
+    ]);
   });
 
   it("names destinations by host, or by address when there's no name, newest first", () => {
     const tally = createTrafficTally();
     tally.add([connection('1', 'vpn-a', 100, '', '10.140.3.17')], ['a'], 0);
-    const snapshot = tally.add([connection('1', 'vpn-a', 100, '', '10.140.3.17'), connection('2', 'vpn-a', 50, 'wiki.corp')], ['a'], 1000);
+    const snapshot = tally.add(
+      [connection('1', 'vpn-a', 100, '', '10.140.3.17'), connection('2', 'vpn-a', 50, 'wiki.corp')],
+      ['a'],
+      1000,
+    );
     expect(snapshot.destinations.map((d) => [d.host, d.last])).toEqual([
       ['wiki.corp', 1000],
       ['10.140.3.17', 0],
@@ -33,7 +49,9 @@ describe('createTrafficTally', () => {
     tally.add([connection('1', 'vpn-a', 1000, 'jira.corp')], ['a'], 0);
     tally.add([connection('1', 'vpn-a', 1500, 'jira.corp')], ['a'], 4 * 60_000);
     const snapshot = tally.add([connection('1', 'vpn-a', 1700, 'jira.corp')], ['a'], 6 * 60_000);
-    expect(snapshot.destinations).toEqual([{ host: 'jira.corp', vpnId: 'a', bytes: 700, last: 6 * 60_000 }]);
+    expect(snapshot.destinations).toEqual([
+      { host: 'jira.corp', vpnId: 'a', bytes: 700, last: 6 * 60_000 },
+    ]);
   });
 
   it('keeps a minute of rates and five minutes of destinations, and forgets disconnected VPNs', () => {

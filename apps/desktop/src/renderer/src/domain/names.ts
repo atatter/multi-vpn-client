@@ -11,7 +11,21 @@ export const nameFromFile = (fileName: string) =>
 /** A name from the address people type: the most telling label, e.g. "vpn.client-a.example" → "Client A". */
 export function nameFromAddress(address: string): string {
   const labels = address.replace(/:\d+$/, '').toLowerCase().split('.').filter(Boolean);
-  const generic = new Set(['vpn', 'sslvpn', 'remote', 'gp', 'portal', 'sso', 'access', 'connect', 'www', 'secure', 'ra', 'gw', 'gateway']);
+  const generic = new Set([
+    'vpn',
+    'sslvpn',
+    'remote',
+    'gp',
+    'portal',
+    'sso',
+    'access',
+    'connect',
+    'www',
+    'secure',
+    'ra',
+    'gw',
+    'gateway',
+  ]);
   const label = labels.slice(0, -1).find((part) => !generic.has(part)) ?? labels[0] ?? 'VPN';
   return nameFromFile(label);
 }
@@ -19,5 +33,6 @@ export function nameFromAddress(address: string): string {
 /** A name not used yet: "Client A", "Client A 2", … */
 export function uniqueName(name: string, vpns: readonly Vpn[]): string {
   if (!vpns.some((vpn) => vpn.name === name)) return name;
-  for (let n = 2; ; n++) if (!vpns.some((vpn) => vpn.name === `${name} ${n}`)) return `${name} ${n}`;
+  for (let n = 2; ; n++)
+    if (!vpns.some((vpn) => vpn.name === `${name} ${n}`)) return `${name} ${n}`;
 }

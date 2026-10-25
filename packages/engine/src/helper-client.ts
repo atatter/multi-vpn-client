@@ -1,4 +1,12 @@
-import { appProofMessage, HelloReply, HELPER_VERSION, HelperResponse, helperProofMessage, type HelperRequest, type HostRoutes } from '@repo/core';
+import {
+  appProofMessage,
+  HelloReply,
+  HELPER_VERSION,
+  HelperResponse,
+  helperProofMessage,
+  type HelperRequest,
+  type HostRoutes,
+} from '@repo/core';
 import { helperKey, proofMatches, signProof } from '@repo/core/helper-crypto';
 import { randomBytes } from 'node:crypto';
 import { connect } from 'node:net';
@@ -31,7 +39,11 @@ interface LineConnection {
 function openConnection(port: number): Promise<LineConnection> {
   return new Promise((resolve, reject) => {
     const socket = connect(port, '127.0.0.1');
-    const waiting: { resolve: (response: HelperResponse) => void; reject: (error: Error) => void; timer: NodeJS.Timeout }[] = [];
+    const waiting: {
+      resolve: (response: HelperResponse) => void;
+      reject: (error: Error) => void;
+      timer: NodeJS.Timeout;
+    }[] = [];
     const failAll = (error: Error) => {
       for (const waiter of waiting.splice(0)) {
         clearTimeout(waiter.timer);
@@ -77,7 +89,8 @@ function openConnection(port: number): Promise<LineConnection> {
         request: (request) =>
           new Promise((resolveReply, rejectReply) => {
             // Closed already (e.g. the helper ended the session after a failed apply): no answer is coming.
-            if (socket.destroyed) return rejectReply(new Error('The network helper closed the connection.'));
+            if (socket.destroyed)
+              return rejectReply(new Error('The network helper closed the connection.'));
             const timer = setTimeout(() => {
               rejectReply(new Error("The network helper didn't answer in time."));
               socket.destroy();
@@ -121,7 +134,13 @@ export interface HelperSession {
  * it is the installed helper. While the session is open the helper keeps our
  * routes; when it closes, they're removed.
  */
-export async function openHelperSession({ port, token }: { port: number; token: string }): Promise<HelperSession> {
+export async function openHelperSession({
+  port,
+  token,
+}: {
+  port: number;
+  token: string;
+}): Promise<HelperSession> {
   const key = helperKey(token);
   const sign = (message: string) => signProof(key, message);
 
@@ -130,14 +149,20 @@ export async function openHelperSession({ port, token }: { port: number; token: 
   });
   try {
     const status = await connection.request({ command: 'status' });
-    if (!status.ok || status.version !== HELPER_VERSION) throw new Error('The network helper is out of date. Update it from the app.');
+    if (!status.ok || status.version !== HELPER_VERSION)
+      throw new Error('The network helper is out of date. Update it from the app.');
 
     const nonce = randomBytes(32).toString('base64url');
     const hello = HelloReply.safeParse(await connection.request({ command: 'hello', nonce }));
     if (!hello.success || !proofMatches(hello.data.proof, sign(helperProofMessage(nonce)))) {
-      throw new Error("Whatever answered on the helper's port couldn't prove it's the installed helper, so nothing was sent. Reinstall the helper.");
+      throw new Error(
+        "Whatever answered on the helper's port couldn't prove it's the installed helper, so nothing was sent. Reinstall the helper.",
+      );
     }
-    const auth = await connection.request({ command: 'auth', proof: sign(appProofMessage(hello.data.challenge)) });
+    const auth = await connection.request({
+      command: 'auth',
+      proof: sign(appProofMessage(hello.data.challenge)),
+    });
     if (!auth.ok) throw new Error('The network helper rejected this app. Reinstall it.');
   } catch (error) {
     connection.close();

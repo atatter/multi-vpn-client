@@ -7,7 +7,13 @@ import { networkInterfaces } from 'node:os';
 export function localIpv6Networks(interfaces = networkInterfaces()): string[] {
   const networks = Object.values(interfaces).flatMap((addresses) =>
     (addresses ?? []).flatMap((address) => {
-      if (address.family !== 'IPv6' || address.internal || !address.cidr || /^fe[89ab]/i.test(address.address)) return [];
+      if (
+        address.family !== 'IPv6' ||
+        address.internal ||
+        !address.cidr ||
+        /^fe[89ab]/i.test(address.address)
+      )
+        return [];
       return ipv6Network(address.cidr) ?? [];
     }),
   );
@@ -30,6 +36,8 @@ export function ipv6Network(cidr: string): string | undefined {
   if (!groups.every((group) => /^[0-9a-f]{1,4}$/i.test(group))) return undefined;
   const value = groups.reduce((sum, group) => (sum << 16n) | BigInt(`0x${group}`), 0n);
   const network = value & (((1n << 128n) - 1n) ^ ((1n << BigInt(128 - prefix)) - 1n));
-  const hextets = Array.from({ length: 8 }, (_, index) => ((network >> BigInt(16 * (7 - index))) & 0xffffn).toString(16));
+  const hextets = Array.from({ length: 8 }, (_, index) =>
+    ((network >> BigInt(16 * (7 - index))) & 0xffffn).toString(16),
+  );
   return `${hextets.join(':')}/${prefix}`;
 }

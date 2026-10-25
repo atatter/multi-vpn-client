@@ -12,15 +12,26 @@ interface Override {
   rules: Record<string, unknown>;
 }
 const root = new URL('../../../', import.meta.url);
-const { overrides } = JSON.parse(readFileSync(new URL('.oxlintrc.json', root), 'utf8')) as { overrides: Override[] };
-const features = readdirSync(new URL(RENDERER, root), { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() && !LAYERS.includes(entry.name) ? [entry.name] : []));
+const { overrides } = JSON.parse(readFileSync(new URL('.oxlintrc.json', root), 'utf8')) as {
+  overrides: Override[];
+};
+const features = readdirSync(new URL(RENDERER, root), { withFileTypes: true }).flatMap((entry) =>
+  entry.isDirectory() && !LAYERS.includes(entry.name) ? [entry.name] : [],
+);
 
 /** What the override for exactly these files (in any order) forbids importing: package names and patterns. */
 const restricted = (files: string[]) => {
   const key = (list: string[]) => list.toSorted().join();
   const override = overrides.find((candidate) => key(candidate.files) === key(files));
-  const options = (override?.rules['eslint/no-restricted-imports'] as [string, { paths?: { name: string }[]; patterns: { group: string[] }[] }] | undefined)?.[1];
-  return [...(options?.paths ?? []).map((path) => path.name), ...(options?.patterns ?? []).flatMap((pattern) => pattern.group)];
+  const options = (
+    override?.rules['eslint/no-restricted-imports'] as
+      | [string, { paths?: { name: string }[]; patterns: { group: string[] }[] }]
+      | undefined
+  )?.[1];
+  return [
+    ...(options?.paths ?? []).map((path) => path.name),
+    ...(options?.patterns ?? []).flatMap((pattern) => pattern.group),
+  ];
 };
 const featureFiles = features.map((feature) => `${RENDERER}/${feature}/**`);
 
@@ -45,8 +56,13 @@ describe('the lint layer rules', () => {
     expect(renderer?.rules['import/no-nodejs-modules']).toBe('error');
     // A layer's rule replaces the renderer-wide one, so each layer repeats all of it.
     const everywhere = restricted([`${RENDERER}/**`, 'apps/desktop/harness/main.tsx']);
-    expect(everywhere).toEqual(expect.arrayContaining(['electron', '@repo/engine', '@repo/vpns/engine']));
-    for (const files of [...['domain', 'store'].map((layer) => [`${RENDERER}/${layer}/**`]), featureFiles]) {
+    expect(everywhere).toEqual(
+      expect.arrayContaining(['electron', '@repo/engine', '@repo/vpns/engine']),
+    );
+    for (const files of [
+      ...['domain', 'store'].map((layer) => [`${RENDERER}/${layer}/**`]),
+      featureFiles,
+    ]) {
       expect(restricted(files)).toEqual(expect.arrayContaining(everywhere));
     }
   });

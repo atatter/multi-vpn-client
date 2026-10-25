@@ -17,15 +17,27 @@ const CARD_TIMEOUT_MS = 3 * 60_000;
  * Prompts get a masked field unless they ask for a username or a one-time code (easier to type
  * visibly); whatever else a gateway asks, in any language, might be a password. A password or PIN always is.
  */
-const isSecretPrompt = (prompt: string) => /pass|\bpin\b/i.test(prompt) || !/user|login|e-?mail|\bcode\b|\botp\b|token/i.test(prompt);
+const isSecretPrompt = (prompt: string) =>
+  /pass|\bpin\b/i.test(prompt) || !/user|login|e-?mail|\bcode\b|\botp\b|token/i.test(prompt);
 
 /**
  * What connecting VPNs wait on from the user: a prompt to answer, a browser sign-in, or a smart card.
  * Each wait shows in the VPN's status and can be cancelled, which ends its connect.
  */
-export function createUserWaits({ statuses, openUrl, cardBridgeBinary }: { statuses: StatusBoard; openUrl: (url: string) => void; cardBridgeBinary: string }) {
+export function createUserWaits({
+  statuses,
+  openUrl,
+  cardBridgeBinary,
+}: {
+  statuses: StatusBoard;
+  openUrl: (url: string) => void;
+  cardBridgeBinary: string;
+}) {
   /** What each connecting VPN waits on: a prompt to answer, a browser sign-in (reopenable), or a card. */
-  const waits = new Map<string, { cancel: (error: Error) => void; answer?: (reply: string) => void; url?: string }>();
+  const waits = new Map<
+    string,
+    { cancel: (error: Error) => void; answer?: (reply: string) => void; url?: string }
+  >();
   /** Ports a browser sign-in listens on. The gateway's page sends its token to a fixed one, so one VPN at a time. */
   const browserPorts = new Set<number>();
 
@@ -33,14 +45,27 @@ export function createUserWaits({ statuses, openUrl, cardBridgeBinary }: { statu
     /** Shows the client's prompt in the VPN's row and waits for the user's answer (or a cancel, or the timeout). */
     ask(vpnId: string, prompt: string, resumeStep: string): Promise<string> {
       return new Promise<string>((resolve, reject) => {
-        const timer = setTimeout(() => settle(() => reject(new Error(`Nothing was entered within ${PROMPT_TIMEOUT_MS / 60_000} minutes. Connect again to retry.`))), PROMPT_TIMEOUT_MS);
+        const timer = setTimeout(
+          () =>
+            settle(() =>
+              reject(
+                new Error(
+                  `Nothing was entered within ${PROMPT_TIMEOUT_MS / 60_000} minutes. Connect again to retry.`,
+                ),
+              ),
+            ),
+          PROMPT_TIMEOUT_MS,
+        );
         const settle = (finish: () => void) => {
           clearTimeout(timer);
           waits.delete(vpnId);
           statuses.set(vpnId, { state: 'connecting', step: resumeStep });
           finish();
         };
-        waits.set(vpnId, { answer: (reply) => settle(() => resolve(reply)), cancel: (error) => settle(() => reject(error)) });
+        waits.set(vpnId, {
+          answer: (reply) => settle(() => resolve(reply)),
+          cancel: (error) => settle(() => reject(error)),
+        });
         statuses.set(vpnId, { state: 'awaiting-code', prompt, secret: isSecretPrompt(prompt) });
       });
     },
@@ -48,7 +73,11 @@ export function createUserWaits({ statuses, openUrl, cardBridgeBinary }: { statu
     /** Opens the sign-in page in the user's browser and waits for the token it hands back (or a cancel). */
     signInWithBrowser(vpnId: string, { signInUrl, tokenPort }: BrowserSignIn): Promise<string> {
       if (browserPorts.has(tokenPort)) {
-        return Promise.reject(new Error('Another VPN is waiting for its browser sign-in. Finish or cancel that one, then connect again.'));
+        return Promise.reject(
+          new Error(
+            'Another VPN is waiting for its browser sign-in. Finish or cancel that one, then connect again.',
+          ),
+        );
       }
       browserPorts.add(tokenPort);
       const wait = receiveBrowserToken(tokenPort, BROWSER_SIGN_IN_TIMEOUT_MS);
@@ -68,10 +97,22 @@ export function createUserWaits({ statuses, openUrl, cardBridgeBinary }: { statu
      */
     findCard(vpnId: string, smartCard: NonNullable<VpnLaunch['smartCard']>): Promise<CardBridge> {
       const search = new AbortController();
-      const timer = setTimeout(() => search.abort(new Error(`No card was inserted within ${CARD_TIMEOUT_MS / 60_000} minutes.`)), CARD_TIMEOUT_MS);
+      const timer = setTimeout(
+        () =>
+          search.abort(
+            new Error(`No card was inserted within ${CARD_TIMEOUT_MS / 60_000} minutes.`),
+          ),
+        CARD_TIMEOUT_MS,
+      );
       waits.set(vpnId, { cancel: (error) => search.abort(error) });
-      const onWaiting = () => statuses.set(vpnId, { state: 'awaiting-card', card: CARD_NAME[smartCard] });
-      return openCardBridge(cardBridgeBinary, { idCardOnly: smartCard === 'id-card', onWaiting, onLog: statuses.logger(vpnId), signal: search.signal }).finally(() => {
+      const onWaiting = () =>
+        statuses.set(vpnId, { state: 'awaiting-card', card: CARD_NAME[smartCard] });
+      return openCardBridge(cardBridgeBinary, {
+        idCardOnly: smartCard === 'id-card',
+        onWaiting,
+        onLog: statuses.logger(vpnId),
+        signal: search.signal,
+      }).finally(() => {
         clearTimeout(timer);
         waits.delete(vpnId);
       });

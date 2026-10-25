@@ -8,7 +8,13 @@ const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').match
  * here and the dragged row follows the pointer; `commit` gets the new order once it's dropped (or stepped).
  * Rows that move between renders slide from where they were, so a change of section reads as motion.
  */
-export function useReorder({ order: saved, commit }: { order: readonly string[]; commit: (ids: string[], moved: string) => void }) {
+export function useReorder({
+  order: saved,
+  commit,
+}: {
+  order: readonly string[];
+  commit: (ids: string[], moved: string) => void;
+}) {
   const [dragOrder, setDragOrder] = useState<string[]>();
   /** The row being dragged, for its lifted look. */
   const [lifted, setLifted] = useState<string>();
@@ -27,7 +33,10 @@ export function useReorder({ order: saved, commit }: { order: readonly string[];
       const before = tops.current.get(id);
       if (drag.current?.id === id) row.style.transform = `translateY(${drag.current.top - top}px)`;
       else if (before !== undefined && Math.abs(before - top) > 2 && !reduced) {
-        row.animate([{ transform: `translateY(${before - top}px)` }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.2,.7,.2,1)' });
+        row.animate([{ transform: `translateY(${before - top}px)` }, { transform: 'none' }], {
+          duration: 220,
+          easing: 'cubic-bezier(.2,.7,.2,1)',
+        });
       }
       tops.current.set(id, top);
     }
@@ -49,7 +58,11 @@ export function useReorder({ order: saved, commit }: { order: readonly string[];
     const row = rows.current.get(id);
     if (!row) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    drag.current = { id, grab: event.clientY - row.getBoundingClientRect().top, top: row.offsetTop };
+    drag.current = {
+      id,
+      grab: event.clientY - row.getBoundingClientRect().top,
+      top: row.offsetTop,
+    };
     setLifted(id);
     setDragOrder([...order]);
   };
@@ -67,7 +80,11 @@ export function useReorder({ order: saved, commit }: { order: readonly string[];
     if (drag.current?.id !== id || !row) return;
     const offset = row.style.transform;
     row.style.transform = '';
-    if (offset && !reducedMotion()) row.animate([{ transform: offset }, { transform: 'none' }], { duration: 160, easing: 'ease-out' });
+    if (offset && !reducedMotion())
+      row.animate([{ transform: offset }, { transform: 'none' }], {
+        duration: 160,
+        easing: 'ease-out',
+      });
     drag.current = undefined;
     if (dragOrder) commit(dragOrder, id);
     setLifted(undefined);

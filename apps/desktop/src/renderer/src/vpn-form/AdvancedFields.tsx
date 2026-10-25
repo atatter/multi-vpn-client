@@ -6,7 +6,15 @@ import { FORMS } from '@repo/vpns/ui';
 import { KindMoreFields } from './kind-forms.tsx';
 
 /** The rarely needed settings: kind-specific options, DNS, and raw extra options for the VPN's client. */
-export function AdvancedFields({ vpn, onChange, errors }: { vpn: Vpn; onChange: (vpn: Vpn) => void; errors: FormErrors }) {
+export function AdvancedFields({
+  vpn,
+  onChange,
+  errors,
+}: {
+  vpn: Vpn;
+  onChange: (vpn: Vpn) => void;
+  errors: FormErrors;
+}) {
   return (
     <>
       <KindMoreFields kind={vpn.kind} vpn={vpn} onChange={onChange} errors={errors} />

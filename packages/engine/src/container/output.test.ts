@@ -5,19 +5,28 @@ import { classifyLine } from './output.ts';
 
 describe('classifyLine', () => {
   // A client's own reading, like OpenVPN's: only its login failure means anything.
-  const openvpn: ReadLine = (line) => (line.includes('AUTH_FAILED') ? { failed: 'The VPN server rejected the username or password.' } : undefined);
+  const openvpn: ReadLine = (line) =>
+    line.includes('AUTH_FAILED')
+      ? { failed: 'The VPN server rejected the username or password.' }
+      : undefined;
   const nonce = '0123456789abcdef';
   const classify = (line: string) => classifyLine(line, openvpn, markers(nonce));
 
   it('recognizes the lines that decide the connection', () => {
     expect(classify(`MVPN-READY:${nonce}`)).toBe('connected');
-    expect(classify(`MVPN-ERROR:${nonce} the SOCKS proxy failed to start`)).toEqual({ failed: 'the SOCKS proxy failed to start' });
-    expect(classify('AUTH: Received control message: AUTH_FAILED')).toEqual({ failed: 'The VPN server rejected the username or password.' });
+    expect(classify(`MVPN-ERROR:${nonce} the SOCKS proxy failed to start`)).toEqual({
+      failed: 'the SOCKS proxy failed to start',
+    });
+    expect(classify('AUTH: Received control message: AUTH_FAILED')).toEqual({
+      failed: 'The VPN server rejected the username or password.',
+    });
     expect(classify('TCP/UDP: Preserving recently used remote address')).toBeUndefined();
   });
 
   it('relays what the client asks the user', () => {
-    expect(classify(`MVPN-PROMPT:${nonce} Please enter the code sent to your phone`)).toEqual({ prompt: 'Please enter the code sent to your phone' });
+    expect(classify(`MVPN-PROMPT:${nonce} Please enter the code sent to your phone`)).toEqual({
+      prompt: 'Please enter the code sent to your phone',
+    });
   });
 
   it('only trusts markers that start the line', () => {

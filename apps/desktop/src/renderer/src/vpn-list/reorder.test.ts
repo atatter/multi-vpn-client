@@ -12,8 +12,16 @@ describe('reordering', () => {
 
   it('drops a dragged row after every row whose middle is above its own', () => {
     const middles: Record<string, number> = { a: 29, b: 87, c: 145 };
-    expect(orderWhileDragging(['a', 'b', 'c'], 'a', 120, (id) => middles[id])).toEqual(['b', 'a', 'c']);
-    expect(orderWhileDragging(['a', 'b', 'c'], 'c', 10, (id) => middles[id])).toEqual(['c', 'a', 'b']);
+    expect(orderWhileDragging(['a', 'b', 'c'], 'a', 120, (id) => middles[id])).toEqual([
+      'b',
+      'a',
+      'c',
+    ]);
+    expect(orderWhileDragging(['a', 'b', 'c'], 'c', 10, (id) => middles[id])).toEqual([
+      'c',
+      'a',
+      'b',
+    ]);
   });
 
   it('saves a moved VPN just above the one after it, or below the one before it', () => {

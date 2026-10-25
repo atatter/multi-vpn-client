@@ -13,14 +13,26 @@ export function CheckScreen({ query = '' }: { query?: string | undefined }) {
   const app = useApp();
   const { api } = app;
   const [text, setText] = useState(() => siteOf(query) ?? query);
-  const [answer, setAnswer] = useState<{ text: string; site: string | null; vpnId: string | null }>();
+  const [answer, setAnswer] = useState<{
+    text: string;
+    site: string | null;
+    vpnId: string | null;
+  }>();
   const typed = text.trim();
 
   useEffect(() => {
     if (!typed) return;
     let current = true;
     const timer = setTimeout(() => {
-      void api.checkRoute(typed).then((result) => current && setAnswer({ text: typed, site: result.site, vpnId: 'vpnId' in result ? result.vpnId : null }));
+      void api.checkRoute(typed).then(
+        (result) =>
+          current &&
+          setAnswer({
+            text: typed,
+            site: result.site,
+            vpnId: 'vpnId' in result ? result.vpnId : null,
+          }),
+      );
     }, 250);
     return () => {
       current = false;
@@ -53,13 +65,24 @@ export function CheckScreen({ query = '' }: { query?: string | undefined }) {
             onBlur={() => setText(siteOf(typed) ?? text)}
           />
         </label>
-        {shown && shown.site === null && <p className="mt-3.5 text-[12.5px] text-muted">That doesn't look like a link, host or IP address.</p>}
+        {shown && shown.site === null && (
+          <p className="mt-3.5 text-[12.5px] text-muted">
+            That doesn't look like a link, host or IP address.
+          </p>
+        )}
         {shown?.site && (
-          <p className={cx('mt-3.5 text-[15px] leading-snug', !via && 'text-muted')} aria-live="polite">
+          <p
+            className={cx('mt-3.5 text-[15px] leading-snug', !via && 'text-muted')}
+            aria-live="polite"
+          >
             {via ? (
               <>
                 Goes through{' '}
-                <button type="button" className={cx(link, 'text-[15px] hover:underline hover:underline-offset-3')} onClick={() => app.push({ name: 'vpn', vpnId: via.id })}>
+                <button
+                  type="button"
+                  className={cx(link, 'text-[15px] hover:underline hover:underline-offset-3')}
+                  onClick={() => app.push({ name: 'vpn', vpnId: via.id })}
+                >
                   {vpnLabel(via)}
                 </button>
               </>

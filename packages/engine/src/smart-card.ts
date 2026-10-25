@@ -30,10 +30,18 @@ export interface CardBridge {
  */
 export function openCardBridge(
   binary: string,
-  options: { idCardOnly: boolean; onWaiting: () => void; onLog: (line: string) => void; signal: AbortSignal },
+  options: {
+    idCardOnly: boolean;
+    onWaiting: () => void;
+    onLog: (line: string) => void;
+    signal: AbortSignal;
+  },
 ): Promise<CardBridge> {
   return new Promise((resolve, reject) => {
-    const bridge = spawn(binary, options.idCardOnly ? ['--id-card'] : [], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+    const bridge = spawn(binary, options.idCardOnly ? ['--id-card'] : [], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      windowsHide: true,
+    });
     let found = false;
     let failed: ((message: string) => void) | undefined;
     let lastError: string | undefined;
@@ -77,10 +85,21 @@ export function openCardBridge(
           attach(dockerBin, container, onFailure) {
             if (closedWith !== undefined) return onFailure(closedWith);
             failed = onFailure;
-            const exec = spawn(dockerBin, ['exec', '-i', container, 'socat', 'STDIO', `TCP:127.0.0.1:${VPCD_PORT},bind=${VPCD_RELAY_SOURCE},retry=120,interval=0.25`], {
-              stdio: ['pipe', 'pipe', 'pipe'],
-              windowsHide: true,
-            });
+            const exec = spawn(
+              dockerBin,
+              [
+                'exec',
+                '-i',
+                container,
+                'socat',
+                'STDIO',
+                `TCP:127.0.0.1:${VPCD_PORT},bind=${VPCD_RELAY_SOURCE},retry=120,interval=0.25`,
+              ],
+              {
+                stdio: ['pipe', 'pipe', 'pipe'],
+                windowsHide: true,
+              },
+            );
             relay = exec;
             exec.stdin.on('error', () => undefined); // EPIPE, see bridge.stdin
             bridge.stdout.pipe(exec.stdin);

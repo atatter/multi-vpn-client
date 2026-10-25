@@ -21,7 +21,11 @@ const ready = (view: AppView) => {
 /** Waits that take (fake) time, for tests that act while main is still busy. */
 const timedPause = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-async function start(scenario: Scenario = 'daily', prepare?: (fake: FakeApi) => void, pause?: (ms: number) => Promise<void>) {
+async function start(
+  scenario: Scenario = 'daily',
+  prepare?: (fake: FakeApi) => void,
+  pause?: (ms: number) => Promise<void>,
+) {
   const fake = createFakeApi(pause ? { scenario, pause } : { scenario });
   prepare?.(fake);
   const store = createAppStore(fake.api);
@@ -30,12 +34,20 @@ async function start(scenario: Scenario = 'daily', prepare?: (fake: FakeApi) => 
   return { fake, store, app: () => ready(store.getState()) };
 }
 
-const renamed = (config: Config, vpnId: string, name: string): Config => ({ ...config, vpns: config.vpns.map((vpn) => (vpn.id === vpnId ? { ...vpn, name } : vpn)) });
+const renamed = (config: Config, vpnId: string, name: string): Config => ({
+  ...config,
+  vpns: config.vpns.map((vpn) => (vpn.id === vpnId ? { ...vpn, name } : vpn)),
+});
 
 describe('loading', () => {
   it("shows why the settings couldn't load", async () => {
-    const { store } = await start('daily', (fake) => fake.failLoad("The settings file isn't valid JSON."));
-    expect(store.getState()).toEqual({ phase: 'failed', error: "The settings file isn't valid JSON." });
+    const { store } = await start('daily', (fake) =>
+      fake.failLoad("The settings file isn't valid JSON."),
+    );
+    expect(store.getState()).toEqual({
+      phase: 'failed',
+      error: "The settings file isn't valid JSON.",
+    });
   });
 });
 
@@ -70,7 +82,10 @@ describe('saving', () => {
     await settle();
     releaseOldest();
     expect(await secondSaved).toBe(true);
-    expect(fake.calls.saves.map(({ config }) => config.vpns[0]?.name)).toEqual(['Client A1', 'Client A2']);
+    expect(fake.calls.saves.map(({ config }) => config.vpns[0]?.name)).toEqual([
+      'Client A1',
+      'Client A2',
+    ]);
     expect(app().config.vpns[0]?.name).toBe('Client A2');
   });
 
@@ -115,7 +130,12 @@ describe('saving', () => {
     const release = fake.holdSaves();
     void app().save(renamed(app().config, 'a', 'Client A1'));
     const learned = { all: false, cidrs: ['10.99.0.0/24'] };
-    fake.sendConfigChanged({ ...fake.config(), vpns: fake.config().vpns.map((vpn) => (vpn.id === 'h' ? { ...vpn, serverRoutes: learned } : vpn)) });
+    fake.sendConfigChanged({
+      ...fake.config(),
+      vpns: fake
+        .config()
+        .vpns.map((vpn) => (vpn.id === 'h' ? { ...vpn, serverRoutes: learned } : vpn)),
+    });
     expect(app().config.vpns.find((vpn) => vpn.id === 'a')?.name).toBe('Client A1');
     expect(app().config.vpns.find((vpn) => vpn.id === 'h')?.serverRoutes).toEqual(learned);
     // Main keeps what it learned when the older save lands.
@@ -127,7 +147,11 @@ describe('saving', () => {
 
   it('shows which secrets are stored after a save adds or clears them', async () => {
     const { app } = await start();
-    await app().save(app().config, { h: { password: 'hunter2' }, b: { password: null }, a: { password: 'not kept' } });
+    await app().save(app().config, {
+      h: { password: 'hunter2' },
+      b: { password: null },
+      a: { password: 'not kept' },
+    });
     expect(app().secretStatus.h).toEqual(['profile', 'password']);
     expect(app().secretStatus.b).toBeUndefined();
     // Client A doesn't remember its password, so main drops it.
@@ -179,20 +203,31 @@ describe('setup', () => {
   it("shows Docker running the moment starting it finishes, so its button doesn't flash back", async () => {
     const fake = createFakeApi({ scenario: 'daily', pause: timedPause });
     fake.setDocker('stopped');
-    const store = createAppStore({ ...fake.api, dockerState: () => timedPause(100).then(fake.api.dockerState) });
+    const store = createAppStore({
+      ...fake.api,
+      dockerState: () => timedPause(100).then(fake.api.dockerState),
+    });
     stops.push(store.start());
     await vi.advanceTimersByTimeAsync(100);
     const app = () => ready(store.getState());
     // What the window shows at the moment the button stops being busy.
-    const started = app().startDocker().then(() => ({ dockerStart: app().dockerStart, docker: app().docker }));
+    const started = app()
+      .startDocker()
+      .then(() => ({ dockerStart: app().dockerStart, docker: app().docker }));
     await vi.advanceTimersByTimeAsync(900);
-    expect(await started).toEqual({ dockerStart: { starting: false, error: undefined }, docker: 'running' });
+    expect(await started).toEqual({
+      dockerStart: { starting: false, error: undefined },
+      docker: 'running',
+    });
   });
 
   it("shows the newest Docker check's answer, even when an older one answers after it", async () => {
     const fake = createFakeApi();
     const answers: ((docker: DockerState) => void)[] = [];
-    const store = createAppStore({ ...fake.api, dockerState: () => new Promise((resolve) => answers.push(resolve)) });
+    const store = createAppStore({
+      ...fake.api,
+      dockerState: () => new Promise((resolve) => answers.push(resolve)),
+    });
     stops.push(store.start());
     await settle();
     const started = ready(store.getState()).startDocker();
@@ -218,7 +253,10 @@ describe('setup', () => {
   it("keeps a failed start's error for every screen until Docker runs", async () => {
     const fake = createFakeApi();
     fake.setDocker('stopped');
-    const store = createAppStore({ ...fake.api, startDocker: async () => ({ ok: false, error: "Docker didn't start within 2 minutes." }) });
+    const store = createAppStore({
+      ...fake.api,
+      startDocker: async () => ({ ok: false, error: "Docker didn't start within 2 minutes." }),
+    });
     stops.push(store.start());
     await settle();
     await ready(store.getState()).startDocker();
@@ -230,7 +268,10 @@ describe('setup', () => {
 
   it('drops the error of a start that timed out just as Docker came up', async () => {
     const fake = createFakeApi();
-    const store = createAppStore({ ...fake.api, startDocker: async () => ({ ok: false, error: "Docker didn't start within 2 minutes." }) });
+    const store = createAppStore({
+      ...fake.api,
+      startDocker: async () => ({ ok: false, error: "Docker didn't start within 2 minutes." }),
+    });
     stops.push(store.start());
     await settle();
     await ready(store.getState()).startDocker();
@@ -318,7 +359,9 @@ describe('prompts', () => {
     app().submitPassword('hunter2', true);
     await settle();
     expect(fake.calls.saves).toHaveLength(1);
-    expect(fake.calls.saves[0]?.config.vpns.find((vpn) => vpn.id === 'c')?.rememberPassword).toBe(true);
+    expect(fake.calls.saves[0]?.config.vpns.find((vpn) => vpn.id === 'c')?.rememberPassword).toBe(
+      true,
+    );
     expect(fake.calls.saves[0]?.secrets).toEqual({ c: { password: 'hunter2' } });
     expect(fake.calls.connects.at(-1)).toEqual({ vpnId: 'c', password: 'hunter2' });
   });
@@ -327,10 +370,24 @@ describe('prompts', () => {
     const { fake, app } = await start();
     app().toggle('c');
     await settle();
-    fake.answerNextConnect({ ok: false, untrustedCertificate: { pin: 'sha256/abc', server: 'sslvpn.client-c.example', changed: false } });
+    fake.answerNextConnect({
+      ok: false,
+      untrustedCertificate: {
+        pin: 'sha256/abc',
+        server: 'sslvpn.client-c.example',
+        changed: false,
+      },
+    });
     app().submitPassword('hunter2', false);
     await settle();
-    expect(app().prompt).toEqual({ kind: 'certificate', vpnId: 'c', pin: 'sha256/abc', server: 'sslvpn.client-c.example', changed: false, password: 'hunter2' });
+    expect(app().prompt).toEqual({
+      kind: 'certificate',
+      vpnId: 'c',
+      pin: 'sha256/abc',
+      server: 'sslvpn.client-c.example',
+      changed: false,
+      password: 'hunter2',
+    });
 
     app().trustCertificate();
     await settle();
@@ -346,14 +403,20 @@ describe('updating the app', () => {
     fake.failNextDownload('HTTP 404.');
     await app().api.downloadUpdate();
     expect(app().notice).toBe("Couldn't download 0.2.0: HTTP 404.");
-    expect(app().update).toEqual({ state: 'download-failed', version: '0.2.0', error: 'HTTP 404.' });
+    expect(app().update).toEqual({
+      state: 'download-failed',
+      version: '0.2.0',
+      error: 'HTTP 404.',
+    });
     await app().api.downloadUpdate();
     expect(app().notice).toBeUndefined();
     expect(app().update).toEqual({ state: 'ready', version: '0.2.0' });
   });
 
   it('shows a download that failed before the window opened', async () => {
-    const { app } = await start('daily', (fake) => fake.setUpdate({ state: 'download-failed', version: '0.2.0', error: 'HTTP 404.' }));
+    const { app } = await start('daily', (fake) =>
+      fake.setUpdate({ state: 'download-failed', version: '0.2.0', error: 'HTTP 404.' }),
+    );
     expect(app().notice).toBe("Couldn't download 0.2.0: HTTP 404.");
   });
 

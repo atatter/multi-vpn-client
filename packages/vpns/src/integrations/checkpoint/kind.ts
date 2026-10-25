@@ -1,4 +1,12 @@
-import { type Action, bareHosts, commonFields, defineKind, HostPort, PASSWORD_SLOT, requiredText } from '@repo/vpn-sdk';
+import {
+  type Action,
+  bareHosts,
+  commonFields,
+  defineKind,
+  HostPort,
+  PASSWORD_SLOT,
+  requiredText,
+} from '@repo/vpn-sdk';
 import { z } from 'zod';
 
 /** A login type a Check Point gateway offers, e.g. { id: "vpn_OTP", label: "MFA", factors: ["password"] }. */
@@ -18,7 +26,8 @@ export type CheckpointLoginType = z.infer<typeof CheckpointLoginType>;
 const UNSUPPORTED_FACTORS = new Set(['certificate', 'mobile_access']);
 
 /** Whether this app can sign in with a login type: passwords and codes (asked for while connecting), or the browser. */
-export const canUseLoginType = (type: CheckpointLoginType) => !type.factors.some((factor) => UNSUPPORTED_FACTORS.has(factor));
+export const canUseLoginType = (type: CheckpointLoginType) =>
+  !type.factors.some((factor) => UNSUPPORTED_FACTORS.has(factor));
 
 /** `loginTypes`: what the gateway at `server` ("host" or "host:port") offers. Only reads its public information. */
 export const CHECKPOINT_ACTIONS = {
@@ -37,7 +46,14 @@ export const checkpoint = defineKind(
     tunnel: z.enum(['ipsec', 'ssl']),
   }),
   {
-    create: (c) => ({ ...c, kind: 'checkpoint', server: '', loginType: '', username: '', tunnel: 'ipsec' }),
+    create: (c) => ({
+      ...c,
+      kind: 'checkpoint',
+      server: '',
+      loginType: '',
+      username: '',
+      tunnel: 'ipsec',
+    }),
     address: (vpn) => vpn.server,
     withAddress: (vpn, server) => ({ ...vpn, server }),
     hosts: (vpn) => bareHosts([vpn.server]),

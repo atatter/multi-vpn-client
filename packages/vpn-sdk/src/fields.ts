@@ -25,10 +25,11 @@ export const HostPort = z
   .regex(HOST_PORT_RE, HOST_MESSAGE)
   .refine(validPort, 'Port must be between 1 and 65535');
 
-
 /** The hosts of "host" / "host:port" addresses, without ports; empty ones are dropped. */
 export const bareHosts = (addresses: readonly string[]) =>
-  addresses.map((address) => HOST_PORT_RE.exec(address.trim())?.[1]).filter((host): host is string => !!host);
+  addresses
+    .map((address) => HOST_PORT_RE.exec(address.trim())?.[1])
+    .filter((host): host is string => !!host);
 
 export const Ipv4 = z.string().refine(isIpv4, 'Expected an IPv4 address');
 export const Domain = z.string().regex(HOST_RE, 'Expected a domain, e.g. corp.example');

@@ -23,7 +23,13 @@ export function LoginTypeField({
   autoLookup: boolean;
   runAction: RunAction;
 }) {
-  const [lookup, setLookup] = useState<{ server: string } & ({ state: 'busy' } | { state: 'done'; types: CheckpointLoginType[] } | { state: 'failed'; message: string })>();
+  const [lookup, setLookup] = useState<
+    { server: string } & (
+      | { state: 'busy' }
+      | { state: 'done'; types: CheckpointLoginType[] }
+      | { state: 'failed'; message: string }
+    )
+  >();
   const validServer = HostPort.safeParse(server);
   // Results belong to the server they came from; editing it hides them.
   const shown = lookup?.server === server.trim() ? lookup : undefined;
@@ -32,11 +38,20 @@ export function LoginTypeField({
     const target = validServer.data;
     setLookup({ server: target, state: 'busy' });
     // A lookup for another server since then wins; this one's answer is dropped.
-    const settle = (next: NonNullable<typeof lookup>) => setLookup((current) => (current?.server === target ? next : current));
+    const settle = (next: NonNullable<typeof lookup>) =>
+      setLookup((current) => (current?.server === target ? next : current));
     try {
-      settle({ server: target, state: 'done', types: await callAction(runAction, CHECKPOINT_ACTIONS, 'loginTypes', target) });
+      settle({
+        server: target,
+        state: 'done',
+        types: await callAction(runAction, CHECKPOINT_ACTIONS, 'loginTypes', target),
+      });
     } catch (lookupError) {
-      settle({ server: target, state: 'failed', message: lookupError instanceof Error ? lookupError.message : String(lookupError) });
+      settle({
+        server: target,
+        state: 'failed',
+        message: lookupError instanceof Error ? lookupError.message : String(lookupError),
+      });
     }
   };
   // Once, on arrival: later lookups are the user's choice.
@@ -50,7 +65,12 @@ export function LoginTypeField({
     <div className="mb-3 grid gap-1">
       <div className="flex items-baseline justify-between gap-3">
         <span className={label}>Login type</span>
-        <button type="button" className={link} disabled={!validServer.success || shown?.state === 'busy'} onClick={() => void find()}>
+        <button
+          type="button"
+          className={link}
+          disabled={!validServer.success || shown?.state === 'busy'}
+          onClick={() => void find()}
+        >
           {shown?.state === 'busy' ? 'Looking up…' : 'Look up'}
         </button>
       </div>
@@ -71,7 +91,11 @@ export function LoginTypeField({
               <button
                 key={type.id}
                 type="button"
-                className={cx(cell, 'disabled:cursor-not-allowed disabled:opacity-50', type.id === value && 'bg-chip')}
+                className={cx(
+                  cell,
+                  'disabled:cursor-not-allowed disabled:opacity-50',
+                  type.id === value && 'bg-chip',
+                )}
                 disabled={!usable}
                 onClick={() => onChange(type.id)}
               >
@@ -79,7 +103,9 @@ export function LoginTypeField({
                   <span className="truncate text-[13px] font-semibold">{type.label}</span>
                   <span className={cx(mono, 'truncate text-muted')}>{type.id}</span>
                 </span>
-                <span className="shrink-0 text-[12.5px] text-muted">{usable ? type.factors.join(', ') : 'Not supported yet'}</span>
+                <span className="shrink-0 text-[12.5px] text-muted">
+                  {usable ? type.factors.join(', ') : 'Not supported yet'}
+                </span>
               </button>
             );
           })}
@@ -91,7 +117,9 @@ export function LoginTypeField({
         <span className="text-[12.5px] text-danger select-text">{shown.message}</span>
       ) : (
         <span className={hint}>
-          {shown?.state === 'busy' ? 'The first lookup also sets up the Check Point client, which takes a minute or two.' : 'Look up the ones your gateway offers, then pick yours (e.g. MFA).'}
+          {shown?.state === 'busy'
+            ? 'The first lookup also sets up the Check Point client, which takes a minute or two.'
+            : 'Look up the ones your gateway offers, then pick yours (e.g. MFA).'}
         </span>
       )}
     </div>

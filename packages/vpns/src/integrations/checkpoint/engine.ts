@@ -1,4 +1,10 @@
-import { type Detect, implement, type LauncherEntry, type VpnLaunch, withPort } from '@repo/vpn-sdk/engine';
+import {
+  type Detect,
+  implement,
+  type LauncherEntry,
+  type VpnLaunch,
+  withPort,
+} from '@repo/vpn-sdk/engine';
 import { CHECKPOINT_IMAGE } from './container.ts';
 import { CHECKPOINT_ACTIONS, type CheckpointLoginType, type CheckpointVpn } from './kind.ts';
 import { CHECKPOINT_SYSCTLS } from './sysctl-shim.ts';
@@ -11,7 +17,15 @@ import { CHECKPOINT_SYSCTLS } from './sysctl-shim.ts';
  */
 
 /** Settings this app owns: dropped from the Advanced box, so only the app's values reach snx-rs. */
-const OWNED = ['server-name', 'login-type', 'user-name', 'password', 'tunnel-type', 'no-dns', 'default-route'];
+const OWNED = [
+  'server-name',
+  'login-type',
+  'user-name',
+  'password',
+  'tunnel-type',
+  'no-dns',
+  'default-route',
+];
 
 /** A config value on one line; a newline would start another setting. */
 function oneLine(label: string, value: string): string {
@@ -24,7 +38,9 @@ const extraSettings = (advanced: string) =>
   advanced
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#') && !OWNED.includes(line.split('=')[0]?.trim() ?? ''));
+    .filter(
+      (line) => line && !line.startsWith('#') && !OWNED.includes(line.split('=')[0]?.trim() ?? ''),
+    );
 
 /**
  * snx-rs's config file. DNS is left to the container (it reads the pushed servers like the other clients do).
@@ -74,13 +90,22 @@ export function checkpointLaunch(vpn: CheckpointVpn, password: string | undefine
       }
       if (browserNext && trimmed) {
         browserNext = false;
-        if (/^https:\/\/\S+$/.test(trimmed)) return { signInUrl: trimmed, tokenPort: SNX_TOKEN_PORT };
-        return { failed: `${vpn.server} sent a browser sign-in address that isn't https: ${trimmed}` };
+        if (/^https:\/\/\S+$/.test(trimmed))
+          return { signInUrl: trimmed, tokenPort: SNX_TOKEN_PORT };
+        return {
+          failed: `${vpn.server} sent a browser sign-in address that isn't https: ${trimmed}`,
+        };
       }
       const error = /^Error: (.+)$/.exec(trimmed)?.[1];
       if (!error) return undefined;
-      if (error === 'Authentication failed') return { failed: 'The VPN server rejected the sign-in (username, password, code or approval).' };
-      if (error === 'Unsupported login type') return { failed: `${vpn.server} doesn't offer the login type ${vpn.loginType}. Look up the ones it offers in the VPN's settings.` };
+      if (error === 'Authentication failed')
+        return {
+          failed: 'The VPN server rejected the sign-in (username, password, code or approval).',
+        };
+      if (error === 'Unsupported login type')
+        return {
+          failed: `${vpn.server} doesn't offer the login type ${vpn.loginType}. Look up the ones it offers in the VPN's settings.`,
+        };
       return { failed: error };
     },
   };
@@ -93,18 +118,37 @@ export function parseLoginTypes(output: string): CheckpointLoginType[] {
   return output.split(/\r?\n/).flatMap((line) => {
     const [, label, id, factors] = LOGIN_TYPE_LINE.exec(line) ?? [];
     if (!label || !id) return [];
-    return [{ id, label, factors: (factors ?? '').split(',').map((factor) => factor.trim()).filter(Boolean) }];
+    return [
+      {
+        id,
+        label,
+        factors: (factors ?? '')
+          .split(',')
+          .map((factor) => factor.trim())
+          .filter(Boolean),
+      },
+    ];
   });
 }
 
 /** Check Point's actions (kind.ts). `loginTypes` only reads the gateway's public information; nothing signs in. */
 export const checkpointActions = implement(CHECKPOINT_ACTIONS, {
   loginTypes: async (server, { runInImage }) => {
-    const result = await runInImage(CHECKPOINT_IMAGE, { entrypoint: 'snx-rs', args: ['--mode=info', `--server-name=${server}`], env: { LANG: 'en_US.UTF-8' } });
+    const result = await runInImage(CHECKPOINT_IMAGE, {
+      entrypoint: 'snx-rs',
+      args: ['--mode=info', `--server-name=${server}`],
+      env: { LANG: 'en_US.UTF-8' },
+    });
     const types = parseLoginTypes(result.stdout);
     if (result.code === 0 && types.length > 0) return types;
-    const error = `${result.stderr}\n${result.stdout}`.split(/\r?\n/).find((line) => line.startsWith('Error: '));
-    throw new Error(error ? `${server} didn't answer: ${error.slice('Error: '.length)}` : `${server} didn't list any login types.`);
+    const error = `${result.stderr}\n${result.stdout}`
+      .split(/\r?\n/)
+      .find((line) => line.startsWith('Error: '));
+    throw new Error(
+      error
+        ? `${server} didn't answer: ${error.slice('Error: '.length)}`
+        : `${server} didn't list any login types.`,
+    );
   },
 });
 
@@ -114,8 +158,17 @@ const CHECKPOINT_HELLO =
 
 /** A Check Point gateway answers the client hello with a server response. */
 export const detectCheckpoint: Detect = async ({ host, port }, probe) => {
-  const answer = await probe({ host, port, method: 'POST', path: '/clients/', body: CHECKPOINT_HELLO, headers: { 'Content-Type': 'text/plain' } });
-  return answer?.body.trimStart().startsWith('(CCCserverResponse') ? { address: withPort(host, port) } : undefined;
+  const answer = await probe({
+    host,
+    port,
+    method: 'POST',
+    path: '/clients/',
+    body: CHECKPOINT_HELLO,
+    headers: { 'Content-Type': 'text/plain' },
+  });
+  return answer?.body.trimStart().startsWith('(CCCserverResponse')
+    ? { address: withPort(host, port) }
+    : undefined;
 };
 
 export const checkpointEngine: LauncherEntry<CheckpointVpn> = {

@@ -1,6 +1,6 @@
 # Code structure
 
-Where code goes, how files are split and named. `pnpm lint` (oxlint, configured in `.oxlintrc.json`) checks the rules that can be checked. Errors fail; size warnings are a guideline.
+Where code goes, how files are split and named. `pnpm lint` (oxlint, configured in `.oxlintrc.json`) checks the rules that can be checked. Errors fail; size warnings are a guideline. `pnpm format` (oxfmt, configured in `.oxfmtrc.json`) owns how JS and TS look, single quotes included, so don't format by hand.
 
 ## Packages
 
@@ -56,7 +56,6 @@ Everything else is local to the component or screen that owns it: drafts, folds,
 5. **Named exports only.** No `index.ts` barrels inside an app. Library packages (`core`, `engine`, `release`, `vpn-sdk`, `vpns`) have a root `index.ts` as their interface; binaries (`helper`, `card-bridge`, `cli`) start at `main.ts`. A per-OS folder's `index.ts` holds the interface its implementations share.
 6. **No import cycles** (lint error).
 7. **Suppressing a lint rule needs a reason**, on the line above: `// reason` then `// oxlint-disable-next-line rule-name`.
-8. **Single quotes for strings** (lint error; `pnpm lint --fix` rewrites them). Double quotes stay where a string holds a `'`, and in JSX attributes.
 
 ## File patterns
 

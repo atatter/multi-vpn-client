@@ -55,7 +55,8 @@ function wordsOf(line: string): string[] {
         state = 'plain';
       }
     } else {
-      const ends = state === 'plain' ? space && !escaped : char === state && (state === "'" || !escaped);
+      const ends =
+        state === 'plain' ? space && !escaped : char === state && (state === "'" || !escaped);
       if (ends) {
         words.push(word);
         word = '';
@@ -104,7 +105,10 @@ export function openVpnLaunch({
       'profile.ovpn': composeProfile(profile, extraDirectives),
       ...(password !== undefined ? { auth: `${username}\n${password}\n` } : {}),
     },
-    readLine: (line) => (line.includes('AUTH_FAILED') ? { failed: 'The VPN server rejected the username or password.' } : undefined),
+    readLine: (line) =>
+      line.includes('AUTH_FAILED')
+        ? { failed: 'The VPN server rejected the username or password.' }
+        : undefined,
   };
 }
 
@@ -114,11 +118,24 @@ export const openvpnEngine: LauncherEntry<OpenVpn> = {
     const profile = await secrets.read('profile');
     if (!profile) throw new Error('Import the .ovpn profile first.');
     const parsed = parseOpenVpnProfile(profile);
-    if (!parsed.ok) throw new Error(`The stored .ovpn profile is invalid (${parsed.error}). Import it again.`);
-    if (!parsed.needsPassword) return openVpnLaunch({ profile, extraDirectives: vpn.advanced, username: vpn.username, password: undefined });
-    if (!vpn.username) throw new Error("This profile needs a username. Add it in the VPN's settings.");
+    if (!parsed.ok)
+      throw new Error(`The stored .ovpn profile is invalid (${parsed.error}). Import it again.`);
+    if (!parsed.needsPassword)
+      return openVpnLaunch({
+        profile,
+        extraDirectives: vpn.advanced,
+        username: vpn.username,
+        password: undefined,
+      });
+    if (!vpn.username)
+      throw new Error("This profile needs a username. Add it in the VPN's settings.");
     const password = await secrets.loginPassword();
     if (password === undefined) return 'needs-password';
-    return openVpnLaunch({ profile, extraDirectives: vpn.advanced, username: vpn.username, password });
+    return openVpnLaunch({
+      profile,
+      extraDirectives: vpn.advanced,
+      username: vpn.username,
+      password,
+    });
   },
 };

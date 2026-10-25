@@ -9,8 +9,14 @@ import { handle } from './handle.ts';
 
 const failed = (issues: { path: string; message: string }[]): SaveResult => ({ ok: false, issues });
 /** Flattens schema issues (zod's shape) for display, e.g. "vpns.0.portal". */
-const issuesOf = ({ issues }: { issues: readonly { path: readonly PropertyKey[]; message: string }[] }, prefix?: string) =>
-  issues.map(({ path, message }) => ({ path: [...(prefix ? [prefix] : []), ...path.map(String)].join('.'), message }));
+const issuesOf = (
+  { issues }: { issues: readonly { path: readonly PropertyKey[]; message: string }[] },
+  prefix?: string,
+) =>
+  issues.map(({ path, message }) => ({
+    path: [...(prefix ? [prefix] : []), ...path.map(String)].join('.'),
+    message,
+  }));
 
 /** Loading and saving the settings file and the secrets that go with it. */
 export function registerConfigHandlers({
@@ -26,7 +32,11 @@ export function registerConfigHandlers({
   onSaved: (config: Config) => void;
 }) {
   handle('config:load', async () => {
-    const [config, secretStatus, problem] = await Promise.all([loadConfig(configPath), secrets.status(), keychainProblem()]);
+    const [config, secretStatus, problem] = await Promise.all([
+      loadConfig(configPath),
+      secrets.status(),
+      keychainProblem(),
+    ]);
     return { path: configPath, config, secretStatus, keychainProblem: problem };
   });
 
@@ -47,7 +57,9 @@ export function registerConfigHandlers({
       try {
         pending = await secrets.prepare(merged, config.data.vpns);
       } catch (error) {
-        return failed([{ path: 'secrets', message: error instanceof Error ? error.message : String(error) }]);
+        return failed([
+          { path: 'secrets', message: error instanceof Error ? error.message : String(error) },
+        ]);
       }
       const saved = await saveConfig(config.data, configPath);
       const secretStatus = await pending.commit();

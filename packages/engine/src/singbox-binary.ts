@@ -40,13 +40,17 @@ export async function ensureSingBox(binDir: string): Promise<SingBoxBinary> {
   const response = await fetch(singBoxUrl(platform));
   if (!response.ok) throw new Error(`Downloading sing-box failed: HTTP ${response.status}`);
   const archive = Buffer.from(await response.arrayBuffer());
-  if (sha256(archive) !== pinned.archive) throw new Error("The downloaded sing-box doesn't match its pinned checksum.");
+  if (sha256(archive) !== pinned.archive)
+    throw new Error("The downloaded sing-box doesn't match its pinned checksum.");
 
   await mkdir(binDir, { recursive: true });
   const staging = await mkdtemp(join(binDir, '.download-'));
   try {
     // Windows' own tar (bsdtar) unpacks .zip; Git for Windows' GNU tar earlier on PATH can't.
-    const tar = process.platform === 'win32' ? join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe') : 'tar';
+    const tar =
+      process.platform === 'win32'
+        ? join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe')
+        : 'tar';
     const archivePath = join(staging, pinned.asset);
     await writeFile(archivePath, archive);
     await runChecked(tar, ['-xf', archivePath, '-C', staging]);
@@ -55,8 +59,10 @@ export async function ensureSingBox(binDir: string): Promise<SingBoxBinary> {
   } finally {
     await rm(staging, { recursive: true, force: true });
   }
-  if (sha256(await readFile(path)) !== pinned.binary) throw new Error("The unpacked sing-box doesn't match its pinned checksum.");
+  if (sha256(await readFile(path)) !== pinned.binary)
+    throw new Error("The unpacked sing-box doesn't match its pinned checksum.");
   // Verified; make sure Gatekeeper doesn't block it as a quarantined download.
-  if (process.platform === 'darwin') await run('/usr/bin/xattr', ['-d', 'com.apple.quarantine', path]);
+  if (process.platform === 'darwin')
+    await run('/usr/bin/xattr', ['-d', 'com.apple.quarantine', path]);
   return { path, sha256: pinned.binary };
 }

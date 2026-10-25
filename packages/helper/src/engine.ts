@@ -31,15 +31,21 @@ const isRunning = (pid: number) => {
  */
 const processList = () =>
   new Promise<{ pid: number; command: string }[]>((resolve, reject) =>
-    execFile('/bin/ps', ['-A', '-ww', '-o', 'pid=,command='], { timeout: 5_000, maxBuffer: 16 * 1024 * 1024 }, (error, stdout) =>
-      error
-        ? reject(new Error(`listing processes failed: ${error.message}`))
-        : resolve(
-            stdout.split('\n').flatMap((line) => {
-              const match = /^\s*(\d+) (.*)$/.exec(line);
-              return match?.[1] && match[2] !== undefined ? [{ pid: Number(match[1]), command: match[2] }] : [];
-            }),
-          ),
+    execFile(
+      '/bin/ps',
+      ['-A', '-ww', '-o', 'pid=,command='],
+      { timeout: 5_000, maxBuffer: 16 * 1024 * 1024 },
+      (error, stdout) =>
+        error
+          ? reject(new Error(`listing processes failed: ${error.message}`))
+          : resolve(
+              stdout.split('\n').flatMap((line) => {
+                const match = /^\s*(\d+) (.*)$/.exec(line);
+                return match?.[1] && match[2] !== undefined
+                  ? [{ pid: Number(match[1]), command: match[2] }]
+                  : [];
+              }),
+            ),
     ),
   );
 
@@ -102,14 +108,19 @@ export function createSingBoxBackend({
   const check = (path: string) =>
     new Promise<void>((resolve, reject) =>
       execFile(singBoxPath, ['check', '-c', path], { timeout: 10_000 }, (error, _stdout, stderr) =>
-        error ? reject(new Error(`Invalid routing config: ${stderr.trim() || error.message}`)) : resolve(),
+        error
+          ? reject(new Error(`Invalid routing config: ${stderr.trim() || error.message}`))
+          : resolve(),
       ),
     );
 
   /** Runs before every use of the binary with the helper's privileges, including `check`. */
   async function verifyBinary() {
-    const hash = createHash('sha256').update(await readFile(singBoxPath)).digest('hex');
-    if (hash !== singBoxSha256) throw new Error("sing-box binary doesn't match its checksum; reinstall the helper.");
+    const hash = createHash('sha256')
+      .update(await readFile(singBoxPath))
+      .digest('hex');
+    if (hash !== singBoxSha256)
+      throw new Error("sing-box binary doesn't match its checksum; reinstall the helper.");
   }
 
   async function start() {
@@ -133,7 +144,10 @@ export function createSingBoxBackend({
     });
     await sleep(1000);
     // sing-box's own last line says why, e.g. "… bind: address already in use".
-    if (child !== engine) throw new Error(`sing-box failed to start: ${plain(lastLine).replace(/^FATAL\[\d+\]\s*/, '') || 'see the helper log'}`);
+    if (child !== engine)
+      throw new Error(
+        `sing-box failed to start: ${plain(lastLine).replace(/^FATAL\[\d+\]\s*/, '') || 'see the helper log'}`,
+      );
     started = true;
   }
 
@@ -156,7 +170,11 @@ export function createSingBoxBackend({
       await verifyBinary();
       await mkdir(workDir, { recursive: true, mode: 0o700 });
       const candidate = `${configPath}.next`;
-      const config = hostSingBoxConfig(routes, { os, cachePath: join(workDir, 'cache.db'), localIpv6: localIpv6Networks() });
+      const config = hostSingBoxConfig(routes, {
+        os,
+        cachePath: join(workDir, 'cache.db'),
+        localIpv6: localIpv6Networks(),
+      });
       await writeFile(candidate, JSON.stringify(config, null, 2), { mode: 0o600 });
       try {
         await check(candidate);
