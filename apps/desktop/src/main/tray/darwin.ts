@@ -1,7 +1,7 @@
-import { app } from "electron";
-import { countLabel, tunnelLayers } from "./glyph.ts";
-import { imageOf } from "./images.ts";
-import type { TrayPlatform } from "./index.ts";
+import { app } from 'electron';
+import { countLabel, tunnelLayers } from './glyph.ts';
+import { imageOf } from './images.ts';
+import type { TrayPlatform } from './index.ts';
 
 /**
  * macOS: a template image, which the menu bar colors for its light or dark look, and the Dock's own red badge.
@@ -19,6 +19,12 @@ export const darwinTray: TrayPlatform = {
   badge(count) {
     app.dock?.setBadge(countLabel(count));
   },
+  // The Dock icon, hidden with the window, comes back with its badge label kept but not drawn, and the Dock draws a
+  // badge only when the label changes: so it's cleared and set again.
+  windowShown(count) {
+    app.dock?.setBadge('');
+    app.dock?.setBadge(countLabel(count));
+  },
   clickOpens: false,
-  quitShortcut: "Command+Q",
+  quitShortcut: 'Command+Q',
 };

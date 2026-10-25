@@ -1,7 +1,7 @@
-import { useRef, useState } from "react";
-import { SavedValue } from "@repo/ui/controls/SavedValue.tsx";
-import { cx, hint, label, mono, secondary } from "@repo/ui/tokens.ts";
-import { OPENVPN_FILE } from "./kind.ts";
+import { useRef, useState } from 'react';
+import { SavedValue } from '@repo/ui/controls/SavedValue.tsx';
+import { cx, hint, label, mono, secondary } from '@repo/ui/tokens.ts';
+import { OPENVPN_FILE } from './kind.ts';
 
 /** The .ovpn profile: servers and certificates come from it, so it's imported rather than typed. */
 export function ProfileField({
@@ -19,17 +19,18 @@ export function ProfileField({
   const picker = useRef<HTMLInputElement>(null);
   const [problem, setProblem] = useState<string>();
   const read = async (file: File) => {
-    const error = onImport(await file.text());
+    const reason = onImport(await file.text());
     // Worded like a dropped file's (renderer: store/import-profile.ts).
-    setProblem(error && `${file.name} isn't a valid OpenVPN file: ${error}`);
+    setProblem(reason && `${file.name} isn't a valid OpenVPN file: ${reason}`);
   };
   const shown = problem ?? error;
+
   return (
     <div className="mb-3 grid gap-1">
       <span className={label}>Profile</span>
       {hasProfile && remotes.length > 0 ? (
         <SavedValue onReplace={() => picker.current?.click()}>
-          <span className={cx(mono, "truncate")}>{remotes.join(", ")}</span>
+          <span className={cx(mono, 'truncate')}>{remotes.join(', ')}</span>
         </SavedValue>
       ) : (
         <div>
@@ -40,20 +41,25 @@ export function ProfileField({
       )}
       {shown ? (
         <span className="text-[12.5px] text-danger select-text">{shown}</span>
-      ) : hasProfile ? (
-        <span className={hint}>Servers and certificates come from this file.</span>
       ) : (
-        <span className={cx(hint, "text-sodium")}>Needed to connect: servers and certificates come from this file.</span>
+        <span className={cx(hint, !hasProfile && 'text-sodium')}>
+          {hasProfile
+            ? 'Servers and certificates come from this file.'
+            : 'Needed to connect: servers and certificates come from this file.'}
+        </span>
       )}
       <input
         ref={picker}
         type="file"
-        accept={OPENVPN_FILE.extensions.join(",")}
+        accept={OPENVPN_FILE.extensions.join(',')}
         hidden
         onChange={(event) => {
           const file = event.target.files?.[0];
-          if (file) void read(file);
-          event.target.value = "";
+          if (file) {
+            void read(file);
+          }
+
+          event.target.value = '';
         }}
       />
     </div>

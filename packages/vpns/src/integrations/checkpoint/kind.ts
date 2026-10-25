@@ -1,5 +1,13 @@
-import { type Action, bareHosts, commonFields, defineKind, HostPort, PASSWORD_SLOT, requiredText } from "@repo/vpn-sdk";
-import { z } from "zod";
+import {
+  type Action,
+  bareHosts,
+  commonFields,
+  defineKind,
+  HostPort,
+  PASSWORD_SLOT,
+  requiredText,
+} from '@repo/vpn-sdk';
+import { z } from 'zod';
 
 /** A login type a Check Point gateway offers, e.g. { id: "vpn_OTP", label: "MFA", factors: ["password"] }. */
 export const CheckpointLoginType = z.object({
@@ -15,10 +23,11 @@ export type CheckpointLoginType = z.infer<typeof CheckpointLoginType>;
  * password copied out of a web page's source. Browser sign-in ("identity_provider", e.g. Microsoft
  * Entra ID) works: the app opens the page and hands the result to the client.
  */
-const UNSUPPORTED_FACTORS = new Set(["certificate", "mobile_access"]);
+const UNSUPPORTED_FACTORS = new Set(['certificate', 'mobile_access']);
 
 /** Whether this app can sign in with a login type: passwords and codes (asked for while connecting), or the browser. */
-export const canUseLoginType = (type: CheckpointLoginType) => !type.factors.some((factor) => UNSUPPORTED_FACTORS.has(factor));
+export const canUseLoginType = (type: CheckpointLoginType) =>
+  !type.factors.some((factor) => UNSUPPORTED_FACTORS.has(factor));
 
 /** `loginTypes`: what the gateway at `server` ("host" or "host:port") offers. Only reads its public information. */
 export const CHECKPOINT_ACTIONS = {
@@ -29,15 +38,22 @@ export const CHECKPOINT_ACTIONS = {
 export const checkpoint = defineKind(
   z.object({
     ...commonFields,
-    kind: z.literal("checkpoint"),
+    kind: z.literal('checkpoint'),
     server: HostPort,
     /** e.g. "vpn_EntraID", as listed by the gateway. */
-    loginType: requiredText("Login type"),
+    loginType: requiredText('Login type'),
     username: z.string(),
-    tunnel: z.enum(["ipsec", "ssl"]),
+    tunnel: z.enum(['ipsec', 'ssl']),
   }),
   {
-    create: (c) => ({ ...c, kind: "checkpoint", server: "", loginType: "", username: "", tunnel: "ipsec" }),
+    create: (c) => ({
+      ...c,
+      kind: 'checkpoint',
+      server: '',
+      loginType: '',
+      username: '',
+      tunnel: 'ipsec',
+    }),
     address: (vpn) => vpn.server,
     withAddress: (vpn, server) => ({ ...vpn, server }),
     hosts: (vpn) => bareHosts([vpn.server]),

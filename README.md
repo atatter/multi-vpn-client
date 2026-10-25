@@ -103,7 +103,7 @@ pnpm dev
 
 On Ubuntu, start it with `pnpm build:helper && pnpm build:card-bridge && pnpm --filter @repo/desktop exec electron-vite dev --noSandbox` instead, because AppArmor blocks Electron's sandbox in development builds.
 
-Before a pull request, run `pnpm lint`, `pnpm typecheck` and `pnpm test`. Where code goes and how it's split is in [docs/code-structure.md](docs/code-structure.md).
+Before a pull request, run `pnpm format`, `pnpm lint`, `pnpm typecheck` and `pnpm test`. Where code goes and how it's split is in [docs/code-structure.md](docs/code-structure.md).
 
 To work on the window without Electron, Docker or VPNs, run `pnpm --filter @repo/desktop harness` and open the address it prints. It's the real window over a pretend main process; pick a situation with the address's ending: `#first`, `#daily`, `#overlap`, `#shared` or `#broke`.
 

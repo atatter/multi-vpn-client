@@ -9,7 +9,7 @@ import {
   VPCD_PORT,
   VPCD_RELAY_SOURCE,
   vpnImage,
-} from "@repo/vpn-sdk/container";
+} from '@repo/vpn-sdk/container';
 
 /** OpenConnect: stdin answers its prompts in order (see engine.ts). */
 export const START_OPENCONNECT = `#!/bin/sh
@@ -153,13 +153,13 @@ lassign [wait] pid spawn_id os_error code
 exit $code
 `;
 
-// Built natively for the Docker host's architecture; downloads are checksum-verified.
+/** Built natively for the Docker host's architecture; downloads are checksum-verified. */
 export const OPENCONNECT_IMAGE = vpnImage(
-  "mvpn-openconnect",
+  'mvpn-openconnect',
   `FROM alpine:3.24
 RUN apk add --no-cache openconnect ca-certificates curl
 ${INSTALL_SING_BOX}
-${installScripts(["/usr/local/bin/mvpn-start-openconnect", START_OPENCONNECT], ["/usr/local/bin/mvpn-oc-script", OC_SCRIPT])}
+${installScripts(['/usr/local/bin/mvpn-start-openconnect', START_OPENCONNECT], ['/usr/local/bin/mvpn-oc-script', OC_SCRIPT])}
 `,
 );
 
@@ -170,7 +170,7 @@ ${installScripts(["/usr/local/bin/mvpn-start-openconnect", START_OPENCONNECT], [
  * vpnc-script goes where the other image keeps it.
  */
 export const OPENCONNECT_CARD_IMAGE = vpnImage(
-  "mvpn-smartcard",
+  'mvpn-smartcard',
   `FROM debian:forky-slim@sha256:3c80e257eff6274d593eb33a94bda5174ccd619836e6a728a73e11c97f2213e3
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl expect gnutls-bin iproute2 nftables \\
       openconnect opensc-pkcs11 pcscd socat vsmartcard-vpcd && rm -rf /var/lib/apt/lists/*
@@ -178,9 +178,9 @@ RUN dpkg --compare-versions "$(dpkg-query -W -f '\${Version}' opensc-pkcs11)" ge
 RUN mkdir -p /etc/vpnc && ln -s /usr/share/vpnc-scripts/vpnc-script /etc/vpnc/vpnc-script
 ${INSTALL_SING_BOX}
 ${installScripts(
-  ["/usr/local/bin/mvpn-start-openconnect-card", START_OPENCONNECT_CARD],
-  ["/usr/local/bin/mvpn-oc-card", OC_CARD_WRAPPER],
-  ["/usr/local/bin/mvpn-oc-script", OC_SCRIPT],
+  ['/usr/local/bin/mvpn-start-openconnect-card', START_OPENCONNECT_CARD],
+  ['/usr/local/bin/mvpn-oc-card', OC_CARD_WRAPPER],
+  ['/usr/local/bin/mvpn-oc-script', OC_SCRIPT],
 )}
 `,
 );

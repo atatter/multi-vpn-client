@@ -1,9 +1,15 @@
-import { dirname, join } from "node:path";
-import { z } from "zod";
-import type { Vpn } from "@repo/vpns";
-import { readJsonIfExists, writeJsonAtomic } from "./fs.ts";
-import { applySecretChanges, validateSecretChanges, type SecretChanges, type SecretMap, type SecretStatus } from "./secrets.ts";
-import { defaultConfigPath } from "./store.ts";
+import { dirname, join } from 'node:path';
+import { z } from 'zod';
+import type { Vpn } from '@repo/vpns';
+import { readJsonIfExists, writeJsonAtomic } from './fs.ts';
+import {
+  applySecretChanges,
+  validateSecretChanges,
+  type SecretChanges,
+  type SecretMap,
+  type SecretStatus,
+} from './secrets.ts';
+import { defaultConfigPath } from './store.ts';
 
 /**
  * Encrypted secret file next to config.json. Node-only; import via
@@ -23,20 +29,28 @@ const SecretFile = z.object({
   vpns: z.record(z.string(), z.record(z.string(), z.string())),
 });
 
-export const defaultSecretsPath = (configPath = defaultConfigPath()) => join(dirname(configPath), "secrets.json");
+export const defaultSecretsPath = (configPath = defaultConfigPath()) =>
+  join(dirname(configPath), 'secrets.json');
 
 export function createSecretStore(path: string, cipher: Cipher) {
   const readAll = async (): Promise<SecretMap<string>> => {
     const raw = await readJsonIfExists(path);
     return raw === undefined ? {} : SecretFile.parse(raw).vpns;
   };
+
   // A value this machine's key can't decrypt (the app's name or the OS keychain changed) counts as missing
   // everywhere: the window shows it as not saved and asks for it again, instead of every connect failing.
-  const decrypt = (stored: string) => cipher.decrypt(Buffer.from(stored, "base64")).catch(() => undefined);
+  const decrypt = (stored: string) =>
+    cipher.decrypt(Buffer.from(stored, 'base64')).catch(() => undefined);
+
   const readableStatus = async (stored: SecretMap<string>): Promise<SecretStatus> => {
     const vpns = await Promise.all(
       Object.entries(stored).map(async ([vpnId, slots]) => {
-        const keys = await Promise.all(Object.entries(slots).map(async ([key, value]) => ((await decrypt(value)) === undefined ? [] : [key])));
+        const keys = await Promise.all(
+          Object.entries(slots).map(async ([key, value]) =>
+            (await decrypt(value)) === undefined ? [] : [key],
+          ),
+        );
         return [vpnId, keys.flat()] as const;
       }),
     );
@@ -60,16 +74,24 @@ export function createSecretStore(path: string, cipher: Cipher) {
      * do this before saving the config. `commit` then writes them and prunes
      * against the saved VPNs (deleted VPNs, changed kinds, passwords no longer remembered).
      */
-    async prepare(changes: SecretChanges, vpns: readonly Vpn[]): Promise<{ commit: () => Promise<SecretStatus> }> {
+    async prepare(
+      changes: SecretChanges,
+      vpns: readonly Vpn[],
+    ): Promise<{ commit: () => Promise<SecretStatus> }> {
       const problems = validateSecretChanges(changes, vpns);
-      if (problems.length > 0) throw new Error(problems.join("\n"));
+      if (problems.length > 0) {
+        throw new Error(problems.join('\n'));
+      }
 
       const encrypted: SecretMap<string | null> = {};
+
       for (const [vpnId, slots] of Object.entries(changes)) {
         const out: Record<string, string | null> = {};
+
         for (const [key, value] of Object.entries(slots)) {
-          out[key] = value === null ? null : (await cipher.encrypt(value)).toString("base64");
+          out[key] = value === null ? null : (await cipher.encrypt(value)).toString('base64');
         }
+
         encrypted[vpnId] = out;
       }
 

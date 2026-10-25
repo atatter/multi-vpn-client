@@ -1,10 +1,10 @@
-import { RESOLVER_MARK } from "@repo/core";
-import { existsSync } from "node:fs";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { run } from "../process.ts";
-import type { InstallPlan, PlatformInstaller } from "./index.ts";
+import { RESOLVER_MARK } from '@repo/core';
+import { existsSync } from 'node:fs';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { run } from '../process.ts';
+import type { InstallPlan, PlatformInstaller } from './index.ts';
 
 /**
  * Windows: a scheduled task that runs the helper as SYSTEM at boot (no service wrapper
@@ -12,15 +12,24 @@ import type { InstallPlan, PlatformInstaller } from "./index.ts";
  * least it can run as. Installed through one UAC prompt.
  */
 
-const TASK = "multi-vpn-client-helper";
-const INSTALL_DIR = join(process.env.ProgramFiles ?? "C:\\Program Files", "multi-vpn-client", "helper");
-const SYSTEM_ROOT = process.env.SystemRoot ?? "C:\\Windows";
-const POWERSHELL = join(SYSTEM_ROOT, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+const TASK = 'multi-vpn-client-helper';
+const INSTALL_DIR = join(
+  process.env.ProgramFiles ?? 'C:\\Program Files',
+  'multi-vpn-client',
+  'helper',
+);
+const SYSTEM_ROOT = process.env.SystemRoot ?? 'C:\\Windows';
+const POWERSHELL = join(SYSTEM_ROOT, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
 
 /** Quotes a value as a PowerShell single-quoted string. */
 const psQuote = (value: string) => `'${value.replaceAll("'", "''")}'`;
 
-const xmlEscape = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+const xmlEscape = (value: string) =>
+  value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
 
 /** Runs at boot as SYSTEM, forever, restarted (every minute, up to 255 times) if it fails. */
 export function taskXml(): string {
@@ -38,7 +47,7 @@ export function taskXml(): string {
     <Enabled>true</Enabled>
   </Settings>
   <Actions Context="Author"><Exec>
-    <Command>"${xmlEscape(join(INSTALL_DIR, "mvpn-helper.exe"))}"</Command>
+    <Command>"${xmlEscape(join(INSTALL_DIR, 'mvpn-helper.exe'))}"</Command>
     <Arguments>serve</Arguments>
   </Exec></Actions>
 </Task>`;
@@ -70,10 +79,13 @@ exit 0
  * users (so the app can show the log), private\\ and work\\ by SYSTEM and administrators only.
  * The settings come from a file in the user's temp folder, so the key never shows up in a command line.
  */
-export function windowsInstallScript(p: Omit<InstallPlan, "configJson"> & { configFile: string }): string {
-  const SY = "*S-1-5-18";
-  const BA = "*S-1-5-32-544";
-  const BU = "*S-1-5-32-545";
+export function windowsInstallScript(
+  p: Omit<InstallPlan, 'configJson'> & { configFile: string },
+): string {
+  const SY = '*S-1-5-18';
+  const BA = '*S-1-5-32-544';
+  const BU = '*S-1-5-32-545';
+
   return `$ErrorActionPreference = 'Stop'
 $dir = ${psQuote(INSTALL_DIR)}
 function Fail($message) { Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue; throw $message }
@@ -106,33 +118,44 @@ exit 0
  * temp folder instead.
  */
 async function runAsAdmin(script: string): Promise<void> {
-  const staging = await mkdtemp(join(tmpdir(), "mvpn-helper-"));
+  const staging = await mkdtemp(join(tmpdir(), 'mvpn-helper-'));
+
   try {
-    const errorFile = join(staging, "error.txt");
+    const errorFile = join(staging, 'error.txt');
     const wrapped = `try {\n${script}\n} catch {\n  $_.ToString() | Out-File -LiteralPath ${psQuote(errorFile)} -Encoding utf8\n  exit 1\n}`;
-    const encoded = Buffer.from(wrapped, "utf16le").toString("base64");
+    const encoded = Buffer.from(wrapped, 'utf16le').toString('base64');
     const launcher =
       `$p = Start-Process -FilePath ${psQuote(POWERSHELL)} -Verb RunAs -WindowStyle Hidden -Wait -PassThru ` +
       `-ArgumentList '-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-EncodedCommand','${encoded}'; exit $p.ExitCode`;
-    const result = await run(POWERSHELL, ["-NoProfile", "-NonInteractive", "-Command", launcher]);
-    if (result.code === 0) return;
+    const result = await run(POWERSHELL, ['-NoProfile', '-NonInteractive', '-Command', launcher]);
+    if (result.code === 0) {
+      return;
+    }
     // Declining the UAC prompt makes Start-Process fail with "canceled by the user".
-    if (/cancel/i.test(result.stderr)) throw new Error("Administrator access was cancelled.");
-    const reported = await readFile(errorFile, "utf8").catch(() => "");
-    throw new Error(reported.trim() || result.stderr.trim() || `The administrator script failed (exit ${result.code}).`);
+    if (/cancel/i.test(result.stderr)) {
+      throw new Error('Administrator access was cancelled.');
+    }
+
+    const reported = await readFile(errorFile, 'utf8').catch(() => '');
+    throw new Error(
+      reported.trim() ||
+        result.stderr.trim() ||
+        `The administrator script failed (exit ${result.code}).`,
+    );
   } finally {
     await rm(staging, { recursive: true, force: true });
   }
 }
 
 export const win32Installer: PlatformInstaller = {
-  logHint: join(INSTALL_DIR, "helper.log"),
-  isInstalled: () => existsSync(join(INSTALL_DIR, "mvpn-helper.exe")),
+  logHint: join(INSTALL_DIR, 'helper.log'),
+  isInstalled: () => existsSync(join(INSTALL_DIR, 'mvpn-helper.exe')),
   async install({ configJson, ...plan }) {
     // The user's temp folder is private to them.
-    const staging = await mkdtemp(join(tmpdir(), "mvpn-helper-config-"));
+    const staging = await mkdtemp(join(tmpdir(), 'mvpn-helper-config-'));
+
     try {
-      const configFile = join(staging, "helper.json");
+      const configFile = join(staging, 'helper.json');
       await writeFile(configFile, configJson);
       await runAsAdmin(windowsInstallScript({ ...plan, configFile }));
     } finally {

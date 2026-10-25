@@ -1,5 +1,5 @@
-import { FILE_TYPES } from "../domain/provider-files.ts";
-import { TunnelIcon } from "@repo/ui/icons.tsx";
+import { FILE_TYPES } from '../domain/provider-files.ts';
+import { TunnelIcon } from '@repo/ui/icons.tsx';
 
 export function DropCover() {
   return (

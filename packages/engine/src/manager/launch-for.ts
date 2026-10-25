@@ -1,6 +1,6 @@
-import { PASSWORD_SLOT, type Vpn, type VpnKind, type VpnOf } from "@repo/core";
-import type { ErasedAction, LauncherEntry, VpnLaunch } from "@repo/vpn-sdk/engine";
-import { LAUNCHERS } from "@repo/vpns/engine";
+import { PASSWORD_SLOT, type Vpn, type VpnKind, type VpnOf } from '@repo/core';
+import type { ErasedAction, LauncherEntry, VpnLaunch } from '@repo/vpn-sdk/engine';
+import { LAUNCHERS } from '@repo/vpns/engine';
 
 /** A kind's entry, typed for that kind's VPN; call it with the VPN's own kind (like core's kindSpec). */
 const entryOf = <K extends VpnKind>(kind: K): LauncherEntry<VpnOf<K>> => LAUNCHERS[kind];
@@ -13,10 +13,11 @@ export async function launchFor(
   vpn: Vpn,
   password: string | undefined,
   readSecret: (vpnId: string, key: string) => Promise<string | undefined>,
-): Promise<VpnLaunch | "needs-password"> {
+): Promise<VpnLaunch | 'needs-password'> {
   return entryOf(vpn.kind).launch(vpn, {
     read: (key) => readSecret(vpn.id, key),
-    loginPassword: async () => password ?? (vpn.rememberPassword ? await readSecret(vpn.id, PASSWORD_SLOT.key) : undefined),
+    loginPassword: async () =>
+      password ?? (vpn.rememberPassword ? await readSecret(vpn.id, PASSWORD_SLOT.key) : undefined),
   });
 }
 

@@ -1,13 +1,13 @@
-import { nativeTheme } from "electron";
-import { execFile } from "node:child_process";
-import { join } from "node:path";
-import { countLabel, type Layer, numeral, point, tunnelLayers } from "./glyph.ts";
-import { imageOf } from "./images.ts";
-import type { TrayPlatform } from "./index.ts";
-import { countHeadline } from "./menu.ts";
+import { nativeTheme } from 'electron';
+import { execFile } from 'node:child_process';
+import { join } from 'node:path';
+import { countLabel, type Layer, numeral, point, tunnelLayers } from './glyph.ts';
+import { imageOf } from './images.ts';
+import type { TrayPlatform } from './index.ts';
+import { countHeadline } from './menu.ts';
 
-const REG = join(process.env.SystemRoot ?? "C:\\Windows", "System32", "reg.exe");
-const PERSONALIZE = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
+const REG = join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'reg.exe');
+const PERSONALIZE = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize';
 
 /** Whether the taskbar is dark, from `reg query <PERSONALIZE> /v SystemUsesLightTheme`; undefined when it doesn't say. */
 export function taskbarIsDark(regOutput: string): boolean | undefined {
@@ -15,7 +15,7 @@ export function taskbarIsDark(regOutput: string): boolean | undefined {
   return value === undefined ? undefined : Number.parseInt(value, 16) === 0;
 }
 
-const WM_SETTINGCHANGE = 0x001a;
+const WM_SETTINGCHANGE = 0x00_1a;
 
 /** The registry's last answer; undefined when it gave none, and Electron's stands in. */
 let darkTaskbar: boolean | undefined;
@@ -35,16 +35,28 @@ export const win32Tray: TrayPlatform = {
   // at startup and on every WM_SETTINGCHANGE, which Windows broadcasts when either mode changes.
   watchColors(redraw, window) {
     const read = () =>
-      execFile(REG, ["query", PERSONALIZE, "/v", "SystemUsesLightTheme"], { windowsHide: true, timeout: 5_000 }, (error, stdout) => {
-        darkTaskbar = error ? undefined : taskbarIsDark(stdout);
-        redraw();
-      });
+      execFile(
+        REG,
+        ['query', PERSONALIZE, '/v', 'SystemUsesLightTheme'],
+        { windowsHide: true, timeout: 5000 },
+        (error, stdout) => {
+          darkTaskbar = error ? undefined : taskbarIsDark(stdout);
+          redraw();
+        },
+      );
     read();
     window.hookWindowMessage(WM_SETTINGCHANGE, read);
-    nativeTheme.on("updated", redraw);
+    nativeTheme.on('updated', redraw);
   },
   badge(count, window) {
-    window.setOverlayIcon(count > 0 ? imageOf(badgeLayers(count), 16) : null, count > 0 ? countHeadline(count) : "");
+    window.setOverlayIcon(
+      count > 0 ? imageOf(badgeLayers(count), 16) : null,
+      count > 0 ? countHeadline(count) : '',
+    );
+  },
+  // The taskbar drops the overlay while the window is hidden.
+  windowShown(count, window) {
+    win32Tray.badge(count, window);
   },
   clickOpens: true,
   quitShortcut: undefined,
@@ -53,7 +65,10 @@ export const win32Tray: TrayPlatform = {
 /** The taskbar badge: a red disc with a dark rim, so it stays apart from the app icon under it, and the white count. */
 function badgeLayers(count: number): Layer[] {
   const label = countLabel(count);
-  const digits = label.length > 1 ? { strokes: numeral(label, 32, 42, 0.75), width: 5 } : { strokes: numeral(label, 32, 45, 1), width: 6 };
+  const digits =
+    label.length > 1
+      ? { strokes: numeral(label, 32, 42, 0.75), width: 5 }
+      : { strokes: numeral(label, 32, 45, 1), width: 6 };
   return [
     { strokes: [point(32, 32)], width: 64, color: [28, 28, 28] },
     { strokes: [point(32, 32)], width: 56, color: [209, 52, 56] },

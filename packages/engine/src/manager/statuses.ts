@@ -1,4 +1,4 @@
-import type { ConnectionState, ConnectionStatus } from "@repo/core";
+import type { ConnectionState, ConnectionStatus } from '@repo/core';
 
 const MAX_LOG_LINES = 300;
 
@@ -15,6 +15,7 @@ export function createStatusBoard(onChange: (statuses: Record<string, Connection
     emitTimer = undefined;
     onChange(Object.fromEntries(statuses));
   };
+
   const emitSoon = () => {
     emitTimer ??= setTimeout(emit, 250);
   };
@@ -38,9 +39,16 @@ export function createStatusBoard(onChange: (statuses: Record<string, Connection
     /** Appends lines to this VPN's log (ignored until it has a status). */
     logger: (vpnId: string) => (line: string) => {
       const status = statuses.get(vpnId);
-      if (!status) return;
+      if (!status) {
+        return;
+      }
+
       status.log.push(line);
-      if (status.log.length > MAX_LOG_LINES) status.log.splice(0, status.log.length - MAX_LOG_LINES);
+
+      if (status.log.length > MAX_LOG_LINES) {
+        status.log.splice(0, status.log.length - MAX_LOG_LINES);
+      }
+
       emitSoon();
     },
   };

@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
-import { input } from "../tokens.ts";
-import { Field } from "./Field.tsx";
+import type { ReactNode } from 'react';
+import { input } from '../tokens.ts';
+import { Field } from './Field.tsx';
 
 export function SelectField<T extends string>({
   label,

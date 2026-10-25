@@ -32,6 +32,7 @@ jobs:
       # No install scripts: the checks don't need Electron's or Bun's binaries, and fewer dependencies run code here.
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm lint
+      - run: pnpm format:check
       - run: pnpm typecheck
 
   test:

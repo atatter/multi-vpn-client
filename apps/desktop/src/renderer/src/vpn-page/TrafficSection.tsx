@@ -1,6 +1,6 @@
-import { isBroad, type RouteRule, type TrafficMode, type Vpn } from "@repo/core";
-import { TrafficChoice } from "../traffic/TrafficChoice.tsx";
-import { heading } from "@repo/ui/tokens.ts";
+import { isBroad, type RouteRule, type TrafficMode, type Vpn } from '@repo/core';
+import { TrafficChoice } from '../traffic/TrafficChoice.tsx';
+import { heading } from '@repo/ui/tokens.ts';
 
 /** What goes through the VPN, and what changing it between all traffic and its own network will do while it's connected. */
 export function TrafficSection({
@@ -25,7 +25,13 @@ export function TrafficSection({
   return (
     <section className="mt-[18px]">
       <h2 className={heading}>What goes through it?</h2>
-      <TrafficChoice vpn={draft} routes={routes} onTraffic={onTraffic} onRoutes={onRoutes} warnings={warnings} />
+      <TrafficChoice
+        vpn={draft}
+        routes={routes}
+        onTraffic={onTraffic}
+        onRoutes={onRoutes}
+        warnings={warnings}
+      />
       {error && <span className="mt-1.5 block text-[12.5px] text-danger">{error}</span>}
       {connected && isBroad(draft) !== isBroad(saved) && (
         <p className="mt-2 text-[12.5px] text-muted">

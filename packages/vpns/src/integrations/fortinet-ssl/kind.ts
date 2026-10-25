@@ -1,11 +1,11 @@
-import { bareHosts, commonFields, defineKind, HostPort, PASSWORD_SLOT } from "@repo/vpn-sdk";
-import { z } from "zod";
+import { bareHosts, commonFields, defineKind, HostPort, PASSWORD_SLOT } from '@repo/vpn-sdk';
+import { z } from 'zod';
 
 /** FortiGate SSL VPN through OpenConnect, often on port 10443. */
 export const fortinetSsl = defineKind(
   z.object({
     ...commonFields,
-    kind: z.literal("fortinet-ssl"),
+    kind: z.literal('fortinet-ssl'),
     gateway: HostPort,
     realm: z.string(),
     username: z.string(),
@@ -13,7 +13,14 @@ export const fortinetSsl = defineKind(
     serverCertPin: z.string(),
   }),
   {
-    create: (c) => ({ ...c, kind: "fortinet-ssl", gateway: "", realm: "", username: "", serverCertPin: "" }),
+    create: (c) => ({
+      ...c,
+      kind: 'fortinet-ssl',
+      gateway: '',
+      realm: '',
+      username: '',
+      serverCertPin: '',
+    }),
     address: (vpn) => vpn.gateway,
     withAddress: (vpn, gateway) => ({ ...vpn, gateway }),
     hosts: (vpn) => bareHosts([vpn.gateway]),

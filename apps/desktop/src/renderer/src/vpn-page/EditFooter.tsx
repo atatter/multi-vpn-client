@@ -1,4 +1,4 @@
-import { danger, link, primary } from "@repo/ui/tokens.ts";
+import { danger, link, primary } from '@repo/ui/tokens.ts';
 
 /**
  * The page's action bar while there are unsaved changes: Save and Discard, or, when the user tries to
@@ -35,15 +35,16 @@ export function EditFooter({
       </>
     );
   }
+
   return (
     <>
-      <span>{reconnects ? "Saving reconnects this VPN" : "Unsaved changes"}</span>
+      <span>{reconnects ? 'Saving reconnects this VPN' : 'Unsaved changes'}</span>
       <span className="flex items-center gap-4">
         <button type="button" className={link} onClick={onDiscard}>
           Discard
         </button>
         <button type="button" className={primary} disabled={saving} onClick={onSave}>
-          {saving ? "Saving…" : "Save"}
+          {saving ? 'Saving…' : 'Save'}
         </button>
       </span>
     </>

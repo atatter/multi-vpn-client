@@ -3,7 +3,7 @@
 // know, so text a server gets into the client's log (e.g. a portal's message) can't pass for a marker.
 
 /** The nonce's file in /run/mvpn, copied in with the launch's other files. */
-export const NONCE_FILE = "nonce";
+export const NONCE_FILE = 'nonce';
 
 /** The marker lines for `nonce`: the engine matches them with the real one, scripts print them reading it from the file. */
 export function markers(nonce: string) {

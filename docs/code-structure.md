@@ -1,6 +1,6 @@
 # Code structure
 
-Where code goes, how files are split and named. `pnpm lint` (oxlint, configured in `.oxlintrc.json`) checks the rules that can be checked. Errors fail; size warnings are a guideline.
+Where code goes, how files are split and named. `pnpm lint` (oxlint, configured in `.oxlintrc.json`) checks the rules that can be checked, and every finding is an error. `pnpm format` (oxfmt, configured in `.oxfmtrc.json`) owns how JS and TS look, single quotes included, so don't format by hand.
 
 ## Packages
 
@@ -52,10 +52,12 @@ Everything else is local to the component or screen that owns it: drafts, folds,
 1. **Folders by feature.** Everything about one part of the app lives in one folder.
 2. **Logic in `.ts`, markup in `.tsx`.** A decision worth testing is a plain function with a `.test.ts` next to it. Components render and call those functions.
 3. **One component per file** once it's reused or longer than about 40 lines.
-4. **Size: about 250 lines per file and 80 per function.** This is a guideline (lint warns), not a limit. Split where it makes the code clearer, not to satisfy a number. Closures that hold one piece of state, such as `createAppStore` and `createConnectionManager`, can be longer.
+4. **Size: about 250 lines per file and 80 per function.** A guideline for review, not a lint rule. Split where it makes the code clearer, not to satisfy a number. Closures that hold one piece of state, such as `createAppStore` and `createConnectionManager`, can be longer.
 5. **Named exports only.** No `index.ts` barrels inside an app. Library packages (`core`, `engine`, `release`, `vpn-sdk`, `vpns`) have a root `index.ts` as their interface; binaries (`helper`, `card-bridge`, `cli`) start at `main.ts`. A per-OS folder's `index.ts` holds the interface its implementations share.
 6. **No import cycles** (lint error).
 7. **Suppressing a lint rule needs a reason**, on the line above: `// reason` then `// oxlint-disable-next-line rule-name`.
+8. **Flat code** (lint errors). Every `if` and loop body has braces. Instead of a nested ternary, use early returns, a lookup object or flat class names; instead of a fifth parameter, pass an object. No negated `if`/`else`, no reassigned parameters, no shadowed names.
+9. **Blank lines split a function into steps.** Lint can't check this one. Leave one after a run of guard clauses, between the declarations a step needs and the logic that uses them, around multi-line `if`, `for`, `try` and `switch` blocks, before the final `return` of a longer function, and between the inner functions of a factory. Lines that belong together stay together; not every statement gets its own paragraph.
 
 ## File patterns
 

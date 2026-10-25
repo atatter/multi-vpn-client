@@ -1,5 +1,5 @@
-import { z } from "zod";
-import type { CommonSettings } from "./fields.ts";
+import { z } from 'zod';
+import type { CommonSettings } from './fields.ts';
 
 /**
  * What every process knows about one VPN kind: its saved settings and the decisions every kind has to make.
@@ -12,7 +12,7 @@ export interface SecretSlot {
   key: string;
   label: string;
   /** "always": part of the setup (OpenVPN's profile). "remember": the login password (PASSWORD_SLOT), kept only if the user opts in. */
-  storage: "always" | "remember";
+  storage: 'always' | 'remember';
   /** Must be stored before the VPN can connect. "remember" slots are asked for at connect time instead. */
   required: boolean;
   /** Only set by importing a file (e.g. the .ovpn profile), never typed in. */
@@ -24,9 +24,9 @@ export interface SecretSlot {
 
 /** The login password: asked for on connect, kept only when the user ticks "Remember password". */
 export const PASSWORD_SLOT = {
-  key: "password",
-  label: "Password",
-  storage: "remember",
+  key: 'password',
+  label: 'Password',
+  storage: 'remember',
   required: false,
   importOnly: false,
   schema: z.string().min(1),
@@ -46,7 +46,10 @@ export interface FromFile<V> {
   /** Lower-case, with the dot; the first is what the window names. */
   extensions: readonly string[];
   /** The new VPN `draft` with what the file says, and the secrets it holds; or why the file isn't one of this kind's. */
-  read: (text: string, draft: V) => { ok: true; vpn: V; secrets: Record<string, string> } | { ok: false; error: string };
+  read: (
+    text: string,
+    draft: V,
+  ) => { ok: true; vpn: V; secrets: Record<string, string> } | { ok: false; error: string };
 }
 
 export interface KindSpec<V> {
@@ -78,4 +81,7 @@ export interface KindSpec<V> {
  * One kind: its schema (the shared settings spread in, plus a `kind` literal), and its spec, typed from the
  * schema so every callback gets exactly this kind's VPN.
  */
-export const defineKind = <S extends z.ZodObject>(schema: S, spec: NoInfer<KindSpec<z.output<S>>>) => ({ schema, ...spec });
+export const defineKind = <S extends z.ZodObject>(
+  schema: S,
+  spec: NoInfer<KindSpec<z.output<S>>>,
+) => ({ schema, ...spec });

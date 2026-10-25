@@ -6,6 +6,6 @@ export interface DnsAdapter {
   clear(): Promise<void>;
 }
 
-export { createResolverDns } from "./darwin.ts";
-export { createResolvedDns } from "./linux.ts";
-export { createNrptDns } from "./win32.ts";
+export { createResolverDns } from './darwin.ts';
+export { createResolvedDns } from './linux.ts';
+export { createNrptDns } from './win32.ts';

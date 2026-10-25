@@ -1,7 +1,7 @@
-import { LINUX_ROUTE_TABLE, LINUX_RULE_INDEX, TUN_NAME } from "@repo/core";
-import { existsSync } from "node:fs";
-import { run, shQuote } from "../process.ts";
-import type { InstallPlan, PlatformInstaller } from "./index.ts";
+import { LINUX_ROUTE_TABLE, LINUX_RULE_INDEX, TUN_NAME } from '@repo/core';
+import { existsSync } from 'node:fs';
+import { run, shQuote } from '../process.ts';
+import type { InstallPlan, PlatformInstaller } from './index.ts';
 
 /**
  * Linux: a systemd service running as its own system user with only CAP_NET_ADMIN
@@ -10,15 +10,15 @@ import type { InstallPlan, PlatformInstaller } from "./index.ts";
  * interface only. Installed through pkexec, the desktop's standard admin prompt.
  */
 
-const UNIT = "multi-vpn-client-helper.service";
+const UNIT = 'multi-vpn-client-helper.service';
 const UNIT_PATH = `/etc/systemd/system/${UNIT}`;
-const INSTALL_DIR = "/usr/local/lib/multi-vpn-client";
-const POLKIT_RULE_PATH = "/etc/polkit-1/rules.d/50-multi-vpn-client.rules";
-const USER = "mvpn-helper";
+const INSTALL_DIR = '/usr/local/lib/multi-vpn-client';
+const POLKIT_RULE_PATH = '/etc/polkit-1/rules.d/50-multi-vpn-client.rules';
+const USER = 'mvpn-helper';
 /** Must match the helper's DNS interface (helper/dns/linux). */
-const DNS_LINK = "mvpn-dns";
+const DNS_LINK = 'mvpn-dns';
 
-const b64 = (text: string) => Buffer.from(text).toString("base64");
+const b64 = (text: string) => Buffer.from(text).toString('base64');
 
 export function systemdUnit(): string {
   return `[Unit]
@@ -111,7 +111,7 @@ chmod 755 "$DIR" "$DIR/mvpn-helper" "$DIR/sing-box"
 chmod 600 "$DIR/helper.json"
 echo ${b64(systemdUnit())} | base64 -d > ${UNIT_PATH}
 chmod 644 ${UNIT_PATH}
-mkdir -p ${POLKIT_RULE_PATH.slice(0, POLKIT_RULE_PATH.lastIndexOf("/"))}
+mkdir -p ${POLKIT_RULE_PATH.slice(0, POLKIT_RULE_PATH.lastIndexOf('/'))}
 echo ${b64(polkitRule())} | base64 -d > ${POLKIT_RULE_PATH}
 chmod 644 ${POLKIT_RULE_PATH}
 systemctl daemon-reload
@@ -124,12 +124,23 @@ systemctl enable --now ${UNIT}
  * since it carries the handshake key and command lines are readable by every user.
  */
 async function runAsAdmin(script: string): Promise<void> {
-  const result = await run("pkexec", ["/bin/sh", "-s"], script).catch((error: NodeJS.ErrnoException) => {
-    if (error.code === "ENOENT") throw new Error("pkexec (polkit) is needed to install the network helper.");
-    throw error;
-  });
-  if (result.code === 126) throw new Error("Administrator access was cancelled.");
-  if (result.code !== 0) throw new Error(result.stderr.trim() || `The administrator script failed (exit ${result.code}).`);
+  const result = await run('pkexec', ['/bin/sh', '-s'], script).catch(
+    (error: NodeJS.ErrnoException) => {
+      if (error.code === 'ENOENT') {
+        throw new Error('pkexec (polkit) is needed to install the network helper.');
+      }
+
+      throw error;
+    },
+  );
+  if (result.code === 126) {
+    throw new Error('Administrator access was cancelled.');
+  }
+  if (result.code !== 0) {
+    throw new Error(
+      result.stderr.trim() || `The administrator script failed (exit ${result.code}).`,
+    );
+  }
 }
 
 export const linuxInstaller: PlatformInstaller = {

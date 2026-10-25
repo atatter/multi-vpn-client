@@ -1,11 +1,11 @@
-import { type Detection, HostPort, isIpv4 } from "@repo/core";
-import { useEffect, useState } from "react";
-import { useApp } from "../store/app-model.ts";
-import { draftFor } from "./draft.ts";
+import { type Detection, HostPort, isIpv4 } from '@repo/core';
+import { useEffect, useState } from 'react';
+import { useApp } from '../store/app-model.ts';
+import { draftFor } from './draft.ts';
 
 /** Complete enough to probe: a valid host ending in a real-looking top-level label (or an IP), so fragments aren't looked up. */
 const looksLikeAddress = (text: string) => {
-  const host = text.trim().replace(/:\d+$/, "");
+  const host = text.trim().replace(/:\d+$/, '');
   return HostPort.safeParse(text.trim()).success && (/\.[a-z]{2,}$/i.test(host) || isIpv4(host));
 };
 
@@ -16,26 +16,36 @@ const looksLikeAddress = (text: string) => {
 export function useAddress() {
   const app = useApp();
   const { api } = app;
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState('');
   const [found, setFound] = useState<{ address: string; detection: Detection }>();
   const [manual, setManual] = useState(false);
   const typed = address.trim();
   const checking = looksLikeAddress(typed) && found?.address !== typed;
 
   useEffect(() => {
-    if (!looksLikeAddress(typed)) return;
+    if (!looksLikeAddress(typed)) {
+      return;
+    }
+
     let current = true;
     // Probing starts once typing pauses, not on every key.
     const timer = setTimeout(() => {
       void api.detect(typed).then(
         (detection) => {
-          if (!current) return;
+          if (!current) {
+            return;
+          }
+
           setFound({ address: typed, detection });
-          if (detection.kind === "unknown") setManual(true);
+
+          if (detection.kind === 'unknown') {
+            setManual(true);
+          }
         },
-        () => current && setFound({ address: typed, detection: { kind: "unknown" } }),
+        () => current && setFound({ address: typed, detection: { kind: 'unknown' } }),
       );
     }, 750);
+
     return () => {
       current = false;
       clearTimeout(timer);
@@ -44,8 +54,15 @@ export function useAddress() {
 
   const detection = found?.address === typed ? found.detection : undefined;
   const next =
-    detection && detection.kind !== "unknown"
-      ? () => app.push({ name: "signin", draft: draftFor(detection, app.config.vpns), secrets: {}, source: { from: "address", browserSignIn: !!detection.browserSignIn } })
+    detection && detection.kind !== 'unknown'
+      ? () =>
+          app.push({
+            name: 'signin',
+            draft: draftFor(detection, app.config.vpns),
+            secrets: {},
+            source: { from: 'address', browserSignIn: !!detection.browserSignIn },
+          })
       : undefined;
+
   return { address, setAddress, typed, checking, detection, manual, setManual, next };
 }

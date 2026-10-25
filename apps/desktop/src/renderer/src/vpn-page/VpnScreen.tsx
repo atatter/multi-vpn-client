@@ -1,17 +1,25 @@
-import type { RouteRule, Vpn } from "@repo/core";
-import { useState } from "react";
-import { isOn } from "../domain/connection.ts";
-import { formErrors } from "../domain/form-errors.ts";
-import { vpnLabel } from "../domain/labels.ts";
-import type { PendingSecrets } from "../domain/secrets.ts";
-import { useApp } from "../store/app-model.ts";
-import { Frame } from "@repo/ui/Frame.tsx";
-import { EditFooter } from "./EditFooter.tsx";
-import { RemoveVpn } from "./RemoveVpn.tsx";
-import { StatusCard } from "./StatusCard.tsx";
-import { TrafficSection } from "./TrafficSection.tsx";
-import { VpnFolds } from "./VpnFolds.tsx";
-import { changedFields, configAfterRemove, configAfterSave, isDirty, routeEditsOf, savingReconnects, siteWarnings } from "./vpn-edit.ts";
+import type { RouteRule, Vpn } from '@repo/core';
+import { useState } from 'react';
+import { isOn } from '../domain/connection.ts';
+import { formErrors } from '../domain/form-errors.ts';
+import { vpnLabel } from '../domain/labels.ts';
+import type { PendingSecrets } from '../domain/secrets.ts';
+import { useApp } from '../store/app-model.ts';
+import { Frame } from '@repo/ui/Frame.tsx';
+import { EditFooter } from './EditFooter.tsx';
+import { RemoveVpn } from './RemoveVpn.tsx';
+import { StatusCard } from './StatusCard.tsx';
+import { TrafficSection } from './TrafficSection.tsx';
+import { VpnFolds } from './VpnFolds.tsx';
+import {
+  changedFields,
+  configAfterRemove,
+  configAfterSave,
+  isDirty,
+  routeEditsOf,
+  savingReconnects,
+  siteWarnings,
+} from './vpn-edit.ts';
 
 /**
  * One VPN on one screen: its status, what goes through it, then folded Account and Advanced. One Save for
@@ -31,7 +39,9 @@ export function VpnScreen({ vpnId }: { vpnId: string }) {
   /** Where the user was going when asked to discard their changes, until they answer. */
   const [leaving, setLeaving] = useState<{ go: () => void }>();
   const [saving, setSaving] = useState(false);
-  if (!vpn) return null; // removed meanwhile: there's nothing left to show
+  if (!vpn) {
+    return null;
+  } // removed meanwhile: there's nothing left to show
 
   // The kind is fixed on this page, so the saved VPN plus the edited fields is still the same kind.
   const draft = { ...vpn, ...edits } as Vpn;
@@ -40,7 +50,7 @@ export function VpnScreen({ vpnId }: { vpnId: string }) {
   const setRoutes = (next: RouteRule[]) => setRouteEdits(routeEditsOf(next, savedRoutes));
 
   const connection = app.connections[vpn.id];
-  const connected = connection?.state === "connected";
+  const connected = connection?.state === 'connected';
   const stored = app.secretStatus[vpn.id] ?? [];
   const errors = formErrors(draft, routes, stored, pending);
   const shown = showErrors ? errors : {};
@@ -55,22 +65,38 @@ export function VpnScreen({ vpnId }: { vpnId: string }) {
     setShowErrors(false);
     setLeaving(undefined);
   };
+
   /** Goes elsewhere, asking first when there are unsaved changes. */
   const leave = (go: () => void) => (dirty ? setLeaving({ go }) : go());
+
   const save = async () => {
-    if (Object.keys(errors).length > 0) return setShowErrors(true);
+    if (Object.keys(errors).length > 0) {
+      return setShowErrors(true);
+    }
+
     setSaving(true);
-    const saved = await app.save(configAfterSave(app.config, vpn, draft, routes), { [vpn.id]: pending });
+    const saved = await app.save(configAfterSave(app.config, vpn, draft, routes), {
+      [vpn.id]: pending,
+    });
     setSaving(false);
-    if (!saved) return;
+    if (!saved) {
+      return;
+    }
+
     // Saved: stay on the page, which now shows the saved VPN.
     discard();
-    if (reconnects) void app.reconnect(vpn.id);
+
+    if (reconnects) {
+      void app.reconnect(vpn.id);
+    }
   };
+
   const remove = async () => {
     await app.turnOff(vpn.id).catch(() => undefined);
     const saved = await app.save(configAfterRemove(app.config, vpn.id));
-    if (saved) app.home();
+    if (saved) {
+      app.home();
+    }
   };
 
   return (
@@ -120,7 +146,12 @@ export function VpnScreen({ vpnId }: { vpnId: string }) {
         />
 
         <div className="mt-[18px]">
-          <RemoveVpn name={name} hasSecrets={stored.length > 0} on={isOn(connection)} onRemove={() => void remove()} />
+          <RemoveVpn
+            name={name}
+            hasSecrets={stored.length > 0}
+            on={isOn(connection)}
+            onRemove={() => void remove()}
+          />
         </div>
       </div>
     </Frame>

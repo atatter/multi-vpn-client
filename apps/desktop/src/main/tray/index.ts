@@ -1,13 +1,13 @@
-import { APP_NAME, type Config, type ConnectionStatus } from "@repo/core";
-import { type BrowserWindow, Menu, type NativeImage, Tray } from "electron";
-import type { AppInfo, UpdateState } from "../../shared/ipc-contract.ts";
-import { platform } from "../window.ts";
-import { darwinTray } from "./darwin.ts";
-import { dotLayers } from "./glyph.ts";
-import { imageOf } from "./images.ts";
-import { linuxTray } from "./linux.ts";
-import { countHeadline, idsOn, namesOn, trayMenu, updateItem } from "./menu.ts";
-import { win32Tray } from "./win32.ts";
+import { APP_NAME, type Config, type ConnectionStatus } from '@repo/core';
+import { type BrowserWindow, Menu, type NativeImage, Tray } from 'electron';
+import type { AppInfo, UpdateState } from '../../shared/ipc-contract.ts';
+import { platform } from '../window.ts';
+import { darwinTray } from './darwin.ts';
+import { dotLayers } from './glyph.ts';
+import { imageOf } from './images.ts';
+import { linuxTray } from './linux.ts';
+import { countHeadline, idsOn, namesOn, trayMenu, updateItem } from './menu.ts';
+import { win32Tray } from './win32.ts';
 
 /** What each OS does its own way: the tray icon's colors, the count on the app's own icon, a click on the tray. */
 export interface TrayPlatform {
@@ -19,13 +19,19 @@ export interface TrayPlatform {
   watchColors(redraw: () => void, window: BrowserWindow): void;
   /** Shows the count on the app's icon in the Dock or taskbar; 0 clears it. */
   badge(count: number, window: BrowserWindow): void;
+  /** Runs each time the window shows again: puts the count back where the OS lost it while the window was hidden. */
+  windowShown(count: number, window: BrowserWindow): void;
   /** Whether a click on the tray icon opens the window. Where it doesn't, the click opens the menu. */
   clickOpens: boolean;
   /** The quit shortcut the menu shows, where the app has one. */
   quitShortcut: string | undefined;
 }
 
-const PLATFORMS: Record<AppInfo["platform"], TrayPlatform> = { darwin: darwinTray, linux: linuxTray, win32: win32Tray };
+const PLATFORMS: Record<AppInfo['platform'], TrayPlatform> = {
+  darwin: darwinTray,
+  linux: linuxTray,
+  win32: win32Tray,
+};
 export const trayPlatform = PLATFORMS[platform()];
 
 /**
@@ -51,10 +57,13 @@ export function createTray(deps: {
   let shown: string | undefined;
   let count = 0;
   let hasUpdate = false;
-  if (trayPlatform.clickOpens) tray.on("click", deps.open);
+
+  if (trayPlatform.clickOpens) {
+    tray.on('click', deps.open);
+  }
+
   trayPlatform.watchColors(() => tray.setImage(trayPlatform.icon(count, hasUpdate)), deps.window);
-  // Windows drops the taskbar overlay while the window is hidden.
-  deps.window.on("show", () => trayPlatform.badge(count, deps.window));
+  deps.window.on('show', () => trayPlatform.windowShown(count, deps.window));
 
   function update() {
     const ids = idsOn(deps.statuses());
@@ -62,20 +71,43 @@ export function createTray(deps: {
     const item = updateItem(deps.updateState(), deps);
     // Statuses change with every log line; rebuild only when what the tray shows does.
     const showing = JSON.stringify([ids, names, item?.label]);
-    if (showing === shown) return;
+    if (showing === shown) {
+      return;
+    }
+
     shown = showing;
     // The menu follows a download's every percent; the icon and badge change only with the count or the dot.
     const countChanged = count !== ids.length;
     const dotChanged = hasUpdate !== Boolean(item);
     count = ids.length;
     hasUpdate = Boolean(item);
-    if (countChanged) trayPlatform.badge(count, deps.window);
-    if (countChanged || dotChanged) tray.setImage(trayPlatform.icon(count, hasUpdate));
+
+    if (countChanged) {
+      trayPlatform.badge(count, deps.window);
+    }
+
+    if (countChanged || dotChanged) {
+      tray.setImage(trayPlatform.icon(count, hasUpdate));
+    }
+
     tray.setToolTip(`${APP_NAME}: ${countHeadline(count)}`);
-    tray.setContextMenu(Menu.buildFromTemplate(trayMenu({ count, names, dot, update: item, quitShortcut: trayPlatform.quitShortcut, open: deps.open, quit: deps.quit })));
+    tray.setContextMenu(
+      Menu.buildFromTemplate(
+        trayMenu({
+          count,
+          names,
+          dot,
+          update: item,
+          quitShortcut: trayPlatform.quitShortcut,
+          open: deps.open,
+          quit: deps.quit,
+        }),
+      ),
+    );
   }
 
   update();
+
   return {
     update,
     /** The saved settings, which name the VPNs in the menu. */
