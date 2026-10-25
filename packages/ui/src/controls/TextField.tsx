@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
-import { cx, input, mono } from "../tokens.ts";
-import { Field } from "./Field.tsx";
+import type { ReactNode } from 'react';
+import { cx, input, mono } from '../tokens.ts';
+import { Field } from './Field.tsx';
 
 export function TextField({
   label,
@@ -8,7 +8,7 @@ export function TextField({
   onChange,
   error,
   hint: hintText,
-  placeholder = "",
+  placeholder = '',
   monospace = false,
 }: {
   label: string;

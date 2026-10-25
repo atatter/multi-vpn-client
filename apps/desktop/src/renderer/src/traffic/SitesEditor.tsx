@@ -1,9 +1,9 @@
-import { RouteRule, routeTarget, type Vpn } from "@repo/core";
-import { useState } from "react";
-import { vpnLabel } from "../domain/labels.ts";
-import { cx, input, link, mono, secondary } from "@repo/ui/tokens.ts";
-import { SiteRow } from "./SiteRow.tsx";
-import { addEntries } from "./sites-input.ts";
+import { RouteRule, routeTarget, type Vpn } from '@repo/core';
+import { useState } from 'react';
+import { vpnLabel } from '../domain/labels.ts';
+import { cx, input, link, mono, secondary } from '@repo/ui/tokens.ts';
+import { SiteRow } from './SiteRow.tsx';
+import { addEntries } from './sites-input.ts';
 
 /** A higher VPN that wins one of these sites while both are on, by rule id. */
 export type SiteWarnings = ReadonlyMap<string, { winner: string }>;
@@ -25,7 +25,7 @@ export function SitesEditor({
   warnings?: SiteWarnings | undefined;
   autoFocus?: boolean;
 }) {
-  const [text, setText] = useState("");
+  const [text, setText] = useState('');
   const [problem, setProblem] = useState<string>();
   const [removed, setRemoved] = useState<{ route: RouteRule; index: number }>();
 
@@ -37,7 +37,8 @@ export function SitesEditor({
     setText(result.text);
     setProblem(result.problem);
   };
-  const update = (id: string, patch: { enabled?: boolean; pinned?: boolean }) => onChange(routes.map((route) => (route.id === id ? { ...route, ...patch } : route)));
+  const update = (id: string, patch: { enabled?: boolean; pinned?: boolean }) =>
+    onChange(routes.map((route) => (route.id === id ? { ...route, ...patch } : route)));
 
   return (
     <div className="mt-2">
@@ -49,7 +50,7 @@ export function SitesEditor({
         }}
       >
         <input
-          className={cx(input(!!problem), mono, "flex-1")}
+          className={cx(input(!!problem), mono, 'flex-1')}
           value={text}
           placeholder="jira.example.com or 10.20.0.0/16"
           aria-label="Add a site or IP range"
@@ -64,12 +65,16 @@ export function SitesEditor({
       {problem && <p className="mt-1 text-[12.5px] text-danger select-text">{problem}</p>}
       {removed && (
         <p className="mt-1.5 text-[13px] text-muted">
-          Removed {routeTarget(removed.route)}.{" "}
+          Removed {routeTarget(removed.route)}.{' '}
           <button
             type="button"
             className={link}
             onClick={() => {
-              onChange([...routes.slice(0, removed.index), removed.route, ...routes.slice(removed.index)]);
+              onChange([
+                ...routes.slice(0, removed.index),
+                removed.route,
+                ...routes.slice(removed.index),
+              ]);
               setRemoved(undefined);
             }}
           >
@@ -94,7 +99,9 @@ export function SitesEditor({
           ))}
         </ul>
       )}
-      <span className="mt-1.5 block text-[12.5px] text-muted">Paste links, hosts or IP ranges. Sites include their subdomains.</span>
+      <span className="mt-1.5 block text-[12.5px] text-muted">
+        Paste links, hosts or IP ranges. Sites include their subdomains.
+      </span>
     </div>
   );
 }

@@ -1,9 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest';
 
 type Handler = (event: { preventDefault: () => void }) => void;
-const created: { options: Electron.BrowserWindowConstructorOptions; openHandler?: () => unknown; handlers: Map<string, Handler> }[] = [];
+const created: {
+  options: Electron.BrowserWindowConstructorOptions;
+  openHandler?: () => unknown;
+  handlers: Map<string, Handler>;
+}[] = [];
 
-vi.mock("electron", () => ({
+vi.mock('electron', () => ({
   nativeTheme: { shouldUseDarkColors: false, on: () => {} },
   screen: {},
   BrowserWindow: class {
@@ -23,21 +27,26 @@ vi.mock("electron", () => ({
   },
 }));
 
-const { createWindow } = await import("./window.ts");
+const { createWindow } = await import('./window.ts');
 
-describe("the main window", () => {
-  it("keeps the renderer sandboxed and isolated, without Node, with only the preload added", () => {
+describe('the main window', () => {
+  it('keeps the renderer sandboxed and isolated, without Node, with only the preload added', () => {
     createWindow();
     const preferences = created.at(-1)?.options.webPreferences;
-    expect(preferences).toEqual({ preload: expect.stringMatching(/preload[/\\]index\.js$/), sandbox: true, contextIsolation: true, nodeIntegration: false });
+    expect(preferences).toEqual({
+      preload: expect.stringMatching(/preload[/\\]index\.js$/),
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+    });
   });
 
-  it("never opens or navigates to another page", () => {
+  it('never opens or navigates to another page', () => {
     createWindow();
     const window = created.at(-1);
-    expect(window?.openHandler?.()).toEqual({ action: "deny" });
+    expect(window?.openHandler?.()).toEqual({ action: 'deny' });
     const preventDefault = vi.fn<() => void>();
-    window?.handlers.get("will-navigate")?.({ preventDefault });
+    window?.handlers.get('will-navigate')?.({ preventDefault });
     expect(preventDefault).toHaveBeenCalledOnce();
   });
 });

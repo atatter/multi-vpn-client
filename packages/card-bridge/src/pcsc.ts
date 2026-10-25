@@ -1,4 +1,4 @@
-import { dlopen } from "bun:ffi";
+import { dlopen } from 'bun:ffi';
 
 /**
  * The OS's smart card API (PC/SC) through Bun's FFI: winscard.dll on Windows, PCSC.framework on
@@ -10,21 +10,42 @@ import { dlopen } from "bun:ffi";
 interface Abi {
   library: string;
   /** Windows has ANSI ("A") and wide variants of the functions that take strings. */
-  suffix: "" | "A";
+  suffix: '' | 'A';
   /**
    * How reader names are encoded. Windows' ANSI functions use the system code page, so names are kept
    * byte for byte (latin1): decoding them as UTF-8 would garble "é" and connecting to the name would fail.
    */
-  names: "latin1" | "utf8";
-  dword: "u32" | "u64";
-  handle: "u64" | "i32" | "i64";
-  result: "i32" | "i64";
+  names: 'latin1' | 'utf8';
+  dword: 'u32' | 'u64';
+  handle: 'u64' | 'i32' | 'i64';
+  result: 'i32' | 'i64';
 }
 
 const ABIS: Partial<Record<NodeJS.Platform, Abi>> = {
-  win32: { library: "winscard.dll", suffix: "A", names: "latin1", dword: "u32", handle: "u64", result: "i32" },
-  darwin: { library: "/System/Library/Frameworks/PCSC.framework/PCSC", suffix: "", names: "utf8", dword: "u32", handle: "i32", result: "i32" },
-  linux: { library: "libpcsclite.so.1", suffix: "", names: "utf8", dword: "u64", handle: "i64", result: "i64" },
+  win32: {
+    library: 'winscard.dll',
+    suffix: 'A',
+    names: 'latin1',
+    dword: 'u32',
+    handle: 'u64',
+    result: 'i32',
+  },
+  darwin: {
+    library: '/System/Library/Frameworks/PCSC.framework/PCSC',
+    suffix: '',
+    names: 'utf8',
+    dword: 'u32',
+    handle: 'i32',
+    result: 'i32',
+  },
+  linux: {
+    library: 'libpcsclite.so.1',
+    suffix: '',
+    names: 'utf8',
+    dword: 'u64',
+    handle: 'i64',
+    result: 'i64',
+  },
 };
 
 // Result codes (the same everywhere, as unsigned 32-bit values).
@@ -47,7 +68,7 @@ const MAX_RESPONSE = 65538;
 export class PcscError extends Error {
   readonly code: number;
   constructor(call: string, code: number) {
-    super(`${call} failed (0x${code.toString(16).padStart(8, "0")})`);
+    super(`${call} failed (0x${code.toString(16).padStart(8, '0')})`);
     this.code = code;
   }
 }
@@ -78,16 +99,22 @@ export function openPcsc(): Pcsc {
   if (!abi) throw new Error(`Smart cards aren't supported on ${process.platform}.`);
   const { dword, handle, result, suffix, names: encoding } = abi;
   const lib = dlopen(abi.library, {
-    SCardEstablishContext: { args: [dword, "ptr", "ptr", "ptr"], returns: result },
+    SCardEstablishContext: { args: [dword, 'ptr', 'ptr', 'ptr'], returns: result },
     SCardReleaseContext: { args: [handle], returns: result },
-    [`SCardListReaders${suffix}`]: { args: [handle, "ptr", "ptr", "ptr"], returns: result },
-    [`SCardConnect${suffix}`]: { args: [handle, "ptr", dword, dword, "ptr", "ptr"], returns: result },
-    SCardReconnect: { args: [handle, dword, dword, dword, "ptr"], returns: result },
+    [`SCardListReaders${suffix}`]: { args: [handle, 'ptr', 'ptr', 'ptr'], returns: result },
+    [`SCardConnect${suffix}`]: {
+      args: [handle, 'ptr', dword, dword, 'ptr', 'ptr'],
+      returns: result,
+    },
+    SCardReconnect: { args: [handle, dword, dword, dword, 'ptr'], returns: result },
     SCardDisconnect: { args: [handle, dword], returns: result },
-    [`SCardStatus${suffix}`]: { args: [handle, "ptr", "ptr", "ptr", "ptr", "ptr", "ptr"], returns: result },
+    [`SCardStatus${suffix}`]: {
+      args: [handle, 'ptr', 'ptr', 'ptr', 'ptr', 'ptr', 'ptr'],
+      returns: result,
+    },
     SCardBeginTransaction: { args: [handle], returns: result },
     SCardEndTransaction: { args: [handle, dword], returns: result },
-    SCardTransmit: { args: [handle, "ptr", "ptr", dword, "ptr", "ptr", "ptr"], returns: result },
+    SCardTransmit: { args: [handle, 'ptr', 'ptr', dword, 'ptr', 'ptr', 'ptr'], returns: result },
   });
   const fn = (name: string) => {
     const symbol = lib.symbols[name];
@@ -95,9 +122,9 @@ export function openPcsc(): Pcsc {
     return symbol;
   };
 
-  const dwordBytes = dword === "u64" ? 8 : 4;
+  const dwordBytes = dword === 'u64' ? 8 : 4;
   /** An integer argument passed by value, as the FFI type expects it. */
-  const word = (value: number) => (dword === "u64" ? BigInt(value) : value);
+  const word = (value: number) => (dword === 'u64' ? BigInt(value) : value);
   /** An out (or in-out) parameter of the given width. */
   const out = (bytes: number, value = 0) => {
     const cell = new Uint8Array(8);
@@ -106,8 +133,8 @@ export function openPcsc(): Pcsc {
   };
   const readHandle = (cell: Uint8Array): number | bigint => {
     const view = new DataView(cell.buffer);
-    if (handle === "i32") return view.getInt32(0, true);
-    return handle === "i64" ? view.getBigInt64(0, true) : view.getBigUint64(0, true);
+    if (handle === 'i32') return view.getInt32(0, true);
+    return handle === 'i64' ? view.getBigInt64(0, true) : view.getBigUint64(0, true);
   };
   const check = (call: string, rv: number | bigint) => {
     const code = Number(BigInt.asUintN(32, BigInt(rv)));
@@ -115,7 +142,10 @@ export function openPcsc(): Pcsc {
   };
 
   const contextCell = new Uint8Array(8);
-  check("SCardEstablishContext", fn("SCardEstablishContext")(word(SCARD_SCOPE_USER), null, null, contextCell));
+  check(
+    'SCardEstablishContext',
+    fn('SCardEstablishContext')(word(SCARD_SCOPE_USER), null, null, contextCell),
+  );
   const context = readHandle(contextCell);
 
   return {
@@ -123,10 +153,16 @@ export function openPcsc(): Pcsc {
       const length = out(dwordBytes, 16 * 1024);
       const names = new Uint8Array(16 * 1024);
       try {
-        check("SCardListReaders", fn(`SCardListReaders${suffix}`)(context, null, names, length.cell));
+        check(
+          'SCardListReaders',
+          fn(`SCardListReaders${suffix}`)(context, null, names, length.cell),
+        );
       } catch (error) {
         const code = error instanceof PcscError ? error.code : 0;
-        if ([SCARD_E_NO_READERS_AVAILABLE, SCARD_E_NO_SERVICE, SCARD_E_SERVICE_STOPPED].includes(code)) return [];
+        if (
+          [SCARD_E_NO_READERS_AVAILABLE, SCARD_E_NO_SERVICE, SCARD_E_SERVICE_STOPPED].includes(code)
+        )
+          return [];
         throw error;
       }
       return splitMultiString(names.subarray(0, length.read()), encoding);
@@ -138,7 +174,10 @@ export function openPcsc(): Pcsc {
       const name = Buffer.from(`${reader}\0`, encoding);
       const share = word(SCARD_SHARE_SHARED);
       const protocols = word(SCARD_PROTOCOL_T0 | SCARD_PROTOCOL_T1);
-      check("SCardConnect", fn(`SCardConnect${suffix}`)(context, name, share, protocols, cardCell, protocol.cell));
+      check(
+        'SCardConnect',
+        fn(`SCardConnect${suffix}`)(context, name, share, protocols, cardCell, protocol.cell),
+      );
       const card = readHandle(cardCell);
       let active = protocol.read();
 
@@ -149,9 +188,20 @@ export function openPcsc(): Pcsc {
       const state = out(dwordBytes);
       const statusProtocol = out(dwordBytes);
       try {
-        check("SCardStatus", fn(`SCardStatus${suffix}`)(card, readerName, readerLength.cell, state.cell, statusProtocol.cell, atr, atrLength.cell));
+        check(
+          'SCardStatus',
+          fn(`SCardStatus${suffix}`)(
+            card,
+            readerName,
+            readerLength.cell,
+            state.cell,
+            statusProtocol.cell,
+            atr,
+            atrLength.cell,
+          ),
+        );
       } catch (error) {
-        fn("SCardDisconnect")(card, word(SCARD_LEAVE_CARD));
+        fn('SCardDisconnect')(card, word(SCARD_LEAVE_CARD));
         throw error;
       }
 
@@ -165,22 +215,29 @@ export function openPcsc(): Pcsc {
           writeUnsigned(pci, 0, dwordBytes, active);
           writeUnsigned(pci, dwordBytes, dwordBytes, pci.length);
           const length = out(dwordBytes, response.length);
-          check("SCardTransmit", fn("SCardTransmit")(card, pci, apdu, word(apdu.length), null, response, length.cell));
+          check(
+            'SCardTransmit',
+            fn('SCardTransmit')(card, pci, apdu, word(apdu.length), null, response, length.cell),
+          );
           return response.slice(0, length.read());
         },
-        beginTransaction: () => check("SCardBeginTransaction", fn("SCardBeginTransaction")(card)),
-        endTransaction: () => check("SCardEndTransaction", fn("SCardEndTransaction")(card, word(SCARD_LEAVE_CARD))),
+        beginTransaction: () => check('SCardBeginTransaction', fn('SCardBeginTransaction')(card)),
+        endTransaction: () =>
+          check('SCardEndTransaction', fn('SCardEndTransaction')(card, word(SCARD_LEAVE_CARD))),
         reconnect() {
           const reconnected = out(dwordBytes);
-          check("SCardReconnect", fn("SCardReconnect")(card, share, protocols, word(SCARD_LEAVE_CARD), reconnected.cell));
+          check(
+            'SCardReconnect',
+            fn('SCardReconnect')(card, share, protocols, word(SCARD_LEAVE_CARD), reconnected.cell),
+          );
           active = reconnected.read();
         },
-        disconnect: () => void fn("SCardDisconnect")(card, word(SCARD_LEAVE_CARD)),
+        disconnect: () => void fn('SCardDisconnect')(card, word(SCARD_LEAVE_CARD)),
       };
     },
 
     close() {
-      fn("SCardReleaseContext")(context);
+      fn('SCardReleaseContext')(context);
       lib.close();
     },
   };
@@ -198,6 +255,6 @@ function writeUnsigned(bytes: Uint8Array, offset: number, width: number, value: 
 }
 
 /** PC/SC lists readers as one string: names separated by NUL, ending with an extra NUL. */
-export function splitMultiString(bytes: Uint8Array, encoding: "latin1" | "utf8"): string[] {
-  return Buffer.from(bytes).toString(encoding).split("\0").filter(Boolean);
+export function splitMultiString(bytes: Uint8Array, encoding: 'latin1' | 'utf8'): string[] {
+  return Buffer.from(bytes).toString(encoding).split('\0').filter(Boolean);
 }

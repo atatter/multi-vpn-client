@@ -1,17 +1,25 @@
-import type { RouteRule, Vpn } from "@repo/core";
-import { useState } from "react";
-import { isOn } from "../domain/connection.ts";
-import { formErrors } from "../domain/form-errors.ts";
-import { vpnLabel } from "../domain/labels.ts";
-import type { PendingSecrets } from "../domain/secrets.ts";
-import { useApp } from "../store/app-model.ts";
-import { Frame } from "@repo/ui/Frame.tsx";
-import { EditFooter } from "./EditFooter.tsx";
-import { RemoveVpn } from "./RemoveVpn.tsx";
-import { StatusCard } from "./StatusCard.tsx";
-import { TrafficSection } from "./TrafficSection.tsx";
-import { VpnFolds } from "./VpnFolds.tsx";
-import { changedFields, configAfterRemove, configAfterSave, isDirty, routeEditsOf, savingReconnects, siteWarnings } from "./vpn-edit.ts";
+import type { RouteRule, Vpn } from '@repo/core';
+import { useState } from 'react';
+import { isOn } from '../domain/connection.ts';
+import { formErrors } from '../domain/form-errors.ts';
+import { vpnLabel } from '../domain/labels.ts';
+import type { PendingSecrets } from '../domain/secrets.ts';
+import { useApp } from '../store/app-model.ts';
+import { Frame } from '@repo/ui/Frame.tsx';
+import { EditFooter } from './EditFooter.tsx';
+import { RemoveVpn } from './RemoveVpn.tsx';
+import { StatusCard } from './StatusCard.tsx';
+import { TrafficSection } from './TrafficSection.tsx';
+import { VpnFolds } from './VpnFolds.tsx';
+import {
+  changedFields,
+  configAfterRemove,
+  configAfterSave,
+  isDirty,
+  routeEditsOf,
+  savingReconnects,
+  siteWarnings,
+} from './vpn-edit.ts';
 
 /**
  * One VPN on one screen: its status, what goes through it, then folded Account and Advanced. One Save for
@@ -40,7 +48,7 @@ export function VpnScreen({ vpnId }: { vpnId: string }) {
   const setRoutes = (next: RouteRule[]) => setRouteEdits(routeEditsOf(next, savedRoutes));
 
   const connection = app.connections[vpn.id];
-  const connected = connection?.state === "connected";
+  const connected = connection?.state === 'connected';
   const stored = app.secretStatus[vpn.id] ?? [];
   const errors = formErrors(draft, routes, stored, pending);
   const shown = showErrors ? errors : {};
@@ -60,7 +68,9 @@ export function VpnScreen({ vpnId }: { vpnId: string }) {
   const save = async () => {
     if (Object.keys(errors).length > 0) return setShowErrors(true);
     setSaving(true);
-    const saved = await app.save(configAfterSave(app.config, vpn, draft, routes), { [vpn.id]: pending });
+    const saved = await app.save(configAfterSave(app.config, vpn, draft, routes), {
+      [vpn.id]: pending,
+    });
     setSaving(false);
     if (!saved) return;
     // Saved: stay on the page, which now shows the saved VPN.
@@ -120,7 +130,12 @@ export function VpnScreen({ vpnId }: { vpnId: string }) {
         />
 
         <div className="mt-[18px]">
-          <RemoveVpn name={name} hasSecrets={stored.length > 0} on={isOn(connection)} onRemove={() => void remove()} />
+          <RemoveVpn
+            name={name}
+            hasSecrets={stored.length > 0}
+            on={isOn(connection)}
+            onRemove={() => void remove()}
+          />
         </div>
       </div>
     </Frame>

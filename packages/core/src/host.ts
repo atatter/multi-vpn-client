@@ -1,8 +1,8 @@
-import { lookup } from "node:dns/promises";
-import { networkInterfaces } from "node:os";
-import type { HostReserved, ReservedRange } from "./compile.ts";
-import { vpnHosts, type Vpn } from "@repo/vpns";
-import { networkOf } from "@repo/vpn-sdk/cidr";
+import { lookup } from 'node:dns/promises';
+import { networkInterfaces } from 'node:os';
+import type { HostReserved, ReservedRange } from './compile.ts';
+import { vpnHosts, type Vpn } from '@repo/vpns';
+import { networkOf } from '@repo/vpn-sdk/cidr';
 
 /**
  * Node-only discovery of the ranges that must never be routed into a VPN.
@@ -14,7 +14,7 @@ export function localNetworks(interfaces = networkInterfaces()): ReservedRange[]
   const reserved: ReservedRange[] = [];
   for (const [name, addresses] of Object.entries(interfaces)) {
     for (const address of addresses ?? []) {
-      if (address.family !== "IPv4" || address.internal || !address.cidr) continue;
+      if (address.family !== 'IPv4' || address.internal || !address.cidr) continue;
       const network = networkOf(address.cidr);
       if (network) reserved.push({ cidr: network, label: `Local network (${name})`, local: true });
     }
@@ -53,7 +53,9 @@ export async function gatewayAddresses(
     reserved: results.flatMap(({ vpn, addresses }) =>
       addresses.map((address) => ({ cidr: `${address}/32`, label: `${vpn.name} gateway` })),
     ),
-    unresolved: results.filter(({ addresses }) => addresses.length === 0).map(({ vpn, host }) => ({ vpnId: vpn.id, host })),
+    unresolved: results
+      .filter(({ addresses }) => addresses.length === 0)
+      .map(({ vpn, host }) => ({ vpnId: vpn.id, host })),
   };
 }
 

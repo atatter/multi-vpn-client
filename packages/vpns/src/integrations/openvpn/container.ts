@@ -1,4 +1,11 @@
-import { INSTALL_SING_BOX, installScripts, KEEP_FALLBACK_DNS, PREFIX, USE_PUSHED_DNS, vpnImage } from "@repo/vpn-sdk/container";
+import {
+  INSTALL_SING_BOX,
+  installScripts,
+  KEEP_FALLBACK_DNS,
+  PREFIX,
+  USE_PUSHED_DNS,
+  vpnImage,
+} from '@repo/vpn-sdk/container';
 
 /** OpenVPN: options after --config override the profile; --mute 0 keeps the log complete. */
 export const START_OPENVPN = `#!/bin/sh
@@ -61,14 +68,14 @@ exec /usr/local/bin/mvpn-ready
 
 // Built natively for the Docker host's architecture; downloads are checksum-verified.
 export const OPENVPN_IMAGE = vpnImage(
-  "mvpn-openvpn",
+  'mvpn-openvpn',
   `FROM alpine:3.24
 RUN apk add --no-cache openvpn ca-certificates curl
 ${INSTALL_SING_BOX}
 ${installScripts(
-  ["/usr/local/bin/mvpn-start-openvpn", START_OPENVPN],
-  ["/usr/local/bin/mvpn-ovpn-up", OVPN_UP],
-  ["/usr/local/bin/mvpn-ovpn-route-up", OVPN_ROUTE_UP],
+  ['/usr/local/bin/mvpn-start-openvpn', START_OPENVPN],
+  ['/usr/local/bin/mvpn-ovpn-up', OVPN_UP],
+  ['/usr/local/bin/mvpn-ovpn-route-up', OVPN_ROUTE_UP],
 )}
 `,
 );

@@ -1,4 +1,4 @@
-import type { MainApi } from "../../preload/index.ts";
+import type { MainApi } from '../../preload/index.ts';
 
 declare global {
   interface Window {

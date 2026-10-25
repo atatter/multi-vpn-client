@@ -5,11 +5,11 @@
 // Output: dist/mvpn-helper-<platform>-<arch>[.exe] (Node naming: darwin-arm64, linux-x64, win32-x64…)
 
 const TARGETS = {
-  "darwin-arm64": "bun-darwin-arm64",
-  "darwin-x64": "bun-darwin-x64",
-  "linux-x64": "bun-linux-x64",
-  "linux-arm64": "bun-linux-arm64",
-  "win32-x64": "bun-windows-x64",
+  'darwin-arm64': 'bun-darwin-arm64',
+  'darwin-x64': 'bun-darwin-x64',
+  'linux-x64': 'bun-linux-x64',
+  'linux-arm64': 'bun-linux-arm64',
+  'win32-x64': 'bun-windows-x64',
 } as const;
 
 type Target = keyof typeof TARGETS;
@@ -17,17 +17,17 @@ const isTarget = (key: string): key is Target => key in TARGETS;
 
 const host = `${process.platform}-${process.arch}`;
 const all = Object.keys(TARGETS).filter(isTarget);
-const selected = process.argv.includes("--all")
+const selected = process.argv.includes('--all')
   ? all
-  : process.argv.includes("--os")
+  : process.argv.includes('--os')
     ? all.filter((target) => target.startsWith(`${process.platform}-`))
     : [host].filter(isTarget);
 if (selected.length === 0) throw new Error(`No helper build target for ${host}`);
 
 for (const target of selected) {
-  const outfile = `dist/mvpn-helper-${target}${target.startsWith("win32") ? ".exe" : ""}`;
+  const outfile = `dist/mvpn-helper-${target}${target.startsWith('win32') ? '.exe' : ''}`;
   const result = await Bun.build({
-    entrypoints: ["src/main.ts"],
+    entrypoints: ['src/main.ts'],
     compile: { target: TARGETS[target], outfile },
   });
   if (!result.success) {

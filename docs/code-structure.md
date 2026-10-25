@@ -1,6 +1,6 @@
 # Code structure
 
-Where code goes, how files are split and named. `pnpm lint` (oxlint, configured in `.oxlintrc.json`) checks the rules that can be checked. Errors fail; size warnings are a guideline.
+Where code goes, how files are split and named. `pnpm lint` (oxlint, configured in `.oxlintrc.json`) checks the rules that can be checked. Errors fail; size warnings are a guideline. `pnpm format` (oxfmt, configured in `.oxfmtrc.json`) owns how JS and TS look, single quotes included, so don't format by hand.
 
 ## Packages
 

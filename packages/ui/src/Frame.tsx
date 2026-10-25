@@ -1,7 +1,7 @@
-import { type ReactNode, useEffect, useLayoutEffect, useRef } from "react";
-import { useFrameEnvironment } from "./frame-context.ts";
-import { BackIcon } from "./icons.tsx";
-import { actionBar, cx, iconButton } from "./tokens.ts";
+import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
+import { useFrameEnvironment } from './frame-context.ts';
+import { BackIcon } from './icons.tsx';
+import { actionBar, cx, iconButton } from './tokens.ts';
 
 /**
  * The window around one screen: title bar, the app's error strip, the body and an optional action bar.
@@ -33,7 +33,8 @@ export function Frame({
   const hasFooter = !!footer;
   // Reports the content's natural height (not the window's), so the window can grow back after it was capped.
   useLayoutEffect(() => {
-    const fit = () => fitWindow(parts.current.reduce((sum, element) => sum + (element?.offsetHeight ?? 0), 0));
+    const fit = () =>
+      fitWindow(parts.current.reduce((sum, element) => sum + (element?.offsetHeight ?? 0), 0));
     const observer = new ResizeObserver(fit);
     for (const element of parts.current) if (element) observer.observe(element);
     fit();
@@ -44,36 +45,56 @@ export function Frame({
   useEffect(() => {
     if (!onBack) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !event.defaultPrevented) onBack();
+      if (event.key === 'Escape' && !event.defaultPrevented) onBack();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [onBack]);
 
   return (
     <div className="flex max-h-screen flex-col">
-      <header ref={part(0)} className="titlebar-insets flex h-11 shrink-0 items-center gap-2 border-b border-rule bg-bg [-webkit-app-region:drag]">
+      <header
+        ref={part(0)}
+        className="titlebar-insets flex h-11 shrink-0 items-center gap-2 border-b border-rule bg-bg [-webkit-app-region:drag]"
+      >
         {onBack === undefined ? (
           bar
         ) : (
           <>
             {/* Next to the window edge the arrow can sit in the padding; next to the traffic lights it keeps its distance. */}
-            <button type="button" className={cx(iconButton, platform !== "darwin" && "-ml-1.5")} aria-label="Back" onClick={onBack}>
+            <button
+              type="button"
+              className={cx(iconButton, platform !== 'darwin' && '-ml-1.5')}
+              aria-label="Back"
+              onClick={onBack}
+            >
               <BackIcon />
             </button>
-            {title && <h1 className="min-w-0 flex-1 truncate text-[15px] font-semibold">{title}</h1>}
+            {title && (
+              <h1 className="min-w-0 flex-1 truncate text-[15px] font-semibold">{title}</h1>
+            )}
           </>
         )}
       </header>
       {notice && (
-        <div ref={part(1)} role="alert" className="flex shrink-0 items-start justify-between gap-3 border-b border-rule bg-danger/10 px-3.5 py-2 text-[13px] text-danger">
+        <div
+          ref={part(1)}
+          role="alert"
+          className="flex shrink-0 items-start justify-between gap-3 border-b border-rule bg-danger/10 px-3.5 py-2 text-[13px] text-danger"
+        >
           <span className="whitespace-pre-wrap select-text">{notice}</span>
           <button type="button" className="font-semibold" onClick={dismissNotice}>
             Dismiss
           </button>
         </div>
       )}
-      <div className={cx("flex min-h-0 flex-1 flex-col", direction === "push" && "animate-[push_170ms_ease-out]", direction === "pop" && "animate-[pop_170ms_ease-out]")}>
+      <div
+        className={cx(
+          'flex min-h-0 flex-1 flex-col',
+          direction === 'push' && 'animate-[push_170ms_ease-out]',
+          direction === 'pop' && 'animate-[pop_170ms_ease-out]',
+        )}
+      >
         {/* Nothing may widen the window: long names truncate or wrap, and the body never scrolls sideways. */}
         <div className="scroll-body min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
           {/* flow-root keeps the first child's top margin inside, so the measured height is the real one. */}
@@ -82,7 +103,7 @@ export function Frame({
           </div>
         </div>
         {footer && (
-          <footer ref={part(3)} className={cx(actionBar, "shrink-0")}>
+          <footer ref={part(3)} className={cx(actionBar, 'shrink-0')}>
             {footer}
           </footer>
         )}

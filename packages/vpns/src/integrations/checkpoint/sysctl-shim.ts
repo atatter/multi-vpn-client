@@ -47,8 +47,8 @@ WRAP_OPENAT(openat64)
 
 /** The values snx-rs sets on its tunnel interface, preset for new interfaces (see SYSCTL_SHIM). */
 export const CHECKPOINT_SYSCTLS = [
-  "net.ipv4.conf.default.rp_filter=2",
-  "net.ipv4.conf.default.promote_secondaries=1",
-  "net.ipv4.conf.default.forwarding=0",
-  "net.ipv4.conf.default.disable_policy=0",
+  'net.ipv4.conf.default.rp_filter=2',
+  'net.ipv4.conf.default.promote_secondaries=1',
+  'net.ipv4.conf.default.forwarding=0',
+  'net.ipv4.conf.default.disable_policy=0',
 ];

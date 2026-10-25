@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
-import { hint, label as labelClass } from "../tokens.ts";
-import { Switch } from "./Switch.tsx";
+import type { ReactNode } from 'react';
+import { hint, label as labelClass } from '../tokens.ts';
+import { Switch } from './Switch.tsx';
 
 /** A switch with its label and hint on the left. */
 export function ToggleRow({

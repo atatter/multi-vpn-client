@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
-import type { z } from "zod";
-import type { Action } from "./kind.ts";
+import type { ReactNode } from 'react';
+import type { z } from 'zod';
+import type { Action } from './kind.ts';
 
 /**
  * What a VPN kind's window side is made of: its wording and its form's fields, as React components built
@@ -11,12 +11,14 @@ import type { Action } from "./kind.ts";
 export type FormErrors = Record<string, string>;
 
 /** The error at `path` or anywhere under it, e.g. "addresses" for an issue at "addresses.1". */
-export const errorAt = (errors: FormErrors, path: string) => errors[path] ?? Object.entries(errors).find(([key]) => key.startsWith(`${path}.`))?.[1];
+export const errorAt = (errors: FormErrors, path: string) =>
+  errors[path] ?? Object.entries(errors).find(([key]) => key.startsWith(`${path}.`))?.[1];
 
 /** Secrets typed in the form so far, by slot: a new value, or null to clear the stored one. */
 export type PendingSecrets = Record<string, string | null>;
 
-export const CERT_PIN_HINT = "Filled in when you trust the gateway's certificate. Clear it to be asked again.";
+export const CERT_PIN_HINT =
+  "Filled in when you trust the gateway's certificate. Clear it to be asked again.";
 
 /** Runs one of this kind's actions in main by name. Rejects with an Error whose message is for the user. Call it through `callAction`. */
 export type RunAction = (name: string, input: unknown) => Promise<unknown>;
@@ -28,10 +30,10 @@ export async function callAction<A extends { [N in keyof A]: Action }, N extends
   runAction: RunAction,
   declared: A,
   name: N,
-  input: z.input<A[N]["input"]>,
-): Promise<z.output<A[N]["output"]>> {
+  input: z.input<A[N]['input']>,
+): Promise<z.output<A[N]['output']>> {
   // Explicit type argument: inferred from declared[name], TypeScript would settle for Action's own schema type.
-  return parse<A[N]["output"]>(declared[name].output, await runAction(name, input));
+  return parse<A[N]['output']>(declared[name].output, await runAction(name, input));
 }
 
 /** A kind's fields get that kind's VPN, so a change can only touch its own fields. */

@@ -1,13 +1,13 @@
-import { APP_NAME, type Config, type ConnectionStatus } from "@repo/core";
-import { type BrowserWindow, Menu, type NativeImage, nativeTheme, Tray } from "electron";
-import type { AppInfo, UpdateState } from "../../shared/ipc-contract.ts";
-import { platform } from "../window.ts";
-import { darwinTray } from "./darwin.ts";
-import { dotLayers } from "./glyph.ts";
-import { imageOf } from "./images.ts";
-import { linuxTray } from "./linux.ts";
-import { countHeadline, idsOn, namesOn, trayMenu, updateItem } from "./menu.ts";
-import { win32Tray } from "./win32.ts";
+import { APP_NAME, type Config, type ConnectionStatus } from '@repo/core';
+import { type BrowserWindow, Menu, type NativeImage, nativeTheme, Tray } from 'electron';
+import type { AppInfo, UpdateState } from '../../shared/ipc-contract.ts';
+import { platform } from '../window.ts';
+import { darwinTray } from './darwin.ts';
+import { dotLayers } from './glyph.ts';
+import { imageOf } from './images.ts';
+import { linuxTray } from './linux.ts';
+import { countHeadline, idsOn, namesOn, trayMenu, updateItem } from './menu.ts';
+import { win32Tray } from './win32.ts';
 
 /** What each OS does its own way: the tray icon's colors, the count on the app's own icon, a click on the tray. */
 export interface TrayPlatform {
@@ -25,7 +25,11 @@ export interface TrayPlatform {
   quitShortcut: string | undefined;
 }
 
-const PLATFORMS: Record<AppInfo["platform"], TrayPlatform> = { darwin: darwinTray, linux: linuxTray, win32: win32Tray };
+const PLATFORMS: Record<AppInfo['platform'], TrayPlatform> = {
+  darwin: darwinTray,
+  linux: linuxTray,
+  win32: win32Tray,
+};
 export const trayPlatform = PLATFORMS[platform()];
 
 /**
@@ -51,9 +55,9 @@ export function createTray(deps: {
   let shown: string | undefined;
   let count = 0;
   let hasUpdate = false;
-  if (trayPlatform.clickOpens) tray.on("click", deps.open);
-  nativeTheme.on("updated", () => tray.setImage(trayPlatform.icon(count, hasUpdate)));
-  deps.window.on("show", () => trayPlatform.windowShown(count, deps.window));
+  if (trayPlatform.clickOpens) tray.on('click', deps.open);
+  nativeTheme.on('updated', () => tray.setImage(trayPlatform.icon(count, hasUpdate)));
+  deps.window.on('show', () => trayPlatform.windowShown(count, deps.window));
 
   function update() {
     const ids = idsOn(deps.statuses());
@@ -71,7 +75,19 @@ export function createTray(deps: {
     if (countChanged) trayPlatform.badge(count, deps.window);
     if (countChanged || dotChanged) tray.setImage(trayPlatform.icon(count, hasUpdate));
     tray.setToolTip(`${APP_NAME}: ${countHeadline(count)}`);
-    tray.setContextMenu(Menu.buildFromTemplate(trayMenu({ count, names, dot, update: item, quitShortcut: trayPlatform.quitShortcut, open: deps.open, quit: deps.quit })));
+    tray.setContextMenu(
+      Menu.buildFromTemplate(
+        trayMenu({
+          count,
+          names,
+          dot,
+          update: item,
+          quitShortcut: trayPlatform.quitShortcut,
+          open: deps.open,
+          quit: deps.quit,
+        }),
+      ),
+    );
   }
 
   update();

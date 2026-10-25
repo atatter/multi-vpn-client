@@ -1,4 +1,4 @@
-import { createServer } from "node:http";
+import { createServer } from 'node:http';
 
 /**
  * Receives the token a VPN gateway's browser sign-in page (e.g. Check Point with Microsoft
@@ -15,10 +15,10 @@ const TOKEN = /^[A-Za-z0-9._~%+=/-]{1,4096}$/;
  * Like snx-rs's own listener, any page open meanwhile could send a token first; the gateway rejects a forged one.
  */
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Private-Network": "true",
-  Connection: "close",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Private-Network': 'true',
+  Connection: 'close',
 };
 
 export interface TokenWait {
@@ -35,13 +35,21 @@ export function receiveBrowserToken(port: number, timeoutMs: number): TokenWait 
   });
   const server = createServer((request, response) => {
     // Like the client's own listener: the raw path is the token, and the first request with one counts, preflight or not.
-    const candidate = ((request.url ?? "/").split("?")[0] ?? "").replace(/^\/+/, "");
-    const valid = (request.method === "GET" || request.method === "OPTIONS") && TOKEN.test(candidate);
+    const candidate = ((request.url ?? '/').split('?')[0] ?? '').replace(/^\/+/, '');
+    const valid =
+      (request.method === 'GET' || request.method === 'OPTIONS') && TOKEN.test(candidate);
     response.writeHead(valid ? 200 : 400, CORS_HEADERS).end();
     if (valid) finish(() => settle?.resolve(candidate));
   });
   const timer = setTimeout(
-    () => finish(() => settle?.reject(new Error(`The browser sign-in didn't finish within ${Math.round(timeoutMs / 1000)} seconds. Connect again to retry.`))),
+    () =>
+      finish(() =>
+        settle?.reject(
+          new Error(
+            `The browser sign-in didn't finish within ${Math.round(timeoutMs / 1000)} seconds. Connect again to retry.`,
+          ),
+        ),
+      ),
     timeoutMs,
   );
   const finish = (done: () => void) => {
@@ -51,15 +59,17 @@ export function receiveBrowserToken(port: number, timeoutMs: number): TokenWait 
     done();
     settle = undefined;
   };
-  server.once("error", (error: NodeJS.ErrnoException) =>
+  server.once('error', (error: NodeJS.ErrnoException) =>
     finish(() =>
       settle?.reject(
-        error.code === "EADDRINUSE"
-          ? new Error(`Port ${port} is in use, so the browser sign-in can't finish. Quit other VPN apps that may be using it and try again.`)
+        error.code === 'EADDRINUSE'
+          ? new Error(
+              `Port ${port} is in use, so the browser sign-in can't finish. Quit other VPN apps that may be using it and try again.`,
+            )
           : error,
       ),
     ),
   );
-  server.listen(port, "127.0.0.1");
+  server.listen(port, '127.0.0.1');
   return { token, cancel: (reason) => finish(() => settle?.reject(reason)) };
 }

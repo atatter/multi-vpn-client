@@ -1,6 +1,6 @@
-import { spawn } from "node:child_process";
-import { createInterface } from "node:readline";
-import { VPCD_PORT, VPCD_RELAY_SOURCE } from "@repo/vpn-sdk/container";
+import { spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
+import { VPCD_PORT, VPCD_RELAY_SOURCE } from '@repo/vpn-sdk/container';
 
 /**
  * Lends the smart card in this computer's reader (e.g. an Estonian ID card) to a VPN container,
@@ -11,9 +11,9 @@ import { VPCD_PORT, VPCD_RELAY_SOURCE } from "@repo/vpn-sdk/container";
  */
 
 /** Status lines on the bridge's stderr. */
-const WAITING = "MVPN-CARD-WAITING";
-const CARD = "MVPN-CARD:";
-const ERROR = "MVPN-ERROR:";
+const WAITING = 'MVPN-CARD-WAITING';
+const CARD = 'MVPN-CARD:';
+const ERROR = 'MVPN-ERROR:';
 
 export interface CardBridge {
   /** The reader holding the card. */
@@ -30,10 +30,18 @@ export interface CardBridge {
  */
 export function openCardBridge(
   binary: string,
-  options: { idCardOnly: boolean; onWaiting: () => void; onLog: (line: string) => void; signal: AbortSignal },
+  options: {
+    idCardOnly: boolean;
+    onWaiting: () => void;
+    onLog: (line: string) => void;
+    signal: AbortSignal;
+  },
 ): Promise<CardBridge> {
   return new Promise((resolve, reject) => {
-    const bridge = spawn(binary, options.idCardOnly ? ["--id-card"] : [], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
+    const bridge = spawn(binary, options.idCardOnly ? ['--id-card'] : [], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      windowsHide: true,
+    });
     let found = false;
     let failed: ((message: string) => void) | undefined;
     let lastError: string | undefined;
@@ -49,50 +57,61 @@ export function openCardBridge(
       reject(options.signal.reason);
     };
     if (options.signal.aborted) return abort();
-    options.signal.addEventListener("abort", abort, { once: true });
+    options.signal.addEventListener('abort', abort, { once: true });
 
-    bridge.on("error", (error) => {
-      options.signal.removeEventListener("abort", abort);
+    bridge.on('error', (error) => {
+      options.signal.removeEventListener('abort', abort);
       reject(new Error(`The card bridge couldn't start: ${error.message}`));
     });
     // Writing into a process that just exited fails with EPIPE; its close handler reports what happened.
-    bridge.stdin.on("error", () => undefined);
-    bridge.on("close", () => {
+    bridge.stdin.on('error', () => undefined);
+    bridge.on('close', () => {
       relay?.kill();
-      options.signal.removeEventListener("abort", abort);
-      const message = lastError ?? "The card bridge stopped.";
+      options.signal.removeEventListener('abort', abort);
+      const message = lastError ?? 'The card bridge stopped.';
       if (!found) reject(new Error(message));
       else if (failed) failed(message);
       else closedWith = message;
       failed = undefined;
     });
-    createInterface({ input: bridge.stderr }).on("line", (line) => {
+    createInterface({ input: bridge.stderr }).on('line', (line) => {
       if (line === WAITING) options.onWaiting();
       else if (line.startsWith(ERROR)) lastError = line.slice(ERROR.length).trim();
       else if (line.startsWith(CARD) && !found) {
         found = true;
-        options.signal.removeEventListener("abort", abort);
+        options.signal.removeEventListener('abort', abort);
         resolve({
           reader: line.slice(CARD.length).trim(),
           attach(dockerBin, container, onFailure) {
             if (closedWith !== undefined) return onFailure(closedWith);
             failed = onFailure;
-            const exec = spawn(dockerBin, ["exec", "-i", container, "socat", "STDIO", `TCP:127.0.0.1:${VPCD_PORT},bind=${VPCD_RELAY_SOURCE},retry=120,interval=0.25`], {
-              stdio: ["pipe", "pipe", "pipe"],
-              windowsHide: true,
-            });
+            const exec = spawn(
+              dockerBin,
+              [
+                'exec',
+                '-i',
+                container,
+                'socat',
+                'STDIO',
+                `TCP:127.0.0.1:${VPCD_PORT},bind=${VPCD_RELAY_SOURCE},retry=120,interval=0.25`,
+              ],
+              {
+                stdio: ['pipe', 'pipe', 'pipe'],
+                windowsHide: true,
+              },
+            );
             relay = exec;
-            exec.stdin.on("error", () => undefined); // EPIPE, see bridge.stdin
+            exec.stdin.on('error', () => undefined); // EPIPE, see bridge.stdin
             bridge.stdout.pipe(exec.stdin);
             exec.stdout.pipe(bridge.stdin);
-            createInterface({ input: exec.stderr }).on("line", options.onLog);
-            exec.on("error", (error) => {
+            createInterface({ input: exec.stderr }).on('line', options.onLog);
+            exec.on('error', (error) => {
               failed?.(`The card couldn't be connected to the VPN container: ${error.message}`);
               failed = undefined;
             });
-            exec.on("close", () => {
+            exec.on('close', () => {
               bridge.stdin.end();
-              failed?.("The VPN container stopped using the card.");
+              failed?.('The VPN container stopped using the card.');
               failed = undefined;
             });
           },

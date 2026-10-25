@@ -1,7 +1,7 @@
-import { type Detect, type LauncherEntry, type VpnLaunch, withPort } from "@repo/vpn-sdk/engine";
-import { extraArguments, readOpenConnect, REJECTED } from "../../shared/openconnect/engine.ts";
-import { OPENCONNECT_IMAGE } from "../../shared/openconnect/container.ts";
-import type { FortinetSslVpn } from "./kind.ts";
+import { type Detect, type LauncherEntry, type VpnLaunch, withPort } from '@repo/vpn-sdk/engine';
+import { extraArguments, readOpenConnect, REJECTED } from '../../shared/openconnect/engine.ts';
+import { OPENCONNECT_IMAGE } from '../../shared/openconnect/container.ts';
+import type { FortinetSslVpn } from './kind.ts';
 
 /**
  * FortiGate SSL VPN through OpenConnect's Fortinet mode, which uses a plain tun device (no PPP).
@@ -10,11 +10,11 @@ import type { FortinetSslVpn } from "./kind.ts";
  */
 export function fortinetLaunch(vpn: FortinetSslVpn, password: string): VpnLaunch {
   return {
-    client: "OpenConnect",
+    client: 'OpenConnect',
     image: OPENCONNECT_IMAGE,
     command: [
-      "openconnect",
-      "--protocol=fortinet",
+      'openconnect',
+      '--protocol=fortinet',
       `--user=${vpn.username}`,
       ...(vpn.realm ? [`--usergroup=${vpn.realm}`] : []),
       ...(vpn.serverCertPin ? [`--servercert=${vpn.serverCertPin}`] : []),
@@ -22,7 +22,9 @@ export function fortinetLaunch(vpn: FortinetSslVpn, password: string): VpnLaunch
       `https://${vpn.gateway}`,
     ],
     files: { auth: `${password}\n\n` },
-    readLine: readOpenConnect(vpn.gateway, (line) => (line.includes("Invalid credentials") ? REJECTED : undefined)),
+    readLine: readOpenConnect(vpn.gateway, (line) =>
+      line.includes('Invalid credentials') ? REJECTED : undefined,
+    ),
   };
 }
 
@@ -32,8 +34,11 @@ export const detectFortinet: Detect = async ({ host, port, explicitPort }, probe
   const ports = explicitPort ? [port] : [443, 10443];
   const found = await Promise.all(
     ports.map(async (candidate) => {
-      const answer = await probe({ host, port: candidate, method: "GET", path: "/remote/login" });
-      return answer && ((answer.status === 200 && looksLikeIt(answer.body)) || looksLikeIt(answer.location)) ? { address: withPort(host, candidate) } : undefined;
+      const answer = await probe({ host, port: candidate, method: 'GET', path: '/remote/login' });
+      return answer &&
+        ((answer.status === 200 && looksLikeIt(answer.body)) || looksLikeIt(answer.location))
+        ? { address: withPort(host, candidate) }
+        : undefined;
     }),
   );
   return found.find((result) => result !== undefined);
@@ -43,7 +48,7 @@ export const fortinetSslEngine: LauncherEntry<FortinetSslVpn> = {
   launch: async (vpn, secrets) => {
     if (!vpn.username) throw new Error("Add your username in the VPN's settings.");
     const password = await secrets.loginPassword();
-    if (password === undefined) return "needs-password";
+    if (password === undefined) return 'needs-password';
     return fortinetLaunch(vpn, password);
   },
   detect: detectFortinet,

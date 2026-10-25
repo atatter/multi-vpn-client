@@ -8,18 +8,20 @@ const MB = 1e6;
 export function progressText(share: number, size: number): string {
   const total = Math.round(size / MB);
   const downloaded = Math.min(total, Math.floor((share * size) / MB));
-  return share >= 1 ? `${total} MB downloaded, unpacking…` : `${downloaded} MB downloaded, ${total - downloaded} MB left`;
+  return share >= 1
+    ? `${total} MB downloaded, unpacking…`
+    : `${downloaded} MB downloaded, ${total - downloaded} MB left`;
 }
 
 /**
  * The launcher's messages. On a terminal the download counter rewrites one line in place; when the stream is piped
  * it's left out rather than printed hundreds of times. A message after the counter starts on the next line.
  */
-export function terminalOutput(stream: Pick<NodeJS.WriteStream, "write" | "isTTY">) {
+export function terminalOutput(stream: Pick<NodeJS.WriteStream, 'write' | 'isTTY'>) {
   let counter: string | undefined;
   return {
     log(line: string) {
-      stream.write(`${counter === undefined ? "" : "\n"}${line}\n`);
+      stream.write(`${counter === undefined ? '' : '\n'}${line}\n`);
       counter = undefined;
     },
     progress(share: number, size: number) {

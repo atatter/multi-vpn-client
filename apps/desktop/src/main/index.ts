@@ -1,24 +1,32 @@
-import { createSecretStore, defaultSecretsPath } from "@repo/core/secret-store";
-import { defaultConfigPath, loadConfig, moveAppDir } from "@repo/core/store";
-import { createConnectionManager } from "@repo/engine";
-import { ensureInstalled, executableIn, latestRelease, type Remove, removeOlderVersions, targetOf, versionsDir } from "@repo/release";
-import { app, shell } from "electron";
-import { mkdirSync } from "node:fs";
-import { promises as originalFs } from "node:original-fs";
-import { homedir } from "node:os";
-import { dirname, join } from "node:path";
-import { bundledBinary } from "./binaries.ts";
-import { broadcast } from "./broadcast.ts";
-import { saveServerRoutes } from "./config-writes.ts";
-import { registerAppHandlers } from "./ipc/app.ts";
-import { registerConfigHandlers } from "./ipc/config.ts";
-import { registerSetupHandlers } from "./ipc/setup.ts";
-import { registerUpdateHandlers } from "./ipc/update.ts";
-import { registerVpnHandlers } from "./ipc/vpn.ts";
-import { keychain } from "./secrets.ts";
-import { createTray, trayPlatform } from "./tray/index.ts";
-import { createUpdater } from "./updater.ts";
-import { APP_ICON, createWindow, followTheme, hideWindow, showWindow } from "./window.ts";
+import { createSecretStore, defaultSecretsPath } from '@repo/core/secret-store';
+import { defaultConfigPath, loadConfig, moveAppDir } from '@repo/core/store';
+import { createConnectionManager } from '@repo/engine';
+import {
+  ensureInstalled,
+  executableIn,
+  latestRelease,
+  type Remove,
+  removeOlderVersions,
+  targetOf,
+  versionsDir,
+} from '@repo/release';
+import { app, shell } from 'electron';
+import { mkdirSync } from 'node:fs';
+import { promises as originalFs } from 'node:original-fs';
+import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { bundledBinary } from './binaries.ts';
+import { broadcast } from './broadcast.ts';
+import { saveServerRoutes } from './config-writes.ts';
+import { registerAppHandlers } from './ipc/app.ts';
+import { registerConfigHandlers } from './ipc/config.ts';
+import { registerSetupHandlers } from './ipc/setup.ts';
+import { registerUpdateHandlers } from './ipc/update.ts';
+import { registerVpnHandlers } from './ipc/vpn.ts';
+import { keychain } from './secrets.ts';
+import { createTray, trayPlatform } from './tray/index.ts';
+import { createUpdater } from './updater.ts';
+import { APP_ICON, createWindow, followTheme, hideWindow, showWindow } from './window.ts';
 
 // The main process's composition root: builds the services, registers the IPC handlers, runs the app's lifecycle.
 
@@ -28,7 +36,7 @@ import { APP_ICON, createWindow, followTheme, hideWindow, showWindow } from "./w
 // The folder moves before the lock is taken, because the lock lives in it: quit an older build before starting this one.
 const folder = moveAppDir();
 mkdirSync(folder, { recursive: true });
-app.setPath("userData", folder);
+app.setPath('userData', folder);
 
 // MVPN_CONFIG overrides the location.
 const configPath = defaultConfigPath();
@@ -41,19 +49,19 @@ let windowMayClose = false;
 
 const connections = createConnectionManager({
   dataDir: dirname(configPath),
-  helperBinary: bundledBinary("helper"),
-  cardBridgeBinary: bundledBinary("card-bridge"),
+  helperBinary: bundledBinary('helper'),
+  cardBridgeBinary: bundledBinary('card-bridge'),
   loadConfig: () => loadConfig(configPath),
   readSecret: (vpnId, key) => secrets.read(vpnId, key),
   onChange: (statuses) => {
-    broadcast("vpn:status", statuses);
+    broadcast('vpn:status', statuses);
     tray?.update();
   },
-  onTraffic: (snapshot) => broadcast("traffic:update", snapshot),
+  onTraffic: (snapshot) => broadcast('traffic:update', snapshot),
   saveServerRoutes: (vpnId, serverRoutes) => saveServerRoutes(configPath, vpnId, serverRoutes),
   // Sign-in pages come from the VPN client; only https ones are opened, in the user's own browser.
   openUrl: (url) => {
-    if (URL.parse(url)?.protocol === "https:") void shell.openExternal(url);
+    if (URL.parse(url)?.protocol === 'https:') void shell.openExternal(url);
   },
 });
 
@@ -68,9 +76,18 @@ const updater = createUpdater({
   packaged: app.isPackaged,
   target,
   latest: latestRelease,
-  download: (release, onProgress) => ensureInstalled({ manifest: release, target, dir: versions, platform, env: process.env, onProgress, remove }),
+  download: (release, onProgress) =>
+    ensureInstalled({
+      manifest: release,
+      target,
+      dir: versions,
+      platform,
+      env: process.env,
+      onProgress,
+      remove,
+    }),
   onChange: (state) => {
-    broadcast("update:changed", state);
+    broadcast('update:changed', state);
     tray?.update();
   },
 });
@@ -81,11 +98,19 @@ function restartToUpdate() {
   const version = updater.markRestarting();
   if (!version) return;
   // Given an execPath, Electron passes only `args`: hand this run's own on (the launcher's --no-sandbox, for one).
-  app.relaunch({ execPath: executableIn(join(versions, version), platform), args: process.argv.slice(1) });
+  app.relaunch({
+    execPath: executableIn(join(versions, version), platform),
+    args: process.argv.slice(1),
+  });
   app.quit();
 }
 
-registerConfigHandlers({ configPath, secrets, connections, onSaved: (config) => tray?.setConfig(config) });
+registerConfigHandlers({
+  configPath,
+  secrets,
+  connections,
+  onSaved: (config) => tray?.setConfig(config),
+});
 registerVpnHandlers({ configPath, connections });
 registerSetupHandlers({ connections });
 registerAppHandlers({ configPath });
@@ -97,7 +122,7 @@ followTheme();
 const primaryInstance = app.requestSingleInstanceLock();
 if (primaryInstance) trayPlatform.registerDesktopApp();
 else app.quit();
-app.on("second-instance", () => void showWindow());
+app.on('second-instance', () => void showWindow());
 
 void app.whenReady().then(() => {
   if (!primaryInstance) return;
@@ -105,13 +130,13 @@ void app.whenReady().then(() => {
   if (!app.isPackaged) app.dock?.setIcon(APP_ICON);
   const window = createWindow();
   // ✕ hides the window: the app stays in the tray and the VPNs stay on.
-  window.on("close", (event) => {
+  window.on('close', (event) => {
     if (windowMayClose) return;
     event.preventDefault();
     hideWindow();
   });
   // Windows ends the session without quitting the app first: a hidden window mustn't hold up the log-off.
-  window.on("session-end", () => {
+  window.on('session-end', () => {
     windowMayClose = true;
   });
   tray = createTray({
@@ -127,14 +152,14 @@ void app.whenReady().then(() => {
   void loadConfig(configPath).then(tray.setConfig, () => {});
   void connections.removeLeftovers();
   updater.start();
-  app.on("browser-window-focus", updater.windowFocused);
+  app.on('browser-window-focus', updater.windowFocused);
   // Holding the single-instance lock, no older version can be running, so what an update replaced can go.
   if (app.isPackaged) void removeOlderVersions(versions, app.getVersion(), remove);
-  app.on("activate", () => void showWindow());
+  app.on('activate', () => void showWindow());
 });
 
 // Quitting is the tray's menu, or ⌘Q on macOS. Disconnect everything (containers, routing helper) first.
-app.on("before-quit", (event) => {
+app.on('before-quit', (event) => {
   if (shuttingDown) return;
   shuttingDown = true;
   event.preventDefault();
