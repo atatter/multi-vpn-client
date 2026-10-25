@@ -1,3 +1,4 @@
+import type { Docker } from './docker.ts';
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { VPCD_PORT, VPCD_RELAY_SOURCE } from '@repo/vpn-sdk/container';
@@ -19,7 +20,11 @@ export interface CardBridge {
   /** The reader holding the card. */
   reader: string;
   /** Starts relaying to the container's virtual reader. `onFailure` is called once if it stops (e.g. the card was removed). */
-  attach(dockerBin: string, container: string, onFailure: (message: string) => void): void;
+  attach(
+    docker: Pick<Docker, 'pipe'>,
+    container: string,
+    onFailure: (message: string) => void,
+  ): void;
   stop(): void;
 }
 
@@ -94,14 +99,13 @@ export function openCardBridge(
         options.signal.removeEventListener('abort', abort);
         resolve({
           reader: line.slice(CARD.length).trim(),
-          attach(dockerBin, container, onFailure) {
+          attach(docker, container, onFailure) {
             if (closedWith !== undefined) {
               return onFailure(closedWith);
             }
 
             failed = onFailure;
-            const exec = spawn(
-              dockerBin,
+            const exec = docker.pipe(
               [
                 'exec',
                 '-i',
@@ -110,15 +114,10 @@ export function openCardBridge(
                 'STDIO',
                 `TCP:127.0.0.1:${VPCD_PORT},bind=${VPCD_RELAY_SOURCE},retry=120,interval=0.25`,
               ],
-              {
-                stdio: ['pipe', 'pipe', 'pipe'],
-                windowsHide: true,
-              },
+              bridge.stdout,
+              bridge.stdin,
             );
             relay = exec;
-            exec.stdin.on('error', () => undefined); // EPIPE, see bridge.stdin
-            bridge.stdout.pipe(exec.stdin);
-            exec.stdout.pipe(bridge.stdin);
             createInterface({ input: exec.stderr }).on('line', options.onLog);
             exec.on('error', (error) => {
               failed?.(`The card couldn't be connected to the VPN container: ${error.message}`);
