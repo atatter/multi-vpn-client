@@ -16,7 +16,7 @@ const KEY = helperKey(TOKEN);
 const sign = signProof;
 const tunnel: VpnTunnel = {
   vpnId: 'a',
-  port: 41000,
+  port: 41_000,
   username: 'u',
   password: 'p',
   cidrs: ['10.20.0.0/16'],
@@ -41,6 +41,7 @@ async function client(port: number) {
   socket.on('data', (chunk: string) => {
     buffer += chunk;
     let newline: number;
+
     while ((newline = buffer.indexOf('\n')) >= 0) {
       replies.push(JSON.parse(buffer.slice(0, newline)) as Reply);
       buffer = buffer.slice(newline + 1);
@@ -52,8 +53,10 @@ async function client(port: number) {
     const received = new Promise<void>((resolve) => waiters.push(resolve));
     socket.write(`${typeof request === 'string' ? request : JSON.stringify(request)}\n`);
     await Promise.race([received, closed]);
+
     return replies.at(-1);
   };
+
   /** Runs the handshake with `key`; returns the helper's hello reply and the auth reply. */
   const authenticate = async (key = KEY) => {
     const nonce = 'client-nonce';
@@ -62,8 +65,10 @@ async function client(port: number) {
       command: 'auth',
       proof: sign(key, appProofMessage(hello?.challenge ?? '')),
     });
+
     return { hello, auth, nonce };
   };
+
   return { socket, closed, send, authenticate };
 }
 
@@ -77,11 +82,14 @@ async function start({ failing = false } = {}) {
   const applied: HostRoutes[] = [];
   const apply = async (state: HostRoutes) => {
     applied.push(state);
-    if (failing && state !== NO_ROUTES) throw new Error('resolvectl failed');
+    if (failing && state !== NO_ROUTES) {
+      throw new Error('resolvectl failed');
+    }
   };
   const server = createHelperServer({ key: KEY, backend: { apply }, log: () => undefined });
   const port = await server.listen(0);
   stop = server.close;
+
   return { port, applied, server };
 }
 

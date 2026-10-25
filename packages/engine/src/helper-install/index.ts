@@ -66,10 +66,18 @@ export async function readHelperToken(dataDir: string): Promise<string | undefin
 
 export async function helperState(dataDir: string): Promise<HelperState> {
   const installer = platformInstaller();
-  if (!installer) return 'unsupported';
+  if (!installer) {
+    return 'unsupported';
+  }
+
   const version = await helperVersion(HELPER_PORT);
-  if (version === undefined) return installer.isInstalled() ? 'not-responding' : 'not-installed';
-  if (version !== HELPER_VERSION || !(await readHelperToken(dataDir))) return 'needs-update';
+  if (version === undefined) {
+    return installer.isInstalled() ? 'not-responding' : 'not-installed';
+  }
+  if (version !== HELPER_VERSION || !(await readHelperToken(dataDir))) {
+    return 'needs-update';
+  }
+
   return 'ready';
 }
 
@@ -77,7 +85,10 @@ const sha256 = (data: Buffer) => createHash('sha256').update(data).digest('hex')
 
 function requireInstaller(): PlatformInstaller {
   const installer = platformInstaller();
-  if (!installer) throw new Error(`The network helper isn't available on ${process.platform} yet.`);
+  if (!installer) {
+    throw new Error(`The network helper isn't available on ${process.platform} yet.`);
+  }
+
   return installer;
 }
 
@@ -106,9 +117,13 @@ export async function installHelper({
   await writeJsonAtomic(secretPath(dataDir), { token }, 0o600);
 
   for (let attempt = 0; attempt < 40; attempt++) {
-    if ((await helperVersion(HELPER_PORT)) === HELPER_VERSION) return;
+    if ((await helperVersion(HELPER_PORT)) === HELPER_VERSION) {
+      return;
+    }
+
     await sleep(250);
   }
+
   throw new Error(
     `The network helper was installed but isn't responding. Its log: ${installer.logHint}`,
   );

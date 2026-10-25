@@ -18,8 +18,13 @@ export const hasRowPrompt = (vpn: Vpn, app: Pick<AppModel, 'prompt' | 'connectio
 
 /** What a VPN carries when it's on, in a word or two. Leads every idle row, so all-traffic VPNs are easy to find. */
 function scopeLabel(vpn: Vpn): string {
-  if (vpn.traffic === 'official' && !vpn.serverRoutes) return 'Routes known after first connect';
-  if (isBroad(vpn)) return 'All traffic';
+  if (vpn.traffic === 'official' && !vpn.serverRoutes) {
+    return 'Routes known after first connect';
+  }
+  if (isBroad(vpn)) {
+    return 'All traffic';
+  }
+
   return vpn.traffic === 'sites' ? 'Chosen sites' : 'Its network';
 }
 
@@ -49,49 +54,65 @@ function layerText(
   vpn: Vpn,
   nameOf: (vpnId: string) => string,
 ): { text: string; tone: Tone } {
-  if (layer.starvedBy)
+  if (layer.starvedBy) {
     return { text: standbyWhy(vpn, nameOf(layer.starvedBy)).why, tone: 'standby' };
+  }
+
   if (layer.broad) {
     // A higher VPN carrying everything leaves this one only its pins.
     const everything = layer.fates.find(
       (fate) => fate.rule.kind === 'cidr' && fate.rule.cidr === ALL_TRAFFIC && !fate.rule.pinned,
     );
-    if (everything?.taken && !everything.taken.partly)
+    if (everything?.taken && !everything.taken.partly) {
       return {
         text: `Pinned sites only · ${nameOf(everything.taken.by)} carries the rest`,
         tone: 'go',
       };
+    }
+
     return {
       text: layer.fates.some((fate) => fate.taken?.partly) ? 'Everything else' : 'All traffic',
       tone: 'go',
     };
   }
+
   const what = vpn.traffic === 'sites' ? 'Chosen sites' : 'Its network';
   const lost = layer.fates.flatMap((fate) =>
     fate.taken ? [{ rule: fate.rule, taken: fate.taken }] : [],
   );
-  if (lost.length === 0) return { text: what, tone: 'go' };
+  if (lost.length === 0) {
+    return { text: what, tone: 'go' };
+  }
+
   const winners = listOf([...new Set(lost.map((fate) => nameOf(fate.taken.by)))]);
   // Lost to a pin is a choice someone made, not a problem: say it, but don't flag it.
   const pinned = lost.every((fate) => fate.taken.byPin);
   const tone = pinned ? 'go' : 'sodium';
   const suffix = pinned ? ' (pinned)' : '';
-  if (lost.length === layer.fates.length && lost.every((fate) => !fate.taken.partly))
+  if (lost.length === layer.fates.length && lost.every((fate) => !fate.taken.partly)) {
     return { text: `${what} · all of it goes to ${winners}${suffix}`, tone };
+  }
+
   const [only] = lost;
-  if (only && lost.length === 1)
+  if (only && lost.length === 1) {
     return {
       text: `${what} · ${only.taken.partly ? 'part of ' : ''}${shortTarget(only.rule)} goes to ${winners}${suffix}`,
       tone,
     };
+  }
+
   return { text: `${what} · part goes to ${winners}${suffix}`, tone };
 }
 
 /** The one rule another VPN fully takes by priority, if exactly one: the row offers to pin it back. Never "everything". */
 export function lostOne(layer: PlanLayer) {
-  if (layer.broad || layer.starvedBy) return undefined;
+  if (layer.broad || layer.starvedBy) {
+    return undefined;
+  }
+
   const lost = layer.fates.filter((fate) => fate.taken && !fate.taken.partly);
   const [only] = lost;
+
   return only && lost.length === 1 && !only.taken?.byPin ? only : undefined;
 }
 
@@ -102,17 +123,22 @@ export function statusOf(
   layer: PlanLayer | undefined,
 ): { scope?: string; text: string; tone: Tone; rate?: boolean; wrap?: boolean } {
   const prompt = app.prompt?.vpnId === vpn.id ? app.prompt : undefined;
-  if (app.waiting.has(vpn.id))
+  if (app.waiting.has(vpn.id)) {
     return { text: setupBlocker(app.docker, app.helper) ?? 'Connecting…', tone: 'sodium' };
-  if (prompt?.kind === 'password')
+  }
+  if (prompt?.kind === 'password') {
     return { text: 'Enter your password to connect', tone: 'sodium' };
-  if (prompt?.kind === 'certificate')
+  }
+  if (prompt?.kind === 'certificate') {
     return prompt.changed
       ? { text: 'Its certificate changed', tone: 'danger' }
       : { text: 'Check its certificate to connect', tone: 'sodium' };
+  }
+
   const status = app.connections[vpn.id];
   const nameOf = (vpnId: string) =>
     vpnLabel(app.config.vpns.find((other) => other.id === vpnId) ?? { name: '' });
+
   switch (status?.state) {
     case 'connecting':
       return { text: status.step, tone: 'sodium' };
@@ -130,15 +156,23 @@ export function statusOf(
     case 'error':
       return { text: status.message.split('\n')[0] ?? status.message, tone: 'danger', wrap: true };
     case 'connected': {
-      if (status.warning) return { text: status.warning, tone: 'sodium', wrap: true };
-      if (!layer) return { text: 'Connected', tone: 'go' };
+      if (status.warning) {
+        return { text: status.warning, tone: 'sodium', wrap: true };
+      }
+      if (!layer) {
+        return { text: 'Connected', tone: 'go' };
+      }
+
       const { text, tone } = layerText(layer, vpn, nameOf);
       return { text, tone, rate: tone === 'go', wrap: tone !== 'go' };
     }
     default: {
       const problem = setupProblem(vpn, app.secretStatus[vpn.id] ?? []);
       // Something the user has to do before it can connect: not idle wording, so it stands out.
-      if (problem) return { text: problem, tone: 'sodium' };
+      if (problem) {
+        return { text: problem, tone: 'sodium' };
+      }
+
       return { scope: scopeLabel(vpn), text: ` · ${accountLabel(vpn)}`, tone: 'muted' };
     }
   }
@@ -146,18 +180,23 @@ export function statusOf(
 
 /** Why the switch is off-limits, if it is (shown as its tooltip). */
 export function switchBlocker(vpn: Vpn, app: AppModel): string | undefined {
-  if (isOn(app.connections[vpn.id])) return undefined;
+  if (isOn(app.connections[vpn.id])) {
+    return undefined;
+  }
+
   return setupProblem(vpn, app.secretStatus[vpn.id] ?? []);
 }
 
 /** A VPN's switch: on for anything but off (waiting, asking, connecting, connected, failed), and its color. Same on the list and its page. */
 export function switchLook(vpnId: string, app: AppModel, layer: PlanLayer | undefined) {
   const connection = app.connections[vpnId];
-  const failed = connection?.state === 'error';
   const on = onIds(app.connections, app.prompt, app.waiting).has(vpnId);
-  const busy = on && !failed && connection?.state !== 'connected';
-  return {
-    on,
-    tone: failed ? 'error' : busy ? 'busy' : layer?.starvedBy ? 'standby' : 'go',
-  } as const;
+  if (connection?.state === 'error') {
+    return { on, tone: 'error' } as const;
+  }
+  if (on && connection?.state !== 'connected') {
+    return { on, tone: 'busy' } as const;
+  }
+
+  return { on, tone: layer?.starvedBy ? 'standby' : 'go' } as const;
 }

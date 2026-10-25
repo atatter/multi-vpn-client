@@ -19,8 +19,9 @@ const { values } = parseArgs({
   },
 });
 const { version, archives, out, partial } = values;
-if (!version || !archives || !out)
+if (!version || !archives || !out) {
   throw new Error('Usage: pack.ts --version <x.y.z> --archives <dir> --out <dir> [--partial]');
+}
 
 const sha256 = (file: string) =>
   new Promise<string>((resolve, reject) => {
@@ -35,7 +36,9 @@ const manifest: Manifest = { version, archives: {} };
 for (const target of Object.keys(ARCHIVE_TYPES).filter(isTarget)) {
   const file = archiveFile(version, target);
   if (!existsSync(join(archives, file))) {
-    if (partial) continue;
+    if (partial) {
+      continue;
+    }
     throw new Error(`${file} is missing from ${archives}.`);
   }
   manifest.archives[target] = {
@@ -44,14 +47,16 @@ for (const target of Object.keys(ARCHIVE_TYPES).filter(isTarget)) {
     size: (await stat(join(archives, file))).size,
   };
 }
-if (Object.keys(manifest.archives).length === 0)
+if (Object.keys(manifest.archives).length === 0) {
   throw new Error(`No archives for ${version} in ${archives}.`);
+}
 Manifest.parse(manifest);
 
 const root = join(import.meta.dirname, '..', '..', '..');
 const bundle = join(import.meta.dirname, '..', 'dist', 'launcher.mjs');
-if (!existsSync(bundle))
+if (!existsSync(bundle)) {
   throw new Error('Build the launcher first: pnpm --filter @repo/launcher build');
+}
 
 await mkdir(out, { recursive: true });
 await copyFile(bundle, join(out, 'bin.mjs'));

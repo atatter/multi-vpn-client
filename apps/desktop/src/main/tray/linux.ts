@@ -16,7 +16,10 @@ export const linuxTray: TrayPlatform = {
   registerDesktopApp() {
     app.setDesktopName(`${DESKTOP_ID}.desktop`);
     // Only a packaged build: a development one would point the user's app grid at a checkout.
-    if (!app.isPackaged) return;
+    if (!app.isPackaged) {
+      return;
+    }
+
     const command: [string, ...string[]] = [
       process.execPath,
       ...(app.commandLine.hasSwitch('no-sandbox') ? ['--no-sandbox'] : []),

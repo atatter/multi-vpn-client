@@ -3,7 +3,7 @@ import { app, BrowserWindow, nativeTheme, screen } from 'electron';
 import { join } from 'node:path';
 import type { AppInfo } from '../shared/ipc-contract.ts';
 
-// A small, fixed-width window sized to its content, like other VPN clients.
+/** A small, fixed-width window sized to its content, like other VPN clients. */
 const WINDOW_WIDTH = 360;
 const TITLE_BAR_HEIGHT = 44;
 let mainWindow: BrowserWindow | undefined;
@@ -20,9 +20,11 @@ const titleBarColors = () =>
     ? { color: '#171B1E', symbolColor: '#E6EAEB' }
     : { color: '#E4E7E6', symbolColor: '#262B2F' };
 
-// The OS draws the window buttons (traffic lights on macOS, on the right elsewhere) in a 44px bar; the overlay
-// tells the renderer where they are through env(titlebar-area-*), so it never guesses their size.
-// Built when the window is created: nativeTheme is only reliable once the app is ready.
+/**
+ * The OS draws the window buttons (traffic lights on macOS, on the right elsewhere) in a 44px bar; the overlay
+ * tells the renderer where they are through env(titlebar-area-*), so it never guesses their size.
+ * Built when the window is created: nativeTheme is only reliable once the app is ready.
+ */
 const titleBarOptions = () =>
   ({
     titleBarStyle: 'hidden',
@@ -32,8 +34,9 @@ const titleBarOptions = () =>
 /** Keeps the title bar's colors in step with the OS theme. */
 export function followTheme() {
   nativeTheme.on('updated', () => {
-    if (process.platform !== 'darwin')
+    if (process.platform !== 'darwin') {
       mainWindow?.setTitleBarOverlay({ ...titleBarColors(), height: TITLE_BAR_HEIGHT });
+    }
   });
 }
 
@@ -42,7 +45,10 @@ export const platform = (): AppInfo['platform'] =>
 
 /** Sizes the window to the renderer's content: never taller than 760px or the screen it's on; the renderer scrolls what doesn't fit. */
 export function fitWindow(height: unknown) {
-  if (!mainWindow || typeof height !== 'number' || !Number.isFinite(height)) return;
+  if (!mainWindow || typeof height !== 'number' || !Number.isFinite(height)) {
+    return;
+  }
+
   const { workArea } = screen.getDisplayMatching(mainWindow.getBounds());
   mainWindow.setContentSize(
     WINDOW_WIDTH,
@@ -74,28 +80,40 @@ export function createWindow() {
   });
   mainWindow = window;
   window.on('closed', () => {
-    if (mainWindow === window) mainWindow = undefined;
+    if (mainWindow === window) {
+      mainWindow = undefined;
+    }
   });
   window.once('ready-to-show', () => window.show());
   // Never leave the app page: a dropped file or link would otherwise load with the preload API attached.
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event) => event.preventDefault());
 
-  if (process.env.ELECTRON_RENDERER_URL) void window.loadURL(process.env.ELECTRON_RENDERER_URL);
-  else void window.loadFile(join(__dirname, '../renderer/index.html'));
+  if (process.env.ELECTRON_RENDERER_URL) {
+    void window.loadURL(process.env.ELECTRON_RENDERER_URL);
+  } else {
+    void window.loadFile(join(__dirname, '../renderer/index.html'));
+  }
+
   return window;
 }
 
 /** Hides the window and, on macOS, the Dock icon: the app stays in the tray. */
 export function hideWindow() {
   const window = mainWindow;
-  if (!window) return;
+  if (!window) {
+    return;
+  }
+
   window.hide();
   // A little over the second Electron needs between Dock changes, so this hide isn't the one it drops.
   clearTimeout(dockHide);
   dockHide = setTimeout(
     () => {
-      if (window.isVisible() || !app.dock) return;
+      if (window.isVisible() || !app.dock) {
+        return;
+      }
+
       app.dock.hide();
       dockChangedAt = Date.now();
     },
@@ -106,14 +124,22 @@ export function hideWindow() {
 /** Brings the window back from the tray, or forward, e.g. when the app is started a second time. */
 export async function showWindow() {
   const window = mainWindow;
-  if (!window) return;
+  if (!window) {
+    return;
+  }
+
   // A hide still waiting would take the Dock icon away while the window comes back.
   clearTimeout(dockHide);
+
   if (app.dock) {
     await app.dock.show();
     dockChangedAt = Date.now();
   }
-  if (window.isMinimized()) window.restore();
+
+  if (window.isMinimized()) {
+    window.restore();
+  }
+
   window.show();
   app.focus({ steal: true });
 }

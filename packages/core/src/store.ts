@@ -9,14 +9,20 @@ import { readJsonIfExists, writeJsonAtomic } from './fs.ts';
  * launcher. Import via "@repo/core/store" (not from the browser bundle).
  */
 
-// Empty or relative values are ignored (as the XDG spec requires), never resolved against the cwd.
+/** Empty or relative values are ignored (as the XDG spec requires), never resolved against the cwd. */
 const absolute = (value: string | undefined) => (value && isAbsolute(value) ? value : undefined);
 
 /** Per-user app data: %APPDATA% on Windows, Application Support on macOS, XDG on Linux. */
 function appDataBase(env: NodeJS.ProcessEnv, platform: NodeJS.Platform): string {
-  if (platform === 'win32') return absolute(env.APPDATA) ?? join(homedir(), 'AppData', 'Roaming');
+  if (platform === 'win32') {
+    return absolute(env.APPDATA) ?? join(homedir(), 'AppData', 'Roaming');
+  }
+
   const home = absolute(env.HOME) ?? homedir();
-  if (platform === 'darwin') return join(home, 'Library', 'Application Support');
+  if (platform === 'darwin') {
+    return join(home, 'Library', 'Application Support');
+  }
+
   return absolute(env.XDG_CONFIG_HOME) ?? join(home, '.config');
 }
 
@@ -72,20 +78,30 @@ export function defaultConfigPath(env = process.env, platform = process.platform
  */
 export function moveAppDir(env = process.env, platform = process.platform): string {
   const { current, old } = folders(env, platform);
-  if (env.MVPN_CONFIG || current === old || appDir(env, platform) !== old)
+  if (env.MVPN_CONFIG || current === old || appDir(env, platform) !== old) {
     return appDir(env, platform);
+  }
+
   try {
-    if (!existsSync(current)) renameSync(old, current);
-    else {
+    if (existsSync(current)) {
       // The new folder holds no config yet but may hold something else (Electron's data, a .DS_Store): move the
       // old folder's entries in. Nothing is overwritten or deleted; a clash stays behind in the old folder.
-      for (const entry of readdirSync(old))
-        if (!existsSync(join(current, entry))) renameSync(join(old, entry), join(current, entry));
-      if (readdirSync(old).length === 0) rmdirSync(old);
+      for (const entry of readdirSync(old)) {
+        if (!existsSync(join(current, entry))) {
+          renameSync(join(old, entry), join(current, entry));
+        }
+      }
+
+      if (readdirSync(old).length === 0) {
+        rmdirSync(old);
+      }
+    } else {
+      renameSync(old, current);
     }
   } catch {
     // Still on the old folder; appDir keeps pointing there while it has the config.
   }
+
   return appDir(env, platform);
 }
 

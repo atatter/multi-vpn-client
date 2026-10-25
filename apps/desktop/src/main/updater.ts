@@ -38,7 +38,9 @@ export function createUpdater(deps: {
     state = next;
     deps.onChange(next);
   };
+
   const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
   const ask = () => {
     askedAt = now();
     return deps.latest();
@@ -47,24 +49,31 @@ export function createUpdater(deps: {
   /** What npm's newest means: an offer when it's newer than this version and than one already offered. */
   function found(latest: Manifest) {
     if (compareVersions(latest.version, deps.version) > 0) {
-      if (state.state === 'available' && compareVersions(latest.version, state.version) <= 0)
+      if (state.state === 'available' && compareVersions(latest.version, state.version) <= 0) {
         return;
+      }
+
       release = latest;
       set({
         state: 'available',
         version: latest.version,
         size: latest.archives[deps.target]?.size,
       });
-    } else if (state.state !== 'available') set({ state: 'current', checkedAt: now() });
+    } else if (state.state !== 'available') {
+      set({ state: 'current', checkedAt: now() });
+    }
   }
 
   /** The Check button: says it's checking, then what npm said. Not while a newer version is known or on its way. */
   async function check() {
-    if (!(state.state === 'idle' || state.state === 'current' || state.state === 'check-failed'))
+    if (!(state.state === 'idle' || state.state === 'current' || state.state === 'check-failed')) {
       return;
+    }
+
     set({ state: 'checking' });
     const answer = ask();
     await Promise.allSettled([answer, wait(CHECKING_AT_LEAST_MS)]);
+
     try {
       found(await answer);
     } catch (error) {
@@ -78,27 +87,40 @@ export function createUpdater(deps: {
    */
   async function checkQuietly() {
     const settled = () => ['idle', 'current', 'check-failed', 'available'].includes(state.state);
-    if (!settled()) return;
+    if (!settled()) {
+      return;
+    }
+
     try {
       const latest = await ask();
+
       // The user may have started a check or a download meanwhile; theirs wins.
-      if (settled()) found(latest);
+      if (settled()) {
+        found(latest);
+      }
     } catch (error) {
-      if (state.state === 'idle') set({ state: 'check-failed', error: messageOf(error) });
+      if (state.state === 'idle') {
+        set({ state: 'check-failed', error: messageOf(error) });
+      }
     }
   }
 
   /** Downloads the version a check found; again after a failed download. */
   async function download() {
-    if (!release || !(state.state === 'available' || state.state === 'download-failed')) return;
+    if (!release || !(state.state === 'available' || state.state === 'download-failed')) {
+      return;
+    }
+
     const { version } = release;
     set({ state: 'downloading', version, percent: 0 });
+
     try {
       await deps.download(release, (share) => {
         // 100% only once it's unpacked too, which is "ready".
         const percent = Math.min(99, Math.floor(share * 100));
-        if (state.state === 'downloading' && percent > state.percent)
+        if (state.state === 'downloading' && percent > state.percent) {
           set({ state: 'downloading', version, percent });
+        }
       });
       set({ state: 'ready', version });
     } catch (error) {
@@ -108,9 +130,13 @@ export function createUpdater(deps: {
 
   /** Marks the downloaded version as the one to restart into, once; undefined when none is ready (or it already is). */
   function markRestarting() {
-    if (state.state !== 'ready') return undefined;
+    if (state.state !== 'ready') {
+      return undefined;
+    }
+
     const { version } = state;
     set({ state: 'restarting', version });
+
     return version;
   }
 
@@ -121,13 +147,18 @@ export function createUpdater(deps: {
     markRestarting,
     /** Checks now and every hour after. Development builds never check. */
     start() {
-      if (!deps.packaged) return;
+      if (!deps.packaged) {
+        return;
+      }
+
       void checkQuietly();
       setInterval(() => void checkQuietly(), CHECK_EVERY_MS);
     },
     /** The window came to the front: checks, unless npm was asked in the last 15 minutes. */
     windowFocused() {
-      if (deps.packaged && now() - askedAt >= ASKED_RECENTLY_MS) void checkQuietly();
+      if (deps.packaged && now() - askedAt >= ASKED_RECENTLY_MS) {
+        void checkQuietly();
+      }
     },
   };
 }

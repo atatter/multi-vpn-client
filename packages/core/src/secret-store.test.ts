@@ -6,7 +6,7 @@ import { newVpn, type Vpn } from '@repo/vpns';
 import { createSecretStore, type Cipher } from './secret-store.ts';
 import type { SecretChanges } from './secrets.ts';
 
-// Reversible but visibly not plaintext, so tests can assert nothing leaks to disk.
+/** Reversible but visibly not plaintext, so tests can assert nothing leaks to disk. */
 const fakeCipher: Cipher = {
   encrypt: async (plain) => Buffer.from(`enc:${[...plain].reverse().join('')}`),
   decrypt: async (data) => Array.from(data.toString().slice(4)).reverse().join(''),
@@ -27,6 +27,7 @@ const tempStore = async (cipher = fakeCipher) => {
   const store = createSecretStore(path, cipher);
   const apply = async (changes: SecretChanges, vpns: Vpn[]) =>
     (await store.prepare(changes, vpns)).commit();
+
   return { path, store, apply };
 };
 
@@ -50,9 +51,12 @@ describe('secret store', () => {
     expect(JSON.parse(onDisk).vpns.g.password).toBe(Buffer.from('enc:2retnuh').toString('base64'));
     expect(await store.read('g', 'password')).toBe('hunter2');
     expect(await store.read('g', 'missing')).toBeUndefined();
+
     // Windows has no file modes to check.
-    // oxlint-disable-next-line vitest/no-conditional-expect
-    if (process.platform !== 'win32') expect((await stat(path)).mode & 0o777).toBe(0o600);
+    if (process.platform !== 'win32') {
+      // oxlint-disable-next-line vitest/no-conditional-expect
+      expect((await stat(path)).mode & 0o777).toBe(0o600);
+    }
   });
 
   it('clears slots and prunes against the current VPNs', async () => {

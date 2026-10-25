@@ -24,6 +24,7 @@ export function AddressFields({
   const openFile = (file: File) => openProfile(app, file);
   const picker = useRef<HTMLInputElement>(null);
   const { address, setAddress, typed, checking, detection, manual, setManual, next } = state;
+
   return (
     <>
       <form
@@ -72,7 +73,10 @@ export function AddressFields({
           hidden
           onChange={(event) => {
             const file = event.target.files?.[0];
-            if (file) openFile(file);
+            if (file) {
+              openFile(file);
+            }
+
             event.target.value = '';
           }}
         />

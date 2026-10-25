@@ -43,10 +43,14 @@ vi.mock('../helper-client.ts', () => ({
     let end: () => void = () => undefined;
     const closed = new Promise<void>((resolve) => (end = resolve));
     const apply = async () => {
-      if (!helper.failing) return;
+      if (!helper.failing) {
+        return;
+      }
+
       end();
       throw new Error('resolvectl failed');
     };
+
     return { apply, close: () => undefined, closed };
   },
 }));
@@ -212,6 +216,7 @@ describe('connection manager', () => {
       connections.answer('b', 'x');
       await b;
       await connections.disconnect('b');
+
       return status?.state === 'awaiting-code' && status.secret;
     };
     expect(await secretFor('Password')).toBe(true);

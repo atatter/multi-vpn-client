@@ -16,6 +16,9 @@ export const FrameContext = createContext<FrameEnvironment | null>(null);
 
 export function useFrameEnvironment(): FrameEnvironment {
   const environment = useContext(FrameContext);
-  if (!environment) throw new Error('Frame needs the FrameContext provider');
+  if (!environment) {
+    throw new Error('Frame needs the FrameContext provider');
+  }
+
   return environment;
 }

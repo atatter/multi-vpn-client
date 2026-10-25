@@ -39,7 +39,9 @@ export function VpnScreen({ vpnId }: { vpnId: string }) {
   /** Where the user was going when asked to discard their changes, until they answer. */
   const [leaving, setLeaving] = useState<{ go: () => void }>();
   const [saving, setSaving] = useState(false);
-  if (!vpn) return null; // removed meanwhile: there's nothing left to show
+  if (!vpn) {
+    return null;
+  } // removed meanwhile: there's nothing left to show
 
   // The kind is fixed on this page, so the saved VPN plus the edited fields is still the same kind.
   const draft = { ...vpn, ...edits } as Vpn;
@@ -63,24 +65,38 @@ export function VpnScreen({ vpnId }: { vpnId: string }) {
     setShowErrors(false);
     setLeaving(undefined);
   };
+
   /** Goes elsewhere, asking first when there are unsaved changes. */
   const leave = (go: () => void) => (dirty ? setLeaving({ go }) : go());
+
   const save = async () => {
-    if (Object.keys(errors).length > 0) return setShowErrors(true);
+    if (Object.keys(errors).length > 0) {
+      return setShowErrors(true);
+    }
+
     setSaving(true);
     const saved = await app.save(configAfterSave(app.config, vpn, draft, routes), {
       [vpn.id]: pending,
     });
     setSaving(false);
-    if (!saved) return;
+    if (!saved) {
+      return;
+    }
+
     // Saved: stay on the page, which now shows the saved VPN.
     discard();
-    if (reconnects) void app.reconnect(vpn.id);
+
+    if (reconnects) {
+      void app.reconnect(vpn.id);
+    }
   };
+
   const remove = async () => {
     await app.turnOff(vpn.id).catch(() => undefined);
     const saved = await app.save(configAfterRemove(app.config, vpn.id));
-    if (saved) app.home();
+    if (saved) {
+      app.home();
+    }
   };
 
   return (

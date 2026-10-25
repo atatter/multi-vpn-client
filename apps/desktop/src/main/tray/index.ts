@@ -55,7 +55,11 @@ export function createTray(deps: {
   let shown: string | undefined;
   let count = 0;
   let hasUpdate = false;
-  if (trayPlatform.clickOpens) tray.on('click', deps.open);
+
+  if (trayPlatform.clickOpens) {
+    tray.on('click', deps.open);
+  }
+
   nativeTheme.on('updated', () => tray.setImage(trayPlatform.icon(count, hasUpdate)));
   deps.window.on('show', () => trayPlatform.windowShown(count, deps.window));
 
@@ -65,15 +69,25 @@ export function createTray(deps: {
     const item = updateItem(deps.updateState(), deps);
     // Statuses change with every log line; rebuild only when what the tray shows does.
     const showing = JSON.stringify([ids, names, item?.label]);
-    if (showing === shown) return;
+    if (showing === shown) {
+      return;
+    }
+
     shown = showing;
     // The menu follows a download's every percent; the icon and badge change only with the count or the dot.
     const countChanged = count !== ids.length;
     const dotChanged = hasUpdate !== Boolean(item);
     count = ids.length;
     hasUpdate = Boolean(item);
-    if (countChanged) trayPlatform.badge(count, deps.window);
-    if (countChanged || dotChanged) tray.setImage(trayPlatform.icon(count, hasUpdate));
+
+    if (countChanged) {
+      trayPlatform.badge(count, deps.window);
+    }
+
+    if (countChanged || dotChanged) {
+      tray.setImage(trayPlatform.icon(count, hasUpdate));
+    }
+
     tray.setToolTip(`${APP_NAME}: ${countHeadline(count)}`);
     tray.setContextMenu(
       Menu.buildFromTemplate(
@@ -91,6 +105,7 @@ export function createTray(deps: {
   }
 
   update();
+
   return {
     update,
     /** The saved settings, which name the VPNs in the menu. */

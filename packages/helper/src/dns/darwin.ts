@@ -6,7 +6,7 @@ import type { DnsAdapter } from './index.ts';
 
 const flushMacDns = () =>
   new Promise<void>((resolve) =>
-    execFile('/usr/bin/killall', ['-HUP', 'mDNSResponder'], { timeout: 5_000 }, () => resolve()),
+    execFile('/usr/bin/killall', ['-HUP', 'mDNSResponder'], { timeout: 5000 }, () => resolve()),
   );
 
 /**
@@ -25,10 +25,13 @@ export function createResolverDns({
 }): DnsAdapter {
   async function removeOurs() {
     const names = await readdir(dir).catch(() => []);
+
     for (const name of names) {
       const path = join(dir, name);
       const firstLine = (await readFile(path, 'utf8').catch(() => '')).split('\n', 1)[0];
-      if (firstLine === RESOLVER_MARK) await rm(path, { force: true });
+      if (firstLine === RESOLVER_MARK) {
+        await rm(path, { force: true });
+      }
     }
   }
 
@@ -36,16 +39,23 @@ export function createResolverDns({
     async set(domains) {
       await removeOurs();
       await mkdir(dir, { recursive: true });
+
       for (const domain of new Set(domains)) {
-        if (!Domain.safeParse(domain).success) continue;
+        if (!Domain.safeParse(domain).success) {
+          continue;
+        }
+
         // Leaves a resolver entry someone else created alone.
         await writeFile(join(dir, domain), `${RESOLVER_MARK}\nnameserver ${server}\n`, {
           flag: 'wx',
           mode: 0o644,
         }).catch((error: NodeJS.ErrnoException) => {
-          if (error.code !== 'EEXIST') throw error;
+          if (error.code !== 'EEXIST') {
+            throw error;
+          }
         });
       }
+
       await flush();
     },
     async clear() {

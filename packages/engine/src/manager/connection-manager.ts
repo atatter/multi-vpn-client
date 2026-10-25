@@ -106,10 +106,12 @@ export function createConnectionManager(deps: Dependencies) {
       await docker.assertRunning();
       return docker;
     }
+
     const candidate = createDocker(await findDocker());
     await candidate.assertRunning();
     await removeStaleContainers(candidate);
     docker = candidate;
+
     return docker;
   }
 
@@ -128,23 +130,33 @@ export function createConnectionManager(deps: Dependencies) {
         config.routes,
         plan?.compiled,
       );
+
     for (const vpnId of sessions.keys()) {
       const current = statuses.get(vpnId);
       const warning = warningOf(vpnId);
-      if (current?.state === 'connected' && current.warning !== warning)
+      if (current?.state === 'connected' && current.warning !== warning) {
         statuses.set(vpnId, { ...current, warning });
+      }
     }
+
     return warningOf;
   };
 
   /** Connects, unless this VPN is connected or connecting already (then it's that connect's result). */
   function startConnect(vpnId: string, password: string | undefined): Promise<ConnectResult> {
-    if (sessions.has(vpnId)) return Promise.resolve({ ok: true });
+    if (sessions.has(vpnId)) {
+      return Promise.resolve({ ok: true });
+    }
+
     const pending = connecting.get(vpnId);
-    if (pending) return pending.done;
+    if (pending) {
+      return pending.done;
+    }
+
     const abort = new AbortController();
     const done = connect(vpnId, password, abort.signal).finally(() => connecting.delete(vpnId));
     connecting.set(vpnId, { abort, done });
+
     return done;
   }
 
@@ -154,6 +166,7 @@ export function createConnectionManager(deps: Dependencies) {
     pending?.abort.abort(new CancelledError());
     await pending?.done;
   }
+
   const stopConnects = () => Promise.all([...connecting.keys()].map(stopConnect));
 
   /** Use through startConnect. Aborting `signal` stops it wherever it is (CancelledError: ends disconnected). */
@@ -172,18 +185,26 @@ export function createConnectionManager(deps: Dependencies) {
     let dropped: string | undefined;
     // A wait for the user ends at once; the container start notices the signal itself.
     signal.addEventListener('abort', () => waits.cancel(vpnId), { once: true });
+
     try {
       // Quick, but shares the helper session, Docker and secrets with everything else: in the queue.
       const prepared = await exclusive(async () => {
         signal.throwIfAborted();
         const config = await deps.loadConfig();
         const vpn = config.vpns.find((candidate) => candidate.id === vpnId);
-        if (!vpn) throw new Error('Save this VPN before connecting.');
+        if (!vpn) {
+          throw new Error('Save this VPN before connecting.');
+        }
+
         hadPin = isPinnable(vpn) && vpn.serverCertPin !== '';
         await host.getHelper(); // fails early, with a precise reason, if the helper isn't usable
         const launch = await launchFor(vpn, password, deps.readSecret);
-        if (launch === 'needs-password') return launch;
+        if (launch === 'needs-password') {
+          return launch;
+        }
+
         statuses.set(vpnId, { state: 'connecting', step: 'Starting the VPN container…' });
+
         return { vpn, launch, engine: await getDocker() };
       });
       if (prepared === 'needs-password') {
@@ -197,6 +218,7 @@ export function createConnectionManager(deps: Dependencies) {
       await untilAborted(ensureVpnImage(engine, launch.image, onLog), signal);
 
       const signingIn = launch.signInStep ?? 'Connecting to the VPN server…';
+
       if (launch.smartCard) {
         statuses.set(vpnId, {
           state: 'connecting',
@@ -205,6 +227,7 @@ export function createConnectionManager(deps: Dependencies) {
         cardBridge = await waits.findCard(vpnId, launch.smartCard);
         onLog(`Using the card in ${cardBridge.reader}.`);
       }
+
       statuses.set(vpnId, { state: 'connecting', step: signingIn });
       session = await startVpnContainer(engine, {
         vpnId,
@@ -219,7 +242,10 @@ export function createConnectionManager(deps: Dependencies) {
           const message = `The VPN connection dropped: ${lastLines.at(-1) ?? ''}`;
           dropped = message;
           void exclusive(async () => {
-            if (!session || sessions.get(vpnId) !== session) return; // not routed to yet: the connect fails on `dropped`
+            if (!session || sessions.get(vpnId) !== session) {
+              return;
+            } // not routed to yet: the connect fails on `dropped`
+
             await drop(vpnId, { state: 'error', message });
             await syncHost();
           }).catch((error: unknown) => onLog(messageOf(error)));
@@ -230,9 +256,13 @@ export function createConnectionManager(deps: Dependencies) {
       const started = session;
       await exclusive(async () => {
         signal.throwIfAborted();
-        if (dropped) throw new Error(dropped);
+        if (dropped) {
+          throw new Error(dropped);
+        }
+
         sessions.set(vpnId, started);
         statuses.set(vpnId, { state: 'connecting', step: 'Routing traffic…' });
+
         // What the server sent decides what "same as the official app" routes, from now on and in the UI.
         // Best effort: failing to save it mustn't drop a working connection.
         if (started.pushedRoutes && !sameRoutes(vpn.serverRoutes, started.pushedRoutes)) {
@@ -242,6 +272,7 @@ export function createConnectionManager(deps: Dependencies) {
               onLog(`Couldn't save what the server sends: ${messageOf(error)}`),
             );
         }
+
         const warningOf = await syncHost();
         statuses.set(vpnId, { state: 'connected', since: Date.now(), warning: warningOf(vpnId) });
       });
@@ -264,15 +295,21 @@ export function createConnectionManager(deps: Dependencies) {
     // A prompt or sign-in the client left open (it stopped, or timed out) mustn't outlive the attempt.
     waits.cancel(vpnId);
     cardBridge?.stop();
+
     // A container that started but was never routed to (cancelled just before) goes too.
-    if (session && sessions.get(vpnId) !== session) await session.stop();
+    if (session && sessions.get(vpnId) !== session) {
+      await session.stop();
+    }
+
     if (error instanceof CancelledError) {
       statuses.set(vpnId, { state: 'disconnected' });
       return { ok: false, error: error.message };
     }
+
     const message = messageOf(error);
     const onLog = statuses.logger(vpnId);
     onLog(message);
+
     if (error instanceof UntrustedCertificateError) {
       presentedPins.set(vpnId, error.pin);
       statuses.set(vpnId, { state: 'disconnected' });
@@ -281,12 +318,16 @@ export function createConnectionManager(deps: Dependencies) {
         untrustedCertificate: { pin: error.pin, server: error.server, changed: hadPin },
       };
     }
+
     await exclusive(async () => {
-      if (!session || sessions.get(vpnId) !== session)
+      if (!session || sessions.get(vpnId) !== session) {
         return statuses.set(vpnId, { state: 'error', message });
+      }
+
       await drop(vpnId, { state: 'error', message });
       await syncHost().catch((cleanupError: unknown) => onLog(messageOf(cleanupError)));
     });
+
     return { ok: false, error: message };
   }
 
@@ -298,7 +339,10 @@ export function createConnectionManager(deps: Dependencies) {
   async function shutdown() {
     // A snapshot: drop() removes sessions while this awaits.
     // oxlint-disable-next-line unicorn/no-useless-spread
-    for (const vpnId of [...sessions.keys()]) await drop(vpnId, { state: 'disconnected' });
+    for (const vpnId of [...sessions.keys()]) {
+      await drop(vpnId, { state: 'disconnected' });
+    }
+
     await host.close();
   }
 
@@ -318,20 +362,27 @@ export function createConnectionManager(deps: Dependencies) {
       if (pending) {
         pending.abort.abort(new CancelledError());
         // Stopped before it connected: nothing left to drop (and a queued drop could land on a newer attempt).
-        if (!(await pending.done).ok) return;
+        if (!(await pending.done).ok) {
+          return;
+        }
       }
+
       await exclusive(() => disconnect(vpnId));
     },
 
     /** Re-applies routes after the saved config changed. */
     refresh: () =>
       exclusive(async () => {
-        if (sessions.size === 0) return;
+        if (sessions.size === 0) {
+          return;
+        }
+
         try {
           await syncHost();
         } catch (error) {
-          for (const vpnId of sessions.keys())
+          for (const vpnId of sessions.keys()) {
             statuses.logger(vpnId)(`Updating routes failed: ${messageOf(error)}`);
+          }
         }
       }),
 
@@ -347,7 +398,10 @@ export function createConnectionManager(deps: Dependencies) {
     }): Promise<string | undefined> => {
       // Only reads state, so it stays out of the queue: a slow lookup mustn't hold up connects.
       const plan = await planRoutes(await deps.loadConfig(), sessions);
-      if (!plan) return undefined;
+      if (!plan) {
+        return undefined;
+      }
+
       // A routed name resolves to a placeholder address, so names are matched first, as the router does.
       const addresses = isAddress
         ? [site]
@@ -355,13 +409,17 @@ export function createConnectionManager(deps: Dependencies) {
             (found) => found.map((entry) => entry.address),
             () => [],
           );
+
       return routeFor(plan.compiled, { ...(isAddress ? {} : { domain: site }), addresses });
     },
 
     /** Runs one of a kind's actions for its form (e.g. Check Point's login types). The action parses its input; the form parses the output. */
     runAction: async (kind: VpnKind, name: string, input: unknown) => {
       const run = actionOf(kind, name);
-      if (!run) throw new Error('This VPN type has no such action.');
+      if (!run) {
+        throw new Error('This VPN type has no such action.');
+      }
+
       // Docker is reached only once the action has parsed its input, so a malformed call does nothing on the host.
       // The build and run stay outside the queue, like a connect's build; a failure says why itself.
       return run(input, {

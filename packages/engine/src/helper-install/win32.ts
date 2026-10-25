@@ -85,6 +85,7 @@ export function windowsInstallScript(
   const SY = '*S-1-5-18';
   const BA = '*S-1-5-32-544';
   const BU = '*S-1-5-32-545';
+
   return `$ErrorActionPreference = 'Stop'
 $dir = ${psQuote(INSTALL_DIR)}
 function Fail($message) { Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue; throw $message }
@@ -118,6 +119,7 @@ exit 0
  */
 async function runAsAdmin(script: string): Promise<void> {
   const staging = await mkdtemp(join(tmpdir(), 'mvpn-helper-'));
+
   try {
     const errorFile = join(staging, 'error.txt');
     const wrapped = `try {\n${script}\n} catch {\n  $_.ToString() | Out-File -LiteralPath ${psQuote(errorFile)} -Encoding utf8\n  exit 1\n}`;
@@ -126,9 +128,14 @@ async function runAsAdmin(script: string): Promise<void> {
       `$p = Start-Process -FilePath ${psQuote(POWERSHELL)} -Verb RunAs -WindowStyle Hidden -Wait -PassThru ` +
       `-ArgumentList '-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-EncodedCommand','${encoded}'; exit $p.ExitCode`;
     const result = await run(POWERSHELL, ['-NoProfile', '-NonInteractive', '-Command', launcher]);
-    if (result.code === 0) return;
+    if (result.code === 0) {
+      return;
+    }
     // Declining the UAC prompt makes Start-Process fail with "canceled by the user".
-    if (/cancel/i.test(result.stderr)) throw new Error('Administrator access was cancelled.');
+    if (/cancel/i.test(result.stderr)) {
+      throw new Error('Administrator access was cancelled.');
+    }
+
     const reported = await readFile(errorFile, 'utf8').catch(() => '');
     throw new Error(
       reported.trim() ||
@@ -146,6 +153,7 @@ export const win32Installer: PlatformInstaller = {
   async install({ configJson, ...plan }) {
     // The user's temp folder is private to them.
     const staging = await mkdtemp(join(tmpdir(), 'mvpn-helper-config-'));
+
     try {
       const configFile = join(staging, 'helper.json');
       await writeFile(configFile, configJson);

@@ -153,7 +153,7 @@ lassign [wait] pid spawn_id os_error code
 exit $code
 `;
 
-// Built natively for the Docker host's architecture; downloads are checksum-verified.
+/** Built natively for the Docker host's architecture; downloads are checksum-verified. */
 export const OPENCONNECT_IMAGE = vpnImage(
   'mvpn-openconnect',
   `FROM alpine:3.24

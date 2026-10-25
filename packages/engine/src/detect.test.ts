@@ -92,7 +92,7 @@ describe('splitAddress', () => {
   it('splits host and port, defaulting to 443', () => {
     expect(splitAddress(' vpn.a:10443 ')).toEqual({
       host: 'vpn.a',
-      port: 10443,
+      port: 10_443,
       explicitPort: true,
     });
     expect(splitAddress('vpn.a')).toEqual({ host: 'vpn.a', port: 443, explicitPort: false });

@@ -56,21 +56,29 @@ export function versionsDir(
 ): string {
   // Empty or relative values are ignored, never resolved against the cwd.
   const absolute = (value: string | undefined) => (value && isAbsolute(value) ? value : undefined);
-  if (platform === 'win32')
+  if (platform === 'win32') {
     return join(
       absolute(env.LOCALAPPDATA) ?? join(home, 'AppData', 'Local'),
       'Multi VPN Client',
       'versions',
     );
-  if (platform === 'darwin') return join(home, 'Library', 'Caches', 'Multi VPN Client', 'versions');
+  }
+  if (platform === 'darwin') {
+    return join(home, 'Library', 'Caches', 'Multi VPN Client', 'versions');
+  }
+
   return join(absolute(env.XDG_CACHE_HOME) ?? join(home, '.cache'), 'multi-vpn-client', 'versions');
 }
 
 /** The app's executable inside an unpacked version. Must match productName and linux.executableName in electron-builder.yml. */
 export function executableIn(versionDir: string, platform: NodeJS.Platform): string {
-  if (platform === 'darwin')
+  if (platform === 'darwin') {
     return join(versionDir, 'Multi VPN Client.app', 'Contents', 'MacOS', 'Multi VPN Client');
-  if (platform === 'win32') return join(versionDir, 'Multi VPN Client.exe');
+  }
+  if (platform === 'win32') {
+    return join(versionDir, 'Multi VPN Client.exe');
+  }
+
   return join(versionDir, 'multi-vpn-client');
 }
 
@@ -80,9 +88,13 @@ export const isVersion = (name: string) => Version.safeParse(name).success;
 /** Orders "x.y.z" versions by number: negative when `a` is older than `b`, 0 when equal. */
 export function compareVersions(a: string, b: string): number {
   const [left, right] = [a, b].map((version) => version.split('.').map(Number));
+
   for (let index = 0; index < 3; index++) {
     const difference = (left?.[index] ?? 0) - (right?.[index] ?? 0);
-    if (difference !== 0) return difference;
+    if (difference !== 0) {
+      return difference;
+    }
   }
+
   return 0;
 }

@@ -62,7 +62,7 @@ The most common defect is a change that works on the path you tested and is miss
 - Smallest proof that the change works: `pnpm vitest run <files>` for the tests you touched, then `pnpm format`, `pnpm typecheck` and `pnpm lint`. The full suite is fast; run `pnpm test` before handing work back.
 - Test decisions, not wiring. Logic lives in plain `.ts` files with a `.test.ts` beside them. Prefer real inputs to mocks. Don't render components just to assert props.
 - Tests never touch the real config, real Docker or the real helper.
-- Lint warnings about size are a guideline. Lint errors are not; fix them, or disable one line with a reason on the line above.
+- Lint warnings about size and complexity are a guideline. Lint errors are not; fix them, or disable one line with a reason on the line above.
 - Don't verify in a browser, a real Electron window or a real VPN unless the developer agrees. Say what you verified and what you couldn't, such as a real gateway or another OS.
 
 ## Pull requests
@@ -96,6 +96,7 @@ Most code changes need no documentation change. Agents can read the code, and th
 ## Comments
 
 - A comment carries the why the code can't: a constraint, a trap, an external fact (what a VPN server sends, what an OS does). Keep it to one to three sentences, mostly above functions and types. If the name and types already say it, don't write one.
+- A comment on a declaration (function, type, class, module-level constant) is `/** */`, so editors show it on hover. Comments on statements, and on a group of declarations, are `//`.
 - Reference only what an agent can open, such as paths and docs in this repo.
 - No history: no incident stories, migration notes, or "used to".
 - Comments move with the code and change with it.

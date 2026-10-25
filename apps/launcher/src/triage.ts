@@ -30,26 +30,35 @@ export function findOnPath(
 ): string | undefined {
   const extensions =
     platform === 'win32' ? (env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean) : [''];
+
   for (const dir of (env.PATH ?? '').split(platform === 'win32' ? ';' : ':').filter(Boolean)) {
     for (const extension of extensions) {
       const candidate = join(dir, command + extension.toLowerCase());
+
       try {
-        if (statSync(candidate).isFile()) return candidate;
+        if (statSync(candidate).isFile()) {
+          return candidate;
+        }
       } catch {
         // Not in this folder.
       }
     }
   }
+
   return undefined;
 }
 
 /** The agents installed on this machine, with where each one's command is. */
 export function findAgents(env: NodeJS.ProcessEnv, platform: NodeJS.Platform): Map<Agent, string> {
   const found = new Map<Agent, string>();
+
   for (const agent of Object.keys(AGENTS).filter(isAgent)) {
     const path = findOnPath(AGENTS[agent].command, env, platform);
-    if (path) found.set(agent, path);
+    if (path) {
+      found.set(agent, path);
+    }
   }
+
   return found;
 }
 
@@ -59,15 +68,24 @@ export function pickAgent(
   requested: string | undefined,
 ): { agent: Agent } | { ask: readonly Agent[] } | { error: string } | { none: true } {
   if (requested !== undefined) {
-    if (!isAgent(requested)) return { error: `--agent must be ${orList(Object.keys(AGENTS))}.` };
+    if (!isAgent(requested)) {
+      return { error: `--agent must be ${orList(Object.keys(AGENTS))}.` };
+    }
+
     const { name, command } = AGENTS[requested];
     return installed.includes(requested)
       ? { agent: requested }
       : { error: `${name} (${command}) isn't installed or isn't on PATH.` };
   }
+
   const [only] = installed;
-  if (installed.length === 1 && only) return { agent: only };
-  if (installed.length > 1) return { ask: installed };
+  if (installed.length === 1 && only) {
+    return { agent: only };
+  }
+  if (installed.length > 1) {
+    return { ask: installed };
+  }
+
   return { none: true };
 }
 

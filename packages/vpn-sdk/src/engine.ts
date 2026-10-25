@@ -123,12 +123,15 @@ export function implement<A extends { [N in keyof A]: Action }>(
   implementations: Implementations<A>,
 ): Readonly<Record<string, ErasedAction>> {
   const erased: Record<string, ErasedAction> = {};
+
   // Explicit type arguments: inferred from declared[name], TypeScript would settle for Action's own schema types.
-  for (const name in declared)
+  for (const name in declared) {
     erased[name] = erase<A[typeof name]['input'], A[typeof name]['output']>(
       declared[name],
       implementations[name],
     );
+  }
+
   return erased;
 }
 

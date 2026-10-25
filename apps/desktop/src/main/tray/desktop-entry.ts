@@ -40,15 +40,20 @@ export function desktopEntry({
 /** Writes `content` unless the file already holds it, via a temp file so a dock never reads half of it. Returns whether it wrote. */
 async function writeIfChanged(path: string, content: Buffer) {
   const current = await readFile(path).catch(() => undefined);
-  if (current?.equals(content)) return false;
+  if (current?.equals(content)) {
+    return false;
+  }
+
   await mkdir(dirname(path), { recursive: true });
   const temp = `${path}.${process.pid}.tmp`;
+
   try {
     await writeFile(temp, content);
     await rename(temp, path);
   } finally {
     await rm(temp, { force: true });
   }
+
   return true;
 }
 

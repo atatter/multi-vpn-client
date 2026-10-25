@@ -14,13 +14,18 @@ export const globalprotectForm: KindForm<GlobalProtectVpn> = {
   changed: (vpn) => [
     ...(vpn.gateway ? [`gateway ${vpn.gateway}`] : []),
     ...(vpn.connectAs === 'gateway' ? ['connects to the gateway'] : []),
-    ...(vpn.reportedOs !== 'win'
-      ? [`reports as ${vpn.reportedOs === 'mac' ? 'macOS' : 'Linux'}`]
-      : []),
+    ...(vpn.reportedOs === 'win'
+      ? []
+      : [`reports as ${vpn.reportedOs === 'mac' ? 'macOS' : 'Linux'}`]),
     ...(vpn.hip ? ['HIP report on'] : []),
   ],
-  signsInWith: (vpn) =>
-    vpn.signIn !== 'card' ? undefined : vpn.cardCertificate ? 'Smart card' : 'ID card',
+  signsInWith: (vpn) => {
+    if (vpn.signIn !== 'card') {
+      return undefined;
+    }
+
+    return vpn.cardCertificate ? 'Smart card' : 'ID card';
+  },
   noBrowserSignIn:
     "This portal signs in through the browser, which this app can't do for GlobalProtect yet. Use a username and password, or an ID card.",
   Main: ({ vpn, onChange, errors, showAddress, storedSlots, setSecret }) => (
@@ -52,11 +57,13 @@ export const globalprotectForm: KindForm<GlobalProtectVpn> = {
           onChange={(signIn) => {
             // The card replaces the password, so a remembered one goes.
             onChange({ ...vpn, signIn, ...(signIn === 'card' ? { rememberPassword: false } : {}) });
-            if (signIn === 'card')
+
+            if (signIn === 'card') {
               setSecret(
                 PASSWORD_SLOT.key,
                 storedSlots.includes(PASSWORD_SLOT.key) ? null : undefined,
               );
+            }
           }}
         />
       </div>

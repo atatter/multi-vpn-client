@@ -17,12 +17,20 @@ const isTarget = (key: string): key is Target => key in TARGETS;
 
 const host = `${process.platform}-${process.arch}`;
 const all = Object.keys(TARGETS).filter(isTarget);
-const selected = process.argv.includes('--all')
-  ? all
-  : process.argv.includes('--os')
-    ? all.filter((target) => target.startsWith(`${process.platform}-`))
-    : [host].filter(isTarget);
-if (selected.length === 0) throw new Error(`No helper build target for ${host}`);
+const selectedTargets = () => {
+  if (process.argv.includes('--all')) {
+    return all;
+  }
+  if (process.argv.includes('--os')) {
+    return all.filter((target) => target.startsWith(`${process.platform}-`));
+  }
+
+  return [host].filter(isTarget);
+};
+const selected = selectedTargets();
+if (selected.length === 0) {
+  throw new Error(`No helper build target for ${host}`);
+}
 
 for (const target of selected) {
   const outfile = `dist/mvpn-helper-${target}${target.startsWith('win32') ? '.exe' : ''}`;
@@ -31,7 +39,9 @@ for (const target of selected) {
     compile: { target: TARGETS[target], outfile },
   });
   if (!result.success) {
-    for (const message of result.logs) console.error(message);
+    for (const message of result.logs) {
+      console.error(message);
+    }
     process.exit(1);
   }
   console.log(`built ${outfile}`);

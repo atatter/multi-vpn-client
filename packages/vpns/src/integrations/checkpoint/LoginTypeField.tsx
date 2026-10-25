@@ -34,12 +34,16 @@ export function LoginTypeField({
   // Results belong to the server they came from; editing it hides them.
   const shown = lookup?.server === server.trim() ? lookup : undefined;
   const find = async () => {
-    if (!validServer.success) return;
+    if (!validServer.success) {
+      return;
+    }
+
     const target = validServer.data;
     setLookup({ server: target, state: 'busy' });
     // A lookup for another server since then wins; this one's answer is dropped.
     const settle = (next: NonNullable<typeof lookup>) =>
       setLookup((current) => (current?.server === target ? next : current));
+
     try {
       settle({
         server: target,
@@ -56,11 +60,15 @@ export function LoginTypeField({
   };
   // Once, on arrival: later lookups are the user's choice.
   const lookUpOnArrival = useEffectEvent(() => {
-    if (autoLookup && validServer.success && !value) void find();
+    if (autoLookup && validServer.success && !value) {
+      void find();
+    }
   });
   // The lookup's busy state is set as it starts, which is the point of this effect.
   // oxlint-disable-next-line react/set-state-in-effect
   useEffect(() => lookUpOnArrival(), []);
+  const failure = error || (shown?.state === 'failed' ? shown.message : undefined);
+
   return (
     <div className="mb-3 grid gap-1">
       <div className="flex items-baseline justify-between gap-3">
@@ -111,10 +119,8 @@ export function LoginTypeField({
           })}
         </div>
       )}
-      {error ? (
-        <span className="text-[12.5px] text-danger select-text">{error}</span>
-      ) : shown?.state === 'failed' ? (
-        <span className="text-[12.5px] text-danger select-text">{shown.message}</span>
+      {failure ? (
+        <span className="text-[12.5px] text-danger select-text">{failure}</span>
       ) : (
         <span className={hint}>
           {shown?.state === 'busy'

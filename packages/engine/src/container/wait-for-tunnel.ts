@@ -17,10 +17,17 @@ const CONNECT_TIMEOUT_MS = 90_000;
  * unless `isStopped`.
  */
 export function waitForTunnel(
-  docker: Docker,
-  name: string,
-  follower: ChildProcessByStdio<null, Readable, Readable>,
-  nonce: string,
+  {
+    docker,
+    name,
+    follower,
+    nonce,
+  }: {
+    docker: Docker;
+    name: string;
+    follower: ChildProcessByStdio<null, Readable, Readable>;
+    nonce: string;
+  },
   options: StartOptions,
   isStopped: () => boolean,
 ): Promise<void> {
@@ -28,6 +35,7 @@ export function waitForTunnel(
   const connectMarkers = markers(nonce);
   const lastLines: string[] = [];
   let connected = false;
+
   return new Promise<void>((resolve, reject) => {
     let timeout: NodeJS.Timeout | undefined;
     let failed = false;
@@ -36,6 +44,7 @@ export function waitForTunnel(
       clearTimeout(timeout);
       reject(error);
     };
+
     // Paused while a prompt waits for the user, so a slow SMS doesn't count against the client.
     const startTimeout = () => {
       timeout = setTimeout(
@@ -48,16 +57,22 @@ export function waitForTunnel(
         CONNECT_TIMEOUT_MS,
       );
     };
+
     /** Waits for the user (the connect timeout paused), then hands what they gave to the client. */
     const waitForUser = async (deliver: () => Promise<unknown>) => {
       clearTimeout(timeout);
+
       try {
         await deliver();
-        if (!connected && !failed) startTimeout();
+
+        if (!connected && !failed) {
+          startTimeout();
+        }
       } catch (error) {
         fail(error);
       }
     };
+
     // An answer goes to the client as one line on its answers FIFO; control characters (e.g. Ctrl-C) would reach its terminal.
     const answer = (prompt: string) =>
       waitForUser(async () => {
@@ -69,6 +84,7 @@ export function waitForTunnel(
           `${reply.replace(/[\x00-\x1f\x7f]/g, '')}\n`,
         );
       });
+
     // A browser sign-in's token goes to the client's listener inside the container.
     const signIn = (request: BrowserSignIn) =>
       waitForUser(async () => {
@@ -92,25 +108,41 @@ export function waitForTunnel(
         );
       });
     startTimeout();
-    if (options.signal.aborted) fail(options.signal.reason);
+
+    if (options.signal.aborted) {
+      fail(options.signal.reason);
+    }
+
     options.signal.addEventListener(
       'abort',
       () => {
-        if (!connected) fail(options.signal.reason);
+        if (!connected) {
+          fail(options.signal.reason);
+        }
       },
       { once: true },
     );
     // The card stops being available if it's removed from the reader. Before connecting, that ends the connect.
     options.cardBridge?.attach(docker.bin, name, (message) => {
       options.onLog(message);
-      if (!connected) fail(new Error(message));
+
+      if (!connected) {
+        fail(new Error(message));
+      }
     });
     const onLine = (line: string) => {
       options.onLog(line);
       lastLines.push(line);
-      if (lastLines.length > 30) lastLines.shift();
+
+      if (lastLines.length > 30) {
+        lastLines.shift();
+      }
+
       const meaning = classifyLine(line, launch.readLine, connectMarkers);
-      if (meaning === undefined || connected || failed) return;
+      if (meaning === undefined || connected || failed) {
+        return;
+      }
+
       if (meaning === 'connected') {
         connected = true;
         clearTimeout(timeout);
@@ -136,13 +168,16 @@ export function waitForTunnel(
     // Registered before the tunnel is reported up, so an exit right after connecting is never missed.
     follower.on('close', () => {
       clearTimeout(timeout);
-      if (!connected)
+
+      if (!connected) {
         reject(
           new Error(
             `${launch.client} stopped before connecting: ${lastLines.at(-1) ?? 'no output'}`,
           ),
         );
-      else if (!isStopped()) options.onExit([...lastLines]);
+      } else if (!isStopped()) {
+        options.onExit([...lastLines]);
+      }
     });
   });
 }

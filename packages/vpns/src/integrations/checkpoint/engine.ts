@@ -29,7 +29,10 @@ const OWNED = [
 
 /** A config value on one line; a newline would start another setting. */
 function oneLine(label: string, value: string): string {
-  if (/[\r\n]/.test(value)) throw new Error(`The ${label} can't contain line breaks.`);
+  if (/[\r\n]/.test(value)) {
+    throw new Error(`The ${label} can't contain line breaks.`);
+  }
+
   return value.trim();
 }
 
@@ -55,7 +58,7 @@ export function snxConfig(vpn: CheckpointVpn, password: string | undefined): str
     `login-type=${oneLine('login type', vpn.loginType)}`,
     ...(vpn.username ? [`user-name=${oneLine('username', vpn.username)}`] : []),
     // snx-rs expects the password base64-encoded, which also keeps any character safe here.
-    ...(password !== undefined ? [`password=${Buffer.from(password).toString('base64')}`] : []),
+    ...(password === undefined ? [] : [`password=${Buffer.from(password).toString('base64')}`]),
     `tunnel-type=${vpn.tunnel}`,
     'no-dns=true',
     'default-route=true',
@@ -88,24 +91,33 @@ export function checkpointLaunch(vpn: CheckpointVpn, password: string | undefine
         browserNext = true;
         return undefined;
       }
+
       if (browserNext && trimmed) {
         browserNext = false;
-        if (/^https:\/\/\S+$/.test(trimmed))
+        if (/^https:\/\/\S+$/.test(trimmed)) {
           return { signInUrl: trimmed, tokenPort: SNX_TOKEN_PORT };
+        }
+
         return {
           failed: `${vpn.server} sent a browser sign-in address that isn't https: ${trimmed}`,
         };
       }
+
       const error = /^Error: (.+)$/.exec(trimmed)?.[1];
-      if (!error) return undefined;
-      if (error === 'Authentication failed')
+      if (!error) {
+        return undefined;
+      }
+      if (error === 'Authentication failed') {
         return {
           failed: 'The VPN server rejected the sign-in (username, password, code or approval).',
         };
-      if (error === 'Unsupported login type')
+      }
+      if (error === 'Unsupported login type') {
         return {
           failed: `${vpn.server} doesn't offer the login type ${vpn.loginType}. Look up the ones it offers in the VPN's settings.`,
         };
+      }
+
       return { failed: error };
     },
   };
@@ -117,7 +129,10 @@ const LOGIN_TYPE_LINE = /^\s*\[(.+)\]: (vpn_\S+) \(([^()]*)\)$/;
 export function parseLoginTypes(output: string): CheckpointLoginType[] {
   return output.split(/\r?\n/).flatMap((line) => {
     const [, label, id, factors] = LOGIN_TYPE_LINE.exec(line) ?? [];
-    if (!label || !id) return [];
+    if (!label || !id) {
+      return [];
+    }
+
     return [
       {
         id,
@@ -140,7 +155,10 @@ export const checkpointActions = implement(CHECKPOINT_ACTIONS, {
       env: { LANG: 'en_US.UTF-8' },
     });
     const types = parseLoginTypes(result.stdout);
-    if (result.code === 0 && types.length > 0) return types;
+    if (result.code === 0 && types.length > 0) {
+      return types;
+    }
+
     const error = `${result.stderr}\n${result.stdout}`
       .split(/\r?\n/)
       .find((line) => line.startsWith('Error: '));

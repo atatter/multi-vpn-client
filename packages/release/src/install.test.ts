@@ -36,6 +36,7 @@ async function fakeArchive() {
   const sha256 = createHash('sha256')
     .update(await readFile(join(dir, file)))
     .digest('hex');
+
   return { dir, file, sha256 };
 }
 
@@ -47,8 +48,10 @@ async function serve(dir: string) {
   const requests: string[] = [];
   const server = createServer((request, response) => {
     requests.push(request.url ?? '');
-    if (request.url?.startsWith('/moved/'))
+    if (request.url?.startsWith('/moved/')) {
       return void response.writeHead(302, { location: request.url.slice('/moved'.length) }).end();
+    }
+
     readFile(join(dir, (request.url ?? '').slice(1))).then(
       (body) => response.end(body),
       () => response.writeHead(404).end(),
@@ -56,6 +59,7 @@ async function serve(dir: string) {
   });
   servers.push(server);
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+
   return { url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, requests };
 }
 
@@ -156,7 +160,11 @@ describe('the versions on disk', () => {
 
   it('lose only the versions older than the running one', async () => {
     const versions = await mkdtemp(join(tmpdir(), 'mvpn-versions-'));
-    for (const version of ['0.1.0', '0.9.0', '0.10.0', '0.11.0']) await unpacked(versions, version);
+
+    for (const version of ['0.1.0', '0.9.0', '0.10.0', '0.11.0']) {
+      await unpacked(versions, version);
+    }
+
     await mkdir(join(versions, '.download-x'));
     await removeOlderVersions(versions, '0.10.0', (path) =>
       rm(path, { recursive: true, force: true }),

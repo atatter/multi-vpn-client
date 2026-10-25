@@ -41,16 +41,23 @@ function wordsOf(line: string): string[] {
   let word = '';
   let state: 'start' | 'plain' | '"' | "'" = 'start';
   let escaped = false;
+
   for (const char of line) {
     if (!escaped && char === '\\' && state !== "'") {
       escaped = true;
       continue;
     }
+
     const space = /[\s\0]/.test(char);
+
     if (state === 'start') {
-      if (char === '#' || char === ';') break;
-      if (!space && !escaped && (char === '"' || char === "'")) state = char;
-      else if (!space) {
+      if (char === '#' || char === ';') {
+        break;
+      }
+
+      if (!space && !escaped && (char === '"' || char === "'")) {
+        state = char;
+      } else if (!space) {
         word += char;
         state = 'plain';
       }
@@ -61,11 +68,18 @@ function wordsOf(line: string): string[] {
         words.push(word);
         word = '';
         state = 'start';
-      } else word += char;
+      } else {
+        word += char;
+      }
     }
+
     escaped = false;
   }
-  if (state !== 'start') words.push(word);
+
+  if (state !== 'start') {
+    words.push(word);
+  }
+
   return words;
 }
 
@@ -103,7 +117,7 @@ export function openVpnLaunch({
     command: ['openvpn'],
     files: {
       'profile.ovpn': composeProfile(profile, extraDirectives),
-      ...(password !== undefined ? { auth: `${username}\n${password}\n` } : {}),
+      ...(password === undefined ? {} : { auth: `${username}\n${password}\n` }),
     },
     readLine: (line) =>
       line.includes('AUTH_FAILED')
@@ -116,21 +130,31 @@ export function openVpnLaunch({
 export const openvpnEngine: LauncherEntry<OpenVpn> = {
   launch: async (vpn, secrets) => {
     const profile = await secrets.read('profile');
-    if (!profile) throw new Error('Import the .ovpn profile first.');
+    if (!profile) {
+      throw new Error('Import the .ovpn profile first.');
+    }
+
     const parsed = parseOpenVpnProfile(profile);
-    if (!parsed.ok)
+    if (!parsed.ok) {
       throw new Error(`The stored .ovpn profile is invalid (${parsed.error}). Import it again.`);
-    if (!parsed.needsPassword)
+    }
+    if (!parsed.needsPassword) {
       return openVpnLaunch({
         profile,
         extraDirectives: vpn.advanced,
         username: vpn.username,
         password: undefined,
       });
-    if (!vpn.username)
+    }
+    if (!vpn.username) {
       throw new Error("This profile needs a username. Add it in the VPN's settings.");
+    }
+
     const password = await secrets.loginPassword();
-    if (password === undefined) return 'needs-password';
+    if (password === undefined) {
+      return 'needs-password';
+    }
+
     return openVpnLaunch({
       profile,
       extraDirectives: vpn.advanced,

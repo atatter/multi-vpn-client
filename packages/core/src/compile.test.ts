@@ -8,15 +8,13 @@ const rule = (
   id: string,
   cidr: string,
   vpnId: string,
-  enabled = true,
-  pinned = false,
+  { enabled = true, pinned = false } = {},
 ): RouteRule => ({ id, kind: 'cidr', cidr, vpnId, enabled, note: '', pinned });
 const domain = (
   id: string,
   name: string,
   vpnId: string,
-  enabled = true,
-  pinned = false,
+  { enabled = true, pinned = false } = {},
 ): RouteRule => ({ id, kind: 'domain', domain: name, vpnId, enabled, note: '', pinned });
 
 const vpns = [vpn('a'), vpn('b')];
@@ -149,14 +147,17 @@ describe('compileRoutes', () => {
   it('ignores disabled rules, so they shadow nothing', () => {
     const result = compileRoutes({
       vpns,
-      routes: [rule('r1', '10.0.0.0/8', 'a', false), rule('r2', '10.20.0.0/16', 'b')],
+      routes: [rule('r1', '10.0.0.0/8', 'a', { enabled: false }), rule('r2', '10.20.0.0/16', 'b')],
     });
     expect(result.byVpn).toEqual({ a: [], b: ['10.20.0.0/16'] });
     expect(result.warnings).toEqual([]);
   });
 
   it('still reports invalid disabled rules, since saving would reject them', () => {
-    const result = compileRoutes({ vpns, routes: [rule('r1', '10.20.1.5/16', 'a', false)] });
+    const result = compileRoutes({
+      vpns,
+      routes: [rule('r1', '10.20.1.5/16', 'a', { enabled: false })],
+    });
     expect(result.warnings).toEqual([
       {
         kind: 'invalid-cidr',
@@ -191,7 +192,7 @@ describe('compileRoutes: domain routes', () => {
         domain('d1', 'argo.lab.example', 'b'),
         rule('r1', '10.20.0.0/16', 'a'),
         domain('d2', 'lab.example', 'a'),
-        domain('d3', 'off.example', 'a', false),
+        domain('d3', 'off.example', 'a', { enabled: false }),
       ],
     });
     expect(result.domains).toEqual([
@@ -259,7 +260,7 @@ describe('compileRoutes: domain routes', () => {
 describe('effectiveRules', () => {
   const own = [
     rule('a1', '10.20.0.0/16', 'a'),
-    rule('a2', '10.30.0.0/16', 'a', true, true),
+    rule('a2', '10.30.0.0/16', 'a', { pinned: true }),
     rule('b1', '10.140.0.0/16', 'b'),
   ];
   const base = vpn('a');
@@ -307,7 +308,10 @@ describe('compileRoutes: pins and all-traffic VPNs', () => {
   it('gives a pinned rule its addresses whatever the order', () => {
     const { byVpn } = compileRoutes({
       vpns,
-      routes: [rule('a1', '10.143.1.20/32', 'a'), rule('b1', '10.143.1.20/32', 'b', true, true)],
+      routes: [
+        rule('a1', '10.143.1.20/32', 'a'),
+        rule('b1', '10.143.1.20/32', 'b', { pinned: true }),
+      ],
     });
     expect(byVpn).toEqual({ a: [], b: ['10.143.1.20/32'] });
   });
@@ -334,7 +338,7 @@ describe('compileRoutes: pins and all-traffic VPNs', () => {
       rule('a1', '10.140.0.0/16', 'a'),
       domain('a2', 'corp.example', 'a'),
       ...effectiveRules({ ...vpn('b'), traffic: 'all' }, [
-        domain('b2', 'pinned.example', 'b', true, true),
+        domain('b2', 'pinned.example', 'b', { pinned: true }),
       ]),
     ];
     const result = compileRoutes({ vpns, routes });
@@ -345,6 +349,7 @@ describe('compileRoutes: pins and all-traffic VPNs', () => {
 
 describe('routingPlan', () => {
   const on = (...ids: string[]) => new Set(ids);
+
   const config = (routes: RouteRule[], list: Vpn[] = vpns) => ({
     vpns: list,
     routes,
@@ -386,7 +391,7 @@ describe('routingPlan', () => {
     const routes = [
       rule('a1', '10.0.0.0/8', 'a'),
       rule('a2', '10.1.0.0/16', 'a'),
-      rule('a3', '10.0.0.0/8', 'a', false),
+      rule('a3', '10.0.0.0/8', 'a', { enabled: false }),
       rule('b1', '10.2.0.0/16', 'b'),
     ];
     const [a, b] = routingPlan(config(routes), on('a', 'b'), on('a', 'b'));
@@ -400,7 +405,7 @@ describe('routingPlan', () => {
     const routes = [
       rule('b1', '10.140.0.0/16', 'b'),
       rule('c1', '10.50.0.0/16', 'c'),
-      rule('c2', '10.60.0.0/16', 'c', true, true),
+      rule('c2', '10.60.0.0/16', 'c', { pinned: true }),
     ];
     const [a, b, c] = routingPlan(config(routes, list), on('a', 'b', 'c'), on('a', 'b', 'c'));
     expect(a).toMatchObject({ broad: true });
@@ -455,7 +460,7 @@ describe('routingPlan: subdomains taken by pins', () => {
     const list = [vpn('a'), vpn('b')];
     const routes = [
       domain('a1', 'a.corp.example', 'a'),
-      domain('b1', 'corp.example', 'b', true, true),
+      domain('b1', 'corp.example', 'b', { pinned: true }),
     ];
     const [a, b] = routingPlan(
       { vpns: list, routes, priority: ['a', 'b'] },

@@ -16,6 +16,20 @@ import { Switch } from '@repo/ui/controls/Switch.tsx';
 import { cx, link, mono, note, primary, TONES } from '@repo/ui/tokens.ts';
 import { LastMinute } from './LastMinute.tsx';
 
+function titleOf(state: { connected: boolean; failed: boolean; waiting: boolean; on: boolean }) {
+  if (state.connected) {
+    return 'Connected';
+  }
+  if (state.failed) {
+    return "Couldn't connect";
+  }
+  if (state.waiting) {
+    return 'Waiting to connect';
+  }
+
+  return state.on ? 'Connecting' : 'Not connected';
+}
+
 /** Its state, its switch, and while connected the last minute of its traffic; failures show the log and a retry. */
 export function StatusCard({ vpn, leave }: { vpn: Vpn; leave: (go: () => void) => void }) {
   const app = useApp();
@@ -34,15 +48,7 @@ export function StatusCard({ vpn, leave }: { vpn: Vpn; leave: (go: () => void) =
   const starvedBy = layer?.starvedBy
     ? app.config.vpns.find((other) => other.id === layer.starvedBy)
     : undefined;
-  const title = connected
-    ? 'Connected'
-    : failed
-      ? "Couldn't connect"
-      : app.waiting.has(vpn.id)
-        ? 'Waiting to connect'
-        : on
-          ? 'Connecting'
-          : 'Not connected';
+  const title = titleOf({ connected, failed, waiting: app.waiting.has(vpn.id), on });
   // Off, it names its server, unless something has to be done before it can connect: then it says what.
   const needsSetup = !on && status.tone === 'sodium';
 
@@ -50,11 +56,9 @@ export function StatusCard({ vpn, leave }: { vpn: Vpn; leave: (go: () => void) =
     <section
       className={cx(
         'grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 rounded-[9px] border px-3 py-2.5',
-        connected
-          ? 'border-go/35 bg-[color-mix(in_srgb,var(--go)_7%,var(--field))]'
-          : failed
-            ? 'border-danger/35 bg-[color-mix(in_srgb,var(--danger)_6%,var(--field))]'
-            : 'border-rule bg-field',
+        connected && 'border-go/35 bg-[color-mix(in_srgb,var(--go)_7%,var(--field))]',
+        failed && 'border-danger/35 bg-[color-mix(in_srgb,var(--danger)_6%,var(--field))]',
+        !connected && !failed && 'border-rule bg-field',
       )}
     >
       <span className="min-w-0">

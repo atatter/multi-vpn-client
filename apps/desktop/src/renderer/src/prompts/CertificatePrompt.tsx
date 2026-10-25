@@ -21,7 +21,10 @@ export function CertificatePrompt({
       role="group"
       aria-label={`${vpnLabel(vpn)}'s certificate`}
       onKeyDown={(event) => {
-        if (event.key !== 'Escape') return;
+        if (event.key !== 'Escape') {
+          return;
+        }
+
         event.preventDefault();
         app.cancelPrompt();
       }}

@@ -9,7 +9,7 @@ import { createSingBoxBackend, stopLeftover } from './engine.ts';
 
 const tunnel: VpnTunnel = {
   vpnId: 'a',
-  port: 41000,
+  port: 41_000,
   username: 'u',
   password: 'p',
   cidrs: ['10.20.0.0/16'],
@@ -42,12 +42,16 @@ while :; do sleep 0.1; [ -e ${join(dir, 'die')} ] && exit 3; done
     .digest('hex');
   const readEvents = async () =>
     (await readFile(events, 'utf8').catch(() => '')).trim().split('\n').filter(Boolean);
+
   const crash = () => writeFile(join(dir, 'die'), '');
+
   return { dir, path, sha, readEvents, crash };
 }
 
-// The stand-in is a shell script that traps SIGHUP and SIGTERM; Windows has neither. CI runs these on Linux and
-// macOS, and Windows' restart-instead-of-reload path is covered there by passing reload: "restart".
+/**
+ * The stand-in is a shell script that traps SIGHUP and SIGTERM; Windows has neither. CI runs these on Linux and
+ * macOS, and Windows' restart-instead-of-reload path is covered there by passing reload: "restart".
+ */
 const noFakeSingBox = process.platform === 'win32';
 
 const recordingDns = () => {
@@ -260,6 +264,7 @@ describe('stopLeftover', () => {
         stdio: 'ignore',
       });
       const gone = new Promise((resolve) => leftover.once('exit', resolve));
+
       try {
         await stopLeftover({
           singBoxPath: sb.path,

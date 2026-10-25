@@ -13,13 +13,20 @@ export function addEntries(
   const added: RouteRule[] = [];
   const bad: string[] = [];
   const dupes: string[] = [];
+
   for (const token of text.split(/[\s,]+/).filter(Boolean)) {
     const parsed = RouteRule.safeParse(retarget(newRoute('', vpnId), token));
-    if (!parsed.success) bad.push(token);
-    else if ([...routes, ...added].some((route) => routeTarget(route) === routeTarget(parsed.data)))
+    if (!parsed.success) {
+      bad.push(token);
+    } else if (
+      [...routes, ...added].some((route) => routeTarget(route) === routeTarget(parsed.data))
+    ) {
       dupes.push(routeTarget(parsed.data));
-    else added.push(parsed.data);
+    } else {
+      added.push(parsed.data);
+    }
   }
+
   const problem = [
     bad.length
       ? `${listOf(bad)} ${bad.length === 1 ? "isn't a site or IP range" : "aren't sites or IP ranges"}.`
@@ -30,5 +37,6 @@ export function addEntries(
   ]
     .join(' ')
     .trim();
+
   return { routes: [...routes, ...added], text: bad.join(' '), problem: problem || undefined };
 }

@@ -30,10 +30,14 @@ const allowed = (vpn: Vpn, key: string) =>
 /** Drops secrets of deleted VPNs, slots the VPN's kind doesn't have, and passwords the user doesn't want kept. */
 export function pruneSecrets<T>(stored: SecretMap<T>, vpns: readonly Vpn[]): SecretMap<T> {
   const result: SecretMap<T> = {};
+
   for (const vpn of vpns) {
     const kept = Object.entries(stored[vpn.id] ?? {}).filter(([key]) => allowed(vpn, key));
-    if (kept.length > 0) result[vpn.id] = Object.fromEntries(kept);
+    if (kept.length > 0) {
+      result[vpn.id] = Object.fromEntries(kept);
+    }
   }
+
   return result;
 }
 
@@ -44,13 +48,16 @@ export function pruneSecrets<T>(stored: SecretMap<T>, vpns: readonly Vpn[]): Sec
  */
 export function kindChangeClears(saved: readonly Vpn[], next: readonly Vpn[]): SecretChanges {
   const clears: SecretChanges = {};
+
   for (const vpn of next) {
     const before = saved.find((candidate) => candidate.id === vpn.id);
-    if (before && before.kind !== vpn.kind)
+    if (before && before.kind !== vpn.kind) {
       clears[vpn.id] = Object.fromEntries(
         kindSpec(before.kind).secrets.map((slot) => [slot.key, null]),
       );
+    }
   }
+
   return clears;
 }
 
@@ -61,8 +68,11 @@ export function changesForSave(
   changes: SecretChanges,
 ): SecretChanges {
   const merged: SecretChanges = { ...kindChangeClears(saved, next) };
-  for (const [vpnId, slots] of Object.entries(changes))
+
+  for (const [vpnId, slots] of Object.entries(changes)) {
     merged[vpnId] = { ...merged[vpnId], ...slots };
+  }
+
   return merged;
 }
 
@@ -73,14 +83,21 @@ export function applySecretChanges<T>(
   vpns: readonly Vpn[],
 ): SecretMap<T> {
   const next: SecretMap<T> = { ...stored };
+
   for (const [vpnId, slots] of Object.entries(changes)) {
     const kept = { ...next[vpnId] };
+
     for (const [key, value] of Object.entries(slots)) {
-      if (value === null) delete kept[key];
-      else kept[key] = value;
+      if (value === null) {
+        delete kept[key];
+      } else {
+        kept[key] = value;
+      }
     }
+
     next[vpnId] = kept;
   }
+
   return pruneSecrets(next, vpns);
 }
 
@@ -95,26 +112,34 @@ export const missingSecrets = (vpn: Vpn, storedKeys: readonly string[]): SecretS
 /** Checks pending changes against the VPNs they target. Returns human-readable problems; empty means valid. */
 export function validateSecretChanges(changes: SecretChanges, vpns: readonly Vpn[]): string[] {
   const problems: string[] = [];
+
   for (const [vpnId, slots] of Object.entries(changes)) {
     const vpn = vpns.find((candidate) => candidate.id === vpnId);
     if (!vpn) {
       problems.push(`Unknown VPN "${vpnId}"`);
       continue;
     }
+
     for (const [key, value] of Object.entries(slots)) {
       // Clearing is always fine, including slots of a kind the VPN just switched away from.
-      if (value === null) continue;
+      if (value === null) {
+        continue;
+      }
+
       const slot = kindSpec(vpn.kind).secrets.find((candidate) => candidate.key === key);
       if (!slot) {
         problems.push(`${vpn.name}: "${key}" is not a secret of this VPN type`);
         continue;
       }
+
       const parsed = slot.schema.safeParse(value);
-      if (!parsed.success)
+      if (!parsed.success) {
         problems.push(
           `${vpn.name}: ${slot.label}: ${parsed.error.issues[0]?.message ?? 'invalid'}`,
         );
+      }
     }
   }
+
   return problems;
 }

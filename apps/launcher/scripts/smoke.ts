@@ -18,15 +18,17 @@ const { values } = parseArgs({
   options: { package: { type: 'string' }, archives: { type: 'string' } },
 });
 const { package: packageDir, archives } = values;
-if (!packageDir || !archives)
+if (!packageDir || !archives) {
   throw new Error('Usage: smoke.ts --package <npm package dir> --archives <dir>');
+}
 
 const manifest = Manifest.parse(JSON.parse(readFileSync(join(packageDir, 'release.json'), 'utf8')));
 const launcherVersion = execFileSync(process.execPath, [join(packageDir, 'bin.mjs'), '--version'], {
   encoding: 'utf8',
 }).trim();
-if (launcherVersion !== manifest.version)
+if (launcherVersion !== manifest.version) {
   throw new Error(`The launcher says ${launcherVersion}, its release.json ${manifest.version}.`);
+}
 
 const server = createServer((request, response) => {
   readFile(join(archives, (request.url ?? '').slice(1))).then(
@@ -80,9 +82,11 @@ if (early !== 'running') {
 }
 // Stop the app and the processes it started (renderer, GPU), by the pid captured at spawn. Forcefully: on macOS the
 // app outlived SIGTERM and its open output pipes kept this script running.
-if (platform === 'win32')
+if (platform === 'win32') {
   execFileSync('taskkill', ['/pid', String(app.pid), '/T', '/F'], { stdio: 'ignore' });
-else if (app.pid) process.kill(-app.pid, 'SIGKILL');
+} else if (app.pid) {
+  process.kill(-app.pid, 'SIGKILL');
+}
 app.stdout.destroy();
 app.stderr.destroy();
 console.log(

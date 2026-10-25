@@ -10,6 +10,7 @@ export function TrafficBars({ rates = [] }: { rates?: readonly number[] }) {
     (_, index) => (seconds[index * 2] ?? 0) + (seconds[index * 2 + 1] ?? 0),
   );
   const max = Math.max(1, ...bars) * 1.08;
+
   return (
     <svg
       className="block h-9 w-full"

@@ -61,7 +61,9 @@ const connections = createConnectionManager({
   saveServerRoutes: (vpnId, serverRoutes) => saveServerRoutes(configPath, vpnId, serverRoutes),
   // Sign-in pages come from the VPN client; only https ones are opened, in the user's own browser.
   openUrl: (url) => {
-    if (URL.parse(url)?.protocol === 'https:') void shell.openExternal(url);
+    if (URL.parse(url)?.protocol === 'https:') {
+      void shell.openExternal(url);
+    }
   },
 });
 
@@ -96,7 +98,10 @@ const updater = createUpdater({
 function restartToUpdate() {
   // Once: each relaunch call would start another copy.
   const version = updater.markRestarting();
-  if (!version) return;
+  if (!version) {
+    return;
+  }
+
   // Given an execPath, Electron passes only `args`: hand this run's own on (the launcher's --no-sandbox, for one).
   app.relaunch({
     execPath: executableIn(join(versions, version), platform),
@@ -120,18 +125,30 @@ followTheme();
 // One instance only: two would fight over the helper session and each other's containers. Starting the app again
 // brings the window back, also from the tray.
 const primaryInstance = app.requestSingleInstanceLock();
-if (primaryInstance) trayPlatform.registerDesktopApp();
-else app.quit();
+if (primaryInstance) {
+  trayPlatform.registerDesktopApp();
+} else {
+  app.quit();
+}
 app.on('second-instance', () => void showWindow());
 
 void app.whenReady().then(() => {
-  if (!primaryInstance) return;
+  if (!primaryInstance) {
+    return;
+  }
+
   // macOS ignores a window's icon; outside a packaged app the Dock would show Electron's. A packaged app has its own.
-  if (!app.isPackaged) app.dock?.setIcon(APP_ICON);
+  if (!app.isPackaged) {
+    app.dock?.setIcon(APP_ICON);
+  }
+
   const window = createWindow();
   // ✕ hides the window: the app stays in the tray and the VPNs stay on.
   window.on('close', (event) => {
-    if (windowMayClose) return;
+    if (windowMayClose) {
+      return;
+    }
+
     event.preventDefault();
     hideWindow();
   });
@@ -153,14 +170,21 @@ void app.whenReady().then(() => {
   void connections.removeLeftovers();
   updater.start();
   app.on('browser-window-focus', updater.windowFocused);
+
   // Holding the single-instance lock, no older version can be running, so what an update replaced can go.
-  if (app.isPackaged) void removeOlderVersions(versions, app.getVersion(), remove);
+  if (app.isPackaged) {
+    void removeOlderVersions(versions, app.getVersion(), remove);
+  }
+
   app.on('activate', () => void showWindow());
 });
 
 // Quitting is the tray's menu, or ⌘Q on macOS. Disconnect everything (containers, routing helper) first.
 app.on('before-quit', (event) => {
-  if (shuttingDown) return;
+  if (shuttingDown) {
+    return;
+  }
+
   shuttingDown = true;
   event.preventDefault();
   void connections.shutdown().finally(() => {

@@ -14,8 +14,14 @@ export async function latestRelease(url = LATEST_URL): Promise<Manifest> {
   const response = await fetch(url, { signal: AbortSignal.timeout(30_000) }).catch(() => {
     throw new Error("Couldn't reach npm. Check the internet connection.");
   });
-  if (!response.ok) throw new Error(`npm answered HTTP ${response.status}. Try again later.`);
+  if (!response.ok) {
+    throw new Error(`npm answered HTTP ${response.status}. Try again later.`);
+  }
+
   const parsed = Latest.safeParse(await response.json().catch(() => undefined));
-  if (!parsed.success) throw new Error("npm's newest version doesn't say what to download.");
+  if (!parsed.success) {
+    throw new Error("npm's newest version doesn't say what to download.");
+  }
+
   return parsed.data.release;
 }

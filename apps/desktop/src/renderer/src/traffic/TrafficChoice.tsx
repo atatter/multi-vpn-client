@@ -30,61 +30,30 @@ export function TrafficChoice({
   const name = vpnLabel(vpn);
   const unknowable = !followsServerRoutes(vpn.kind);
 
-  const official = unknowable ? (
-    <>
-      {FORMS[vpn.kind].label} doesn't tell this app what its gateway sends, so choose your sites or
-      all your traffic.
-    </>
-  ) : !server ? (
-    <>
-      Whatever {name}'s server sends, exactly like the official app. Shown here after the first
-      connect.
-    </>
-  ) : server.all ? (
-    <>Its server sends all your traffic through it. {IPV6_BLOCKED}</>
-  ) : (
-    <>
-      Its server sends only its own network:
-      <span className="mt-1.5 flex flex-wrap gap-1">
-        {server.cidrs.map((cidr) => (
-          <span
-            key={cidr}
-            className={cx(mono, 'rounded bg-chip px-1.5 py-px text-[11.5px] text-ink')}
-          >
-            {cidr}
-          </span>
-        ))}
-        {server.cidrs.length === 0 && <span className="text-[12.5px]">nothing yet</span>}
-      </span>
-    </>
-  );
-
-  const extras =
-    server && !server.all ? (
-      routes.length > 0 || addingExtra ? (
-        <div className="mt-1">
-          <span className="text-[13px] font-semibold">Also send these through it</span>
-          <SitesEditor
-            vpn={vpn}
-            routes={routes}
-            onChange={onRoutes}
-            warnings={warnings}
-            autoFocus={addingExtra && routes.length === 0}
-          />
-        </div>
-      ) : (
-        <button type="button" className={cx(link, 'mt-0.5')} onClick={() => setAddingExtra(true)}>
-          + Also send a site the server doesn't
-        </button>
-      )
-    ) : undefined;
+  const extraSites =
+    routes.length > 0 || addingExtra ? (
+      <div className="mt-1">
+        <span className="text-[13px] font-semibold">Also send these through it</span>
+        <SitesEditor
+          vpn={vpn}
+          routes={routes}
+          onChange={onRoutes}
+          warnings={warnings}
+          autoFocus={addingExtra && routes.length === 0}
+        />
+      </div>
+    ) : (
+      <button type="button" className={cx(link, 'mt-0.5')} onClick={() => setAddingExtra(true)}>
+        + Also send a site the server doesn't
+      </button>
+    );
 
   const options: ChoiceOption<TrafficMode>[] = [
     {
       value: 'official',
       title: TRAFFIC_LABEL.official,
-      description: official,
-      extra: extras,
+      description: officialDescription(vpn, unknowable),
+      extra: server && !server.all ? extraSites : undefined,
       disabled: unknowable,
     },
     {
@@ -102,7 +71,8 @@ export function TrafficChoice({
       ),
     },
   ];
-  if (more)
+
+  if (more) {
     options.push({
       value: 'all',
       title: TRAFFIC_LABEL.all,
@@ -111,6 +81,7 @@ export function TrafficChoice({
           ? `Everything, even though the server only asks for its own network. Your personal browsing goes through ${name} too, and it can be slower or blocked. ${IPV6_BLOCKED}`
           : `Everything goes through it, whatever the server says. ${IPV6_BLOCKED}`,
     });
+  }
 
   return (
     <>
@@ -125,6 +96,47 @@ export function TrafficChoice({
           More choices
         </button>
       )}
+    </>
+  );
+}
+
+/** What following the official app means for this VPN, as far as the app knows. */
+function officialDescription(vpn: Vpn, unknowable: boolean) {
+  const server = vpn.serverRoutes;
+  if (unknowable) {
+    return (
+      <>
+        {FORMS[vpn.kind].label} doesn't tell this app what its gateway sends, so choose your sites
+        or all your traffic.
+      </>
+    );
+  }
+  if (!server) {
+    return (
+      <>
+        Whatever {vpnLabel(vpn)}'s server sends, exactly like the official app. Shown here after the
+        first connect.
+      </>
+    );
+  }
+  if (server.all) {
+    return <>Its server sends all your traffic through it. {IPV6_BLOCKED}</>;
+  }
+
+  return (
+    <>
+      Its server sends only its own network:
+      <span className="mt-1.5 flex flex-wrap gap-1">
+        {server.cidrs.map((cidr) => (
+          <span
+            key={cidr}
+            className={cx(mono, 'rounded bg-chip px-1.5 py-px text-[11.5px] text-ink')}
+          >
+            {cidr}
+          </span>
+        ))}
+        {server.cidrs.length === 0 && <span className="text-[12.5px]">nothing yet</span>}
+      </span>
     </>
   );
 }

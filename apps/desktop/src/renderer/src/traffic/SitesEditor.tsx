@@ -30,13 +30,20 @@ export function SitesEditor({
   const [removed, setRemoved] = useState<{ route: RouteRule; index: number }>();
 
   const add = () => {
-    if (!text.trim()) return;
+    if (!text.trim()) {
+      return;
+    }
+
     const result = addEntries(text, routes, vpn.id);
-    if (result.routes.length > routes.length) onChange(result.routes);
+    if (result.routes.length > routes.length) {
+      onChange(result.routes);
+    }
+
     setRemoved(undefined);
     setText(result.text);
     setProblem(result.problem);
   };
+
   const update = (id: string, patch: { enabled?: boolean; pinned?: boolean }) =>
     onChange(routes.map((route) => (route.id === id ? { ...route, ...patch } : route)));
 

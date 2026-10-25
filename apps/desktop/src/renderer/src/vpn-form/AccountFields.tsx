@@ -44,6 +44,7 @@ export function AccountFields({
     api
       .runAction(vpn.kind, name, input)
       .catch((error: unknown) => Promise.reject(new Error(messageOf(error))));
+
   const setSecret = (key: string, value: string | null | undefined) => {
     const { [key]: _previous, ...rest } = pending;
     onPendingChange(value === undefined ? rest : { ...rest, [key]: value });
@@ -56,10 +57,15 @@ export function AccountFields({
 
   const setRemember = (rememberPassword: boolean) => {
     onChange({ ...vpn, rememberPassword });
+
     // A password typed while remembering mustn't be saved once it's off; a stored one goes too.
-    if (!rememberPassword)
+    if (!rememberPassword) {
       setSecret(passwordKey, storedSlots.includes(passwordKey) ? null : undefined);
+    }
   };
+  const rememberHint = vpn.rememberPassword
+    ? 'Saved in your system keychain.'
+    : "You'll be asked each time you connect.";
 
   return (
     <>
@@ -102,13 +108,7 @@ export function AccountFields({
         <>
           <ToggleRow
             label="Remember password"
-            hint={
-              keychainProblem
-                ? 'Not available on this computer.'
-                : vpn.rememberPassword
-                  ? 'Saved in your system keychain.'
-                  : "You'll be asked each time you connect."
-            }
+            hint={keychainProblem ? 'Not available on this computer.' : rememberHint}
             checked={vpn.rememberPassword}
             disabled={!!keychainProblem}
             onChange={setRemember}

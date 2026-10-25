@@ -68,7 +68,7 @@ export const vpnImage = (
 });
 
 /** vpcd's port for its first reader slot (its default, 0x8C7B); the second slot uses the next one. */
-export const VPCD_PORT = 35963;
+export const VPCD_PORT = 35_963;
 
 /**
  * The loopback address the relay connects to vpcd from. vpcd's port takes connections from it alone,

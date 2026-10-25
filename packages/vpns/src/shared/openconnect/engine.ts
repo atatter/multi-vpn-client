@@ -31,21 +31,28 @@ export function readOpenConnect(
   let server = firstServer;
   return (line) => {
     const negotiating = /^SSL negotiation with (\S+)/.exec(line)?.[1];
-    if (negotiating) server = negotiating;
+    if (negotiating) {
+      server = negotiating;
+    }
+
     const changed = PIN_MISMATCH.exec(line)?.[1];
-    if (changed)
+    if (changed) {
       return {
         failed: `${server} presented a different certificate than the one you trusted.`,
         untrustedPin: changed,
         server,
       };
+    }
+
     const untrusted = UNTRUSTED.exec(line)?.[1];
-    if (untrusted)
+    if (untrusted) {
       return {
         failed: `${server}'s certificate isn't publicly trusted.`,
         untrustedPin: untrusted,
         server,
       };
+    }
+
     return readProtocol(line);
   };
 }

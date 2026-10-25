@@ -126,16 +126,21 @@ systemctl enable --now ${UNIT}
 async function runAsAdmin(script: string): Promise<void> {
   const result = await run('pkexec', ['/bin/sh', '-s'], script).catch(
     (error: NodeJS.ErrnoException) => {
-      if (error.code === 'ENOENT')
+      if (error.code === 'ENOENT') {
         throw new Error('pkexec (polkit) is needed to install the network helper.');
+      }
+
       throw error;
     },
   );
-  if (result.code === 126) throw new Error('Administrator access was cancelled.');
-  if (result.code !== 0)
+  if (result.code === 126) {
+    throw new Error('Administrator access was cancelled.');
+  }
+  if (result.code !== 0) {
     throw new Error(
       result.stderr.trim() || `The administrator script failed (exit ${result.code}).`,
     );
+  }
 }
 
 export const linuxInstaller: PlatformInstaller = {

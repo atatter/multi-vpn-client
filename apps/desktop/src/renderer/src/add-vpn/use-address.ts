@@ -23,19 +23,29 @@ export function useAddress() {
   const checking = looksLikeAddress(typed) && found?.address !== typed;
 
   useEffect(() => {
-    if (!looksLikeAddress(typed)) return;
+    if (!looksLikeAddress(typed)) {
+      return;
+    }
+
     let current = true;
     // Probing starts once typing pauses, not on every key.
     const timer = setTimeout(() => {
       void api.detect(typed).then(
         (detection) => {
-          if (!current) return;
+          if (!current) {
+            return;
+          }
+
           setFound({ address: typed, detection });
-          if (detection.kind === 'unknown') setManual(true);
+
+          if (detection.kind === 'unknown') {
+            setManual(true);
+          }
         },
         () => current && setFound({ address: typed, detection: { kind: 'unknown' } }),
       );
     }, 750);
+
     return () => {
       current = false;
       clearTimeout(timer);
@@ -53,5 +63,6 @@ export function useAddress() {
             source: { from: 'address', browserSignIn: !!detection.browserSignIn },
           })
       : undefined;
+
   return { address, setAddress, typed, checking, detection, manual, setManual, next };
 }

@@ -21,7 +21,10 @@ export function CheckScreen({ query = '' }: { query?: string | undefined }) {
   const typed = text.trim();
 
   useEffect(() => {
-    if (!typed) return;
+    if (!typed) {
+      return;
+    }
+
     let current = true;
     const timer = setTimeout(() => {
       void api.checkRoute(typed).then(
@@ -34,6 +37,7 @@ export function CheckScreen({ query = '' }: { query?: string | undefined }) {
           }),
       );
     }, 250);
+
     return () => {
       current = false;
       clearTimeout(timer);
@@ -42,6 +46,7 @@ export function CheckScreen({ query = '' }: { query?: string | undefined }) {
 
   const shown = answer?.text === typed ? answer : undefined;
   const via = shown?.vpnId ? app.config.vpns.find((vpn) => vpn.id === shown.vpnId) : undefined;
+
   return (
     <Frame title="Site not loading?" onBack={app.back}>
       {/* One 14px rhythm around the box and the answer; the label sits tight to its box. */}
@@ -58,7 +63,10 @@ export function CheckScreen({ query = '' }: { query?: string | undefined }) {
             // A pasted link keeps only its site: the path doesn't change where it goes.
             onPaste={(event) => {
               const pasted = siteOf(event.clipboardData.getData('text'));
-              if (!pasted) return;
+              if (!pasted) {
+                return;
+              }
+
               event.preventDefault();
               setText(pasted);
             }}

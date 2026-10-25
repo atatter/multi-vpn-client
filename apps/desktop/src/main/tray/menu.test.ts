@@ -62,6 +62,7 @@ describe("the update's item", () => {
       label: 'Restarting to update to 0.2.0…',
       enabled: false,
     });
+
     for (const update of [
       { state: 'off' },
       { state: 'idle' },

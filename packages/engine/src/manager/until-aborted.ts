@@ -7,5 +7,8 @@ export const untilAborted = <T>(work: Promise<T>, signal: AbortSignal): Promise<
     const onAbort = () => reject(signal.reason);
     signal.addEventListener('abort', onAbort, { once: true });
     work.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
-    if (signal.aborted) onAbort();
+
+    if (signal.aborted) {
+      onAbort();
+    }
   });

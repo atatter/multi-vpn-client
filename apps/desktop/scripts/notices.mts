@@ -39,10 +39,11 @@ const bunVersions = new Set(
   ),
 );
 const [bun] = bunVersions;
-if (bunVersions.size !== 1 || !bun)
+if (bunVersions.size !== 1 || !bun) {
   throw new Error(
     `The helper and card bridge must build with the same Bun; they use ${[...bunVersions].join(', ')}.`,
   );
+}
 const bunSources = BUN_SOURCES[bun];
 if (!bunSources || !existsSync(join(desktop, 'licenses', `bun-${bun}-LICENSE.md`))) {
   throw new Error(
@@ -55,8 +56,10 @@ function shippedPackages(): string[] {
   const recorded = readdirSync(join(desktop, 'build'))
     .filter((file) => /^packages-.+\.json$/.test(file))
     .flatMap((file) => z.array(z.string()).parse(JSON.parse(read(desktop, 'build', file))));
-  if (recorded.length === 0)
+  if (recorded.length === 0) {
     throw new Error('No recorded packages: run electron-vite build first.');
+  }
+
   const compiled = ['helper', 'card-bridge'].flatMap((name) => {
     const dir = join(root, 'packages', name);
     return Object.keys(packageJson(dir).dependencies ?? {})
@@ -65,16 +68,19 @@ function shippedPackages(): string[] {
   });
   // Tailwind writes its preflight base styles into the window's stylesheet.
   const inlined = [realpathSync(join(desktop, 'node_modules', 'tailwindcss'))];
+
   return [...new Set([...recorded, ...compiled, ...inlined].map((dir) => realpathSync(dir)))];
 }
 
 function packageNotice(dir: string): { id: string; text: string } {
   const { name, version = '', license } = packageJson(dir);
   const file = readdirSync(dir).find((entry) => /^(licen[cs]e|copying)(\.[a-z]+)?$/i.test(entry));
-  if (!file)
+  if (!file) {
     throw new Error(
       `${name}@${version} ships no license file, so its notice can't be included. Check its license (${license ?? 'none given'}) by hand.`,
     );
+  }
+
   return {
     id: `${name}@${version}`,
     text: `${name} ${version} (${license ?? 'see below'})\n\n${read(dir, file).trim()}`,
@@ -92,7 +98,9 @@ const notices = [
   .map(([, text]) => text);
 const rule = (title: string) => `\n\n${'='.repeat(79)}\n${title}\n${'='.repeat(79)}\n\n`;
 const { version } = packageJson(desktop);
-if (!version) throw new Error('apps/desktop/package.json has no version.');
+if (!version) {
+  throw new Error('apps/desktop/package.json has no version.');
+}
 
 writeFileSync(
   join(desktop, 'build', 'THIRD_PARTY_NOTICES.txt'),

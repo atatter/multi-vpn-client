@@ -69,6 +69,7 @@ const KEPT_WITH_VPNS = new Set(['config.json', 'secrets.json', 'Local State']);
 export function heldLock(appFolder: string, platform: NodeJS.Platform): string | undefined {
   if (platform === 'win32') {
     const lockfile = join(appFolder, 'lockfile');
+
     try {
       closeSync(openSync(lockfile, 'r+'));
       return undefined;
@@ -77,13 +78,16 @@ export function heldLock(appFolder: string, platform: NodeJS.Platform): string |
       return code === 'EBUSY' || code === 'EPERM' ? lockfile : undefined;
     }
   }
+
   const lock = join(appFolder, 'SingletonLock');
   let target: string;
+
   try {
     target = readlinkSync(lock);
   } catch {
     return undefined;
   }
+
   const held = singletonLockHeld(target, hostname(), (pid) => {
     try {
       process.kill(pid, 0);
@@ -92,6 +96,7 @@ export function heldLock(appFolder: string, platform: NodeJS.Platform): string |
       return (error as NodeJS.ErrnoException).code === 'EPERM';
     }
   });
+
   return held ? lock : undefined;
 }
 
@@ -103,7 +108,10 @@ export function singletonLockHeld(
 ): boolean {
   const split = target.lastIndexOf('-');
   const pid = Number(target.slice(split + 1));
-  if (split <= 0 || !Number.isInteger(pid) || pid <= 0) return false;
+  if (split <= 0 || !Number.isInteger(pid) || pid <= 0) {
+    return false;
+  }
+
   return target.slice(0, split) !== host || alive(pid);
 }
 
@@ -122,6 +130,7 @@ export async function survey(
         others: (await readdir(appFolder)).filter((entry) => !KEPT_WITH_VPNS.has(entry)),
       }
     : undefined;
+
   return {
     platform,
     helper: helperInstalled(),
@@ -151,8 +160,12 @@ export async function survey(
 
 async function dockerImages(): Promise<Found['docker']> {
   const bin = await findDocker().catch(() => undefined);
-  if (!bin) return undefined;
+  if (!bin) {
+    return undefined;
+  }
+
   const docker = createDocker(bin);
+
   try {
     await docker.assertRunning();
     return { docker, images: await listVpnImages(docker) };
@@ -163,10 +176,13 @@ async function dockerImages(): Promise<Found['docker']> {
 
 async function folderBytes(dir: string): Promise<number> {
   let total = 0;
+
   for (const entry of await readdir(dir, { recursive: true, withFileTypes: true })) {
-    if (entry.isFile())
+    if (entry.isFile()) {
       total += (await lstat(join(entry.parentPath, entry.name)).catch(() => ({ size: 0 }))).size;
+    }
   }
+
   return total;
 }
 
@@ -190,8 +206,13 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 /** The question about the VPNs, or undefined when there are none to lose and the app's folder simply goes. */
 export function keepQuestion(found: Found): string | undefined {
   const vpns = found.data?.vpns;
-  if (!found.data || vpns === 0) return undefined;
-  if (vpns === 1) return 'Also delete your VPN and its saved passwords?';
+  if (!found.data || vpns === 0) {
+    return undefined;
+  }
+  if (vpns === 1) {
+    return 'Also delete your VPN and its saved passwords?';
+  }
+
   return `Also delete your ${vpns === undefined ? 'VPNs' : `${vpns} VPNs`} and their saved passwords?`;
 }
 
@@ -204,6 +225,7 @@ export function uninstallSteps(found: Found, deleteVpns: boolean): Step[] {
   const steps: Step[] = [];
   const again = 'Run npx multi-vpn-client uninstall again.';
   const { appFolder, data } = found;
+
   if (found.helper) {
     steps.push({
       what: 'the network helper (asks for your password)',
@@ -211,6 +233,7 @@ export function uninstallSteps(found: Found, deleteVpns: boolean): Step[] {
       manual: `${again} It asks for your password.`,
     });
   }
+
   if (found.cache) {
     const { dir, versions, bytes } = found.cache;
     const what =
@@ -223,15 +246,19 @@ export function uninstallSteps(found: Found, deleteVpns: boolean): Step[] {
       manual: `Delete the folder ${dir}`,
     });
   }
+
   if (found.desktopEntry.length > 0) {
     steps.push({
       what: "the app's entry in your app list",
       run: async () => {
-        for (const path of found.desktopEntry) await rm(path, { force: true });
+        for (const path of found.desktopEntry) {
+          await rm(path, { force: true });
+        }
       },
       manual: `Delete ${found.desktopEntry.join(' and ')}`,
     });
   }
+
   const docker = found.docker;
   if (docker && 'problem' in docker) {
     steps.push({
@@ -252,13 +279,16 @@ export function uninstallSteps(found: Found, deleteVpns: boolean): Step[] {
       manual: `docker image rm ${refs.join(' ')}`,
     });
   }
+
   const keepVpns = data !== undefined && data.vpns !== 0 && !deleteVpns;
   if (data && keepVpns && data.others.length > 0) {
     const others = data.others.map((entry) => join(appFolder, entry));
     steps.push({
       what: "sing-box and the app's caches",
       run: async () => {
-        for (const path of others) await rm(path, { recursive: true, force: true });
+        for (const path of others) {
+          await rm(path, { recursive: true, force: true });
+        }
       },
       manual: `Delete everything in ${appFolder} except ${[...KEPT_WITH_VPNS].join(', ')}`,
     });
@@ -270,8 +300,12 @@ export function uninstallSteps(found: Found, deleteVpns: boolean): Step[] {
       manual: `Delete the folder ${appFolder}`,
     });
   }
+
   // Also when the app's folder is already gone: the key is no use without the passwords it encrypted.
-  if (found.keychainKey && !keepVpns) steps.push(keychainStep(found.platform));
+  if (found.keychainKey && !keepVpns) {
+    steps.push(keychainStep(found.platform));
+  }
+
   return steps;
 }
 
@@ -287,6 +321,7 @@ function keychainStep(platform: NodeJS.Platform): Step {
       manual: `Delete "${KEYCHAIN_SERVICE}" in Keychain Access.`,
     };
   }
+
   // Which secret store holds it, and under which attributes, depends on the desktop; there's no one command for it.
   return {
     what,

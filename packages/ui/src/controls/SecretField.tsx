@@ -39,11 +39,8 @@ export function SecretField({
       ) : (
         <SavedValue onReplace={() => onChange('')}>Saved</SavedValue>
       )}
-      {error ? (
-        <span className="text-[12.5px] text-danger">{error}</span>
-      ) : hintText ? (
-        <span className={hint}>{hintText}</span>
-      ) : null}
+      {error && <span className="text-[12.5px] text-danger">{error}</span>}
+      {!error && hintText ? <span className={hint}>{hintText}</span> : null}
       {stored && typeof pending === 'string' && (
         <button
           type="button"

@@ -27,7 +27,7 @@ function parseReply(line: string): HelperResponse | undefined {
   }
 }
 
-const CONNECT_TIMEOUT_MS = 2_000;
+const CONNECT_TIMEOUT_MS = 2000;
 const REQUEST_TIMEOUT_MS = 15_000;
 
 interface LineConnection {
@@ -63,15 +63,21 @@ function openConnection(port: number): Promise<LineConnection> {
     socket.on('data', (chunk: string) => {
       buffer += chunk;
       let newline: number;
+
       while ((newline = buffer.indexOf('\n')) >= 0) {
         const line = buffer.slice(0, newline);
         buffer = buffer.slice(newline + 1);
         const reply = parseReply(line);
         const waiter = waiting.shift();
-        if (!waiter) continue;
+        if (!waiter) {
+          continue;
+        }
+
         clearTimeout(waiter.timer);
-        if (reply) waiter.resolve(reply);
-        else {
+
+        if (reply) {
+          waiter.resolve(reply);
+        } else {
           waiter.reject(new Error('The network helper sent an invalid reply.'));
           socket.destroy();
         }
@@ -89,8 +95,10 @@ function openConnection(port: number): Promise<LineConnection> {
         request: (request) =>
           new Promise((resolveReply, rejectReply) => {
             // Closed already (e.g. the helper ended the session after a failed apply): no answer is coming.
-            if (socket.destroyed)
+            if (socket.destroyed) {
               return rejectReply(new Error('The network helper closed the connection.'));
+            }
+
             const timer = setTimeout(() => {
               rejectReply(new Error("The network helper didn't answer in time."));
               socket.destroy();
@@ -109,6 +117,7 @@ function openConnection(port: number): Promise<LineConnection> {
 export async function helperVersion(port: number): Promise<number | undefined> {
   try {
     const connection = await openConnection(port);
+
     try {
       const reply = await connection.request({ command: 'status' });
       return reply.ok ? reply.version : undefined;
@@ -147,10 +156,12 @@ export async function openHelperSession({
   const connection = await openConnection(port).catch(() => {
     throw new Error("The network helper isn't running. Reinstall it from the app.");
   });
+
   try {
     const status = await connection.request({ command: 'status' });
-    if (!status.ok || status.version !== HELPER_VERSION)
+    if (!status.ok || status.version !== HELPER_VERSION) {
       throw new Error('The network helper is out of date. Update it from the app.');
+    }
 
     const nonce = randomBytes(32).toString('base64url');
     const hello = HelloReply.safeParse(await connection.request({ command: 'hello', nonce }));
@@ -159,11 +170,14 @@ export async function openHelperSession({
         "Whatever answered on the helper's port couldn't prove it's the installed helper, so nothing was sent. Reinstall the helper.",
       );
     }
+
     const auth = await connection.request({
       command: 'auth',
       proof: sign(appProofMessage(hello.data.challenge)),
     });
-    if (!auth.ok) throw new Error('The network helper rejected this app. Reinstall it.');
+    if (!auth.ok) {
+      throw new Error('The network helper rejected this app. Reinstall it.');
+    }
   } catch (error) {
     connection.close();
     throw error;
@@ -172,7 +186,9 @@ export async function openHelperSession({
   return {
     async apply(routes) {
       const reply = await connection.request({ command: 'apply', routes });
-      if (!reply.ok) throw new Error(`The network helper refused the routes: ${reply.error}`);
+      if (!reply.ok) {
+        throw new Error(`The network helper refused the routes: ${reply.error}`);
+      }
     },
     close: connection.close,
     closed: connection.closed,

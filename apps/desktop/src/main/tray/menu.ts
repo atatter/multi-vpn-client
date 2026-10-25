@@ -12,8 +12,13 @@ export const idsOn = (statuses: Record<string, ConnectionStatus>) =>
 export const namesOn = (ids: readonly string[], config: Pick<Config, 'vpns' | 'priority'>) =>
   rankVpns(config).flatMap((vpn) => (ids.includes(vpn.id) ? [vpn.name] : []));
 
-export const countHeadline = (count: number) =>
-  count === 0 ? 'No VPNs on' : count === 1 ? '1 VPN on' : `${count} VPNs on`;
+export const countHeadline = (count: number) => {
+  if (count === 0) {
+    return 'No VPNs on';
+  }
+
+  return count === 1 ? '1 VPN on' : `${count} VPNs on`;
+};
 
 /**
  * The update's one menu item; undefined whenever the window's update button is hidden too (renderer/src/domain/update-copy.ts).

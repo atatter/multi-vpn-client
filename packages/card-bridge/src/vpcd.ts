@@ -15,24 +15,32 @@ export function createFramer(onMessage: (message: Uint8Array) => void) {
     joined.set(pending);
     joined.set(chunk, pending.length);
     let offset = 0;
+
     while (joined.length - offset >= 2) {
       const length = ((joined[offset] ?? 0) << 8) | (joined[offset + 1] ?? 0);
-      if (joined.length - offset - 2 < length) break;
+      if (joined.length - offset - 2 < length) {
+        break;
+      }
+
       onMessage(joined.slice(offset + 2, offset + 2 + length));
       offset += 2 + length;
     }
+
     pending = joined.slice(offset);
   };
 }
 
 /** One message as vpcd expects it. Its 2-byte length can't describe more than 65535 bytes, so longer ones throw. */
 export function frame(message: Uint8Array): Uint8Array {
-  if (message.length > 0xffff)
+  if (message.length > 0xff_ff) {
     throw new RangeError(`A ${message.length}-byte message doesn't fit vpcd's framing.`);
+  }
+
   const framed = new Uint8Array(message.length + 2);
   framed[0] = message.length >> 8;
   framed[1] = message.length & 0xff;
   framed.set(message, 2);
+
   return framed;
 }
 
@@ -71,10 +79,17 @@ const VERIFY = 0x20;
 export function refusal(apdu: Uint8Array, guarded: readonly number[] = []): Uint8Array | undefined {
   const [, instruction, , reference] = apdu;
   // Too short to be a command at all: refused, so nothing unchecked reaches the card.
-  if (apdu.length < 4 || instruction === undefined) return WRONG_LENGTH;
+  if (apdu.length < 4 || instruction === undefined) {
+    return WRONG_LENGTH;
+  }
+
   const command = instruction & 0xfe;
-  if (REFUSED_INSTRUCTIONS.has(command)) return INS_NOT_SUPPORTED;
-  if (command === VERIFY && guarded.some((pin) => (pin & 0x7f) === ((reference ?? 0) & 0x7f)))
+  if (REFUSED_INSTRUCTIONS.has(command)) {
+    return INS_NOT_SUPPORTED;
+  }
+  if (command === VERIFY && guarded.some((pin) => (pin & 0x7f) === ((reference ?? 0) & 0x7f))) {
     return SECURITY_NOT_SATISFIED;
+  }
+
   return undefined;
 }

@@ -3,7 +3,10 @@ import { intersect, isIpv4, networkOf, parseCidr, rangesToCidrs, subtract, union
 
 const range = (cidr: string) => {
   const parsed = parseCidr(cidr);
-  if (!parsed.ok) throw new Error(parsed.error);
+  if (!parsed.ok) {
+    throw new Error(parsed.error);
+  }
+
   return parsed.range;
 };
 
@@ -12,7 +15,7 @@ describe('parseCidr', () => {
     expect(parseCidr('10.20.0.0/16')).toEqual({
       ok: true,
       cidr: '10.20.0.0/16',
-      range: [0x0a140000, 0x0a14ffff],
+      range: [0x0a_14_00_00, 0x0a_14_ff_ff],
     });
   });
 
@@ -21,7 +24,7 @@ describe('parseCidr', () => {
   });
 
   it('handles the full IPv4 space', () => {
-    expect(parseCidr('0.0.0.0/0')).toMatchObject({ ok: true, range: [0, 0xffffffff] });
+    expect(parseCidr('0.0.0.0/0')).toMatchObject({ ok: true, range: [0, 0xff_ff_ff_ff] });
   });
 
   it('tolerates surrounding whitespace', () => {
@@ -58,8 +61,8 @@ describe('range set operations', () => {
 
   it('subtracts a hole from the middle', () => {
     expect(subtract([range('10.0.0.0/24')], [range('10.0.0.64/26')])).toEqual([
-      [0x0a000000, 0x0a00003f],
-      [0x0a000080, 0x0a0000ff],
+      [0x0a_00_00_00, 0x0a_00_00_3f],
+      [0x0a_00_00_80, 0x0a_00_00_ff],
     ]);
   });
 
@@ -94,7 +97,7 @@ describe('rangesToCidrs', () => {
   });
 
   it('covers an unaligned range exactly', () => {
-    expect(rangesToCidrs([[0x0a000001, 0x0a000006]])).toEqual([
+    expect(rangesToCidrs([[0x0a_00_00_01, 0x0a_00_00_06]])).toEqual([
       '10.0.0.1/32',
       '10.0.0.2/31',
       '10.0.0.4/31',

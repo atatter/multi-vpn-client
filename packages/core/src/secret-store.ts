@@ -37,10 +37,12 @@ export function createSecretStore(path: string, cipher: Cipher) {
     const raw = await readJsonIfExists(path);
     return raw === undefined ? {} : SecretFile.parse(raw).vpns;
   };
+
   // A value this machine's key can't decrypt (the app's name or the OS keychain changed) counts as missing
   // everywhere: the window shows it as not saved and asks for it again, instead of every connect failing.
   const decrypt = (stored: string) =>
     cipher.decrypt(Buffer.from(stored, 'base64')).catch(() => undefined);
+
   const readableStatus = async (stored: SecretMap<string>): Promise<SecretStatus> => {
     const vpns = await Promise.all(
       Object.entries(stored).map(async ([vpnId, slots]) => {
@@ -77,14 +79,19 @@ export function createSecretStore(path: string, cipher: Cipher) {
       vpns: readonly Vpn[],
     ): Promise<{ commit: () => Promise<SecretStatus> }> {
       const problems = validateSecretChanges(changes, vpns);
-      if (problems.length > 0) throw new Error(problems.join('\n'));
+      if (problems.length > 0) {
+        throw new Error(problems.join('\n'));
+      }
 
       const encrypted: SecretMap<string | null> = {};
+
       for (const [vpnId, slots] of Object.entries(changes)) {
         const out: Record<string, string | null> = {};
+
         for (const [key, value] of Object.entries(slots)) {
           out[key] = value === null ? null : (await cipher.encrypt(value)).toString('base64');
         }
+
         encrypted[vpnId] = out;
       }
 

@@ -36,18 +36,31 @@ export function Frame({
     const fit = () =>
       fitWindow(parts.current.reduce((sum, element) => sum + (element?.offsetHeight ?? 0), 0));
     const observer = new ResizeObserver(fit);
-    for (const element of parts.current) if (element) observer.observe(element);
+
+    for (const element of parts.current) {
+      if (element) {
+        observer.observe(element);
+      }
+    }
+
     fit();
+
     return () => observer.disconnect();
   }, [hasNotice, hasFooter, fitWindow]);
 
   // Escape goes back, like the arrow. Prompts and inputs that handle Escape themselves stop it first.
   useEffect(() => {
-    if (!onBack) return;
+    if (!onBack) {
+      return;
+    }
+
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !event.defaultPrevented) onBack();
+      if (event.key === 'Escape' && !event.defaultPrevented) {
+        onBack();
+      }
     };
     window.addEventListener('keydown', onKey);
+
     return () => window.removeEventListener('keydown', onKey);
   }, [onBack]);
 
