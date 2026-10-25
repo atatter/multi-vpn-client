@@ -49,9 +49,12 @@ function recordPackages(name: string): Plugin {
 }
 
 // Main and preload bundle everything (including the TS-source @repo/core workspace package);
-// the sandboxed preload can't require node_modules at runtime anyway.
+// the sandboxed preload can't require node_modules at runtime anyway. Their output is CommonJS, which Rolldown leaves
+// in sloppy mode unless the source says "use strict"; ES modules never do, so strict mode is asked for here.
+const nodeBuild = { externalizeDeps: false, rolldownOptions: { output: { strict: true } } };
+
 export default defineConfig({
-  main: { build: { externalizeDeps: false }, plugins: [recordPackages('main')] },
-  preload: { build: { externalizeDeps: false }, plugins: [recordPackages('preload')] },
+  main: { build: nodeBuild, plugins: [recordPackages('main')] },
+  preload: { build: nodeBuild, plugins: [recordPackages('preload')] },
   renderer: { plugins: [react(), tailwindcss(), recordPackages('renderer')] },
 });

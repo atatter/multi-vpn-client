@@ -11,7 +11,7 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "package": "electron-vite build && node scripts/notices.mts && electron-builder --publish never",
-    "harness": "vite --config harness/vite.config.ts",
+    "harness": "vite --config harness/vite.config.mts",
     "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json"
   },
   "devDependencies": {
@@ -25,14 +25,14 @@
     "@tailwindcss/vite": "4.3.3",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
-    "@vitejs/plugin-react": "5.2.0",
+    "@vitejs/plugin-react": "6.1.2",
     "electron": "44.9.3",
     "electron-builder": "26.18.0",
-    "electron-vite": "5.0.0",
+    "electron-vite": "6.0.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "tailwindcss": "4.3.3",
-    "vite": "7.3.7",
+    "vite": "8.3.5",
     "zod": "4.6.7"
   }
 }
