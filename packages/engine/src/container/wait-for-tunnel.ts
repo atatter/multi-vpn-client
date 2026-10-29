@@ -1,7 +1,5 @@
-import type { ChildProcessByStdio } from 'node:child_process';
 import { createInterface } from 'node:readline';
-import type { Readable } from 'node:stream';
-import type { Docker } from '../docker.ts';
+import type { Docker, DockerOutput } from '../docker.ts';
 import { markers } from '@repo/vpn-sdk/container';
 import type { BrowserSignIn } from '@repo/vpn-sdk/engine';
 import { classifyLine, UntrustedCertificateError } from './output.ts';
@@ -25,7 +23,7 @@ export function waitForTunnel(
   }: {
     docker: Docker;
     name: string;
-    follower: ChildProcessByStdio<null, Readable, Readable>;
+    follower: DockerOutput;
     nonce: string;
   },
   options: StartOptions,
@@ -125,7 +123,7 @@ export function waitForTunnel(
     );
 
     // The card stops being available if it's removed from the reader. Before connecting, that ends the connect.
-    options.cardBridge?.attach(docker.bin, name, (message) => {
+    options.cardBridge?.attach(docker, name, (message) => {
       options.onLog(message);
 
       if (!connected) {
@@ -169,6 +167,7 @@ export function waitForTunnel(
 
     createInterface({ input: follower.stdout }).on('line', onLine);
     createInterface({ input: follower.stderr }).on('line', onLine);
+    follower.on('error', fail);
     // Registered before the tunnel is reported up, so an exit right after connecting is never missed.
     follower.on('close', () => {
       clearTimeout(timeout);

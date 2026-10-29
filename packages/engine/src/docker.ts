@@ -1,4 +1,6 @@
 import type { DockerState } from '@repo/core';
+import type { Readable, Writable } from 'node:stream';
+import type { EventEmitter } from 'node:events';
 import { spawn } from 'node:child_process';
 import { access, constants } from 'node:fs/promises';
 import { delimiter, join } from 'node:path';
@@ -65,11 +67,31 @@ export async function findDocker(path = process.env.PATH ?? ''): Promise<string>
   );
 }
 
+/** A Docker command whose output remains live until the process closes. */
+export interface DockerOutput extends EventEmitter {
+  stdout: Readable;
+  stderr: Readable;
+  kill(): void;
+}
+
 export type Docker = ReturnType<typeof createDocker>;
 
 export function createDocker(bin: string) {
   return {
-    bin,
+    followLogs(name: string): DockerOutput {
+      return spawn(bin, ['logs', '--follow', name], { stdio: ['ignore', 'pipe', 'pipe'] });
+    },
+    pipe(args: readonly string[], source: Readable, destination: Writable): DockerOutput {
+      const child = spawn(bin, args, {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        windowsHide: true,
+      });
+      // The process close reports a broken pipe; don't let EPIPE crash the app.
+      child.stdin.on('error', () => undefined);
+      source.pipe(child.stdin);
+      child.stdout.pipe(destination);
+      return child;
+    },
     run: (args: readonly string[], input?: string | Buffer) => run(bin, args, input),
     runChecked: (args: readonly string[], input?: string | Buffer) => runChecked(bin, args, input),
 

@@ -6,12 +6,11 @@ import {
   MAX_DNS_SERVERS,
   type ServerRoutes,
 } from '@repo/core';
-import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { Docker } from '../docker.ts';
+import type { Docker, DockerOutput } from '../docker.ts';
 import type { CardBridge } from '../smart-card.ts';
 import { parseCidr, rangesToCidrs } from '@repo/vpn-sdk/cidr';
 import { NONCE_FILE } from '@repo/vpn-sdk/container';
@@ -160,7 +159,7 @@ export async function startVpnContainer(
     ...launch.command,
   ]);
 
-  let logs: ReturnType<typeof spawn> | undefined;
+  let logs: DockerOutput | undefined;
   let stopped = false;
 
   try {
@@ -191,9 +190,7 @@ export async function startVpnContainer(
     }
 
     // Follow the logs: they tell us when the tunnel is up, and the stream ends when the container stops.
-    const follower = spawn(docker.bin, ['logs', '--follow', name], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const follower = docker.followLogs(name);
     logs = follower;
     await waitForTunnel({ docker, name, follower, nonce }, options, () => stopped);
 
