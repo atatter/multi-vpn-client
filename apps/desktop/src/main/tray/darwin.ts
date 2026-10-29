@@ -15,6 +15,7 @@ export const darwinTray: TrayPlatform = {
     image.setTemplateImage(true);
     return image;
   },
+  watchColors() {},
   badge(count) {
     app.dock?.setBadge(countLabel(count));
   },

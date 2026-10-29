@@ -1,10 +1,10 @@
-import { newVpn, type Config } from '@repo/core';
+import { newVpn, NO_ROUTES, type HostRoutes, type Config } from '@repo/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 import type { startVpnContainer } from '../container/start.ts';
 import { createConnectionManager } from './connection-manager.ts';
 
-// The manager against fakes for Docker, the helper and the container: what's tested is who waits for whom.
+// The real manager and host routing against fakes for Docker, the helper and the container.
 type StartOptions = Parameters<typeof startVpnContainer>[1];
 /** How each VPN's (fake) container start behaves, by VPN id; unlisted ones connect at once. */
 const starts = new Map<string, (options: StartOptions) => Promise<void>>();
@@ -37,12 +37,19 @@ vi.mock('../helper-install/index.ts', async (importOriginal) => ({
   readHelperToken: async () => 'token',
 }));
 /** The (fake) helper: while `failing`, applying fails and ends the session, as the real helper does. */
-const helper = vi.hoisted(() => ({ failing: false }));
+const helper = vi.hoisted(() => ({
+  failing: false,
+  instructions: [] as HostRoutes[],
+  lose: (): void => undefined,
+}));
+const stopped: string[] = [];
 vi.mock('../helper-client.ts', () => ({
   openHelperSession: async () => {
     let end: () => void = () => undefined;
     const closed = new Promise<void>((resolve) => (end = resolve));
-    const apply = async () => {
+    helper.lose = end;
+    const apply = async (routes: HostRoutes) => {
+      helper.instructions.push(structuredClone(routes));
       if (!helper.failing) {
         return;
       }
@@ -71,7 +78,7 @@ vi.mock('../container/start.ts', async (importOriginal) => ({
       pushedDns: [],
       pushedRoutes: pushed.get(options.vpnId),
       endpoint: endpoints.get(options.vpnId),
-      stop: async () => undefined,
+      stop: async () => void stopped.push(options.vpnId),
     };
   },
 }));
@@ -111,11 +118,120 @@ describe('connection manager', () => {
     savedConfig = config;
     build = Promise.resolve();
     helper.failing = false;
+    helper.instructions.length = 0;
+    helper.lose = () => undefined;
+    stopped.length = 0;
     // A asks for a one-time code; B connects right away.
     starts.set(
       'a',
       async ({ onPrompt }) => void (await onPrompt('Please enter your one-time code')),
     );
+  });
+
+  it("removes a disconnected VPN from the helper plan and clears the last VPN's routes", async () => {
+    starts.delete('a');
+    savedConfig = {
+      ...config,
+      vpns: config.vpns.map((vpn) => ({
+        ...vpn,
+        traffic: 'official',
+        serverRoutes: { all: false, cidrs: [vpn.id === 'a' ? '10.20.0.0/16' : '10.30.0.0/16'] },
+      })),
+    };
+    const connections = manager();
+    try {
+      await expect(connections.connect('a', undefined)).resolves.toEqual({ ok: true });
+      await expect(connections.connect('b', undefined)).resolves.toEqual({ ok: true });
+      expect(helper.instructions.at(-1)?.tunnels).toMatchObject([
+        { vpnId: 'a', cidrs: ['10.20.0.0/16'] },
+        { vpnId: 'b', cidrs: ['10.30.0.0/16'] },
+      ]);
+
+      await connections.disconnect('a');
+      expect(connections.statuses().a?.state).toBe('disconnected');
+      expect(helper.instructions.at(-1)?.tunnels).toEqual([
+        expect.objectContaining({ vpnId: 'b', cidrs: ['10.30.0.0/16'] }),
+      ]);
+
+      await connections.disconnect('b');
+      expect(helper.instructions.at(-1)).toEqual(NO_ROUTES);
+      expect(stopped).toEqual(['a', 'b']);
+    } finally {
+      await connections.shutdown();
+    }
+  });
+
+  it('assigns overlapping destinations to the higher priority connected VPN', async () => {
+    starts.delete('a');
+    savedConfig = {
+      ...config,
+      priority: ['b', 'a'],
+      vpns: config.vpns.map((vpn) => ({
+        ...vpn,
+        traffic: 'official',
+        serverRoutes: { all: false, cidrs: ['10.20.0.0/16'] },
+      })),
+    };
+    const connections = manager();
+    try {
+      await expect(connections.connect('a', undefined)).resolves.toEqual({ ok: true });
+      await expect(connections.connect('b', undefined)).resolves.toEqual({ ok: true });
+      expect(helper.instructions.at(-1)?.tunnels).toMatchObject([
+        { vpnId: 'b', cidrs: ['10.20.0.0/16'] },
+        { vpnId: 'a', cidrs: [] },
+      ]);
+
+      savedConfig = { ...savedConfig, priority: ['a', 'b'] };
+      await connections.refresh();
+      expect(helper.instructions.at(-1)?.tunnels).toMatchObject([
+        { vpnId: 'a', cidrs: ['10.20.0.0/16'] },
+        { vpnId: 'b', cidrs: [] },
+      ]);
+
+      await connections.disconnect('a');
+      expect(helper.instructions.at(-1)?.tunnels).toEqual([
+        expect.objectContaining({ vpnId: 'b', cidrs: ['10.20.0.0/16'] }),
+      ]);
+    } finally {
+      await connections.shutdown();
+    }
+  });
+
+  it('drops connected VPNs when the helper session ends without reapplying their routes', async () => {
+    starts.delete('a');
+    savedConfig = {
+      ...config,
+      vpns: config.vpns.map((vpn) => ({
+        ...vpn,
+        traffic: 'official',
+        serverRoutes: { all: false, cidrs: ['10.20.0.0/16'] },
+      })),
+    };
+    const connections = manager();
+    try {
+      await expect(connections.connect('a', undefined)).resolves.toEqual({ ok: true });
+      await expect(connections.connect('b', undefined)).resolves.toEqual({ ok: true });
+      expect(helper.instructions.at(-1)?.tunnels).toContainEqual(
+        expect.objectContaining({ vpnId: 'a', cidrs: ['10.20.0.0/16'] }),
+      );
+      const beforeLoss = structuredClone(helper.instructions);
+
+      helper.lose();
+      await vi.waitFor(() => {
+        for (const id of ['a', 'b']) {
+          expect(connections.statuses()[id]).toMatchObject({
+            state: 'error',
+            message:
+              "The network helper stopped or couldn't apply the routes, so it removed them. Connect again.",
+          });
+        }
+      });
+      expect(stopped).toEqual(['a', 'b']);
+      await connections.refresh();
+      expect(helper.instructions).toEqual(beforeLoss);
+    } finally {
+      await connections.shutdown();
+    }
   });
 
   it('connects and disconnects other VPNs while one waits for the user', async () => {

@@ -1,5 +1,5 @@
 import { APP_NAME, type Config, type ConnectionStatus } from '@repo/core';
-import { type BrowserWindow, Menu, type NativeImage, nativeTheme, Tray } from 'electron';
+import { type BrowserWindow, Menu, type NativeImage, Tray } from 'electron';
 import type { AppInfo, UpdateState } from '../../shared/ipc-contract.ts';
 import { platform } from '../window.ts';
 import { darwinTray } from './darwin.ts';
@@ -15,6 +15,8 @@ export interface TrayPlatform {
   registerDesktopApp(): void;
   /** The tray icon with this many VPNs on, and with a dot while there's an update. */
   icon(count: number, hasUpdate: boolean): NativeImage;
+  /** Calls `redraw` whenever `icon` would draw in other colors; `window` receives the system's messages. */
+  watchColors(redraw: () => void, window: BrowserWindow): void;
   /** Shows the count on the app's icon in the Dock or taskbar; 0 clears it. */
   badge(count: number, window: BrowserWindow): void;
   /** Runs each time the window shows again: puts the count back where the OS lost it while the window was hidden. */
@@ -60,7 +62,7 @@ export function createTray(deps: {
     tray.on('click', deps.open);
   }
 
-  nativeTheme.on('updated', () => tray.setImage(trayPlatform.icon(count, hasUpdate)));
+  trayPlatform.watchColors(() => tray.setImage(trayPlatform.icon(count, hasUpdate)), deps.window);
   deps.window.on('show', () => trayPlatform.windowShown(count, deps.window));
 
   function update() {
